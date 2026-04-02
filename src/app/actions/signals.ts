@@ -54,10 +54,12 @@ export async function createSignal(
 
 	const validated = signalSchema.safeParse(raw);
 	if (!validated.success) {
+		const fieldErrors = validated.error.flatten().fieldErrors;
+		const firstError = Object.values(fieldErrors).flat()[0] ?? "Invalid signal data";
 		return {
 			status: "error",
-			message: "Invalid signal data",
-			errors: validated.error.flatten().fieldErrors,
+			message: firstError,
+			errors: fieldErrors,
 		};
 	}
 
