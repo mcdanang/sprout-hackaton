@@ -46,6 +46,7 @@ export default function ProjectDetailPage() {
   // Infinite Scroll States
   const [visibleCount, setVisibleCount] = useState(5);
   const [isLoading, setIsLoading] = useState(false);
+  const [replyingToId, setReplyingToId] = useState<string | null>(null);
   const observerTarget = useRef(null);
 
   const visibleActivities = allActivities.slice(0, visibleCount);
@@ -252,8 +253,9 @@ export default function ProjectDetailPage() {
                         {activity.content}
                       </p>
                       
-                      {/* Heart Like Pill Implementation with Active State */}
-                      <div className="flex items-center justify-start pt-1">
+                      {/* Interaction Actions: Like & Reply */}
+                      <div className="flex items-center gap-3 pt-1">
+                        {/* Like Button */}
                         <button className={cn(
                           "flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all group/like",
                           activity.isLiked 
@@ -275,7 +277,49 @@ export default function ProjectDetailPage() {
                             {activity.likesCount}
                           </span>
                         </button>
+
+                        {/* Reply Button */}
+                        <button 
+                          onClick={() => setReplyingToId(replyingToId === activity.id ? null : activity.id)}
+                          className={cn(
+                            "flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all group/reply",
+                            replyingToId === activity.id
+                              ? "bg-brand-primary/5 border-brand-primary/20 text-brand-primary"
+                              : "bg-white border-slate-100 hover:border-slate-200 text-slate-500 hover:text-slate-700 hover:shadow-sm"
+                          )}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                          </svg>
+                          <span className="font-plus-jakarta text-xs font-bold">Reply</span>
+                        </button>
                       </div>
+
+                      {/* Expanding Reply Contextual Field */}
+                      {replyingToId === activity.id && (
+                        <div className="pt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                          <div className="relative group/field">
+                            <textarea 
+                              placeholder={`Reply to ${activity.userName.split(' ')[0]}...`}
+                              className="w-full bg-slate-50/50 border border-slate-100 rounded-2xl p-4 font-plus-jakarta text-sm text-brand-primary placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-primary/10 focus:bg-white transition-all min-h-[100px] resize-none"
+                              autoFocus
+                            />
+                            <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                              <button 
+                                onClick={() => setReplyingToId(null)}
+                                className="px-3 py-1.5 rounded-xl text-[11px] font-bold text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-wider"
+                              >
+                                Cancel
+                              </button>
+                              <button 
+                                className="px-4 py-1.5 rounded-xl bg-brand-primary text-white text-[11px] font-bold hover:scale-105 active:scale-95 transition-all uppercase tracking-wider shadow-sm"
+                              >
+                                Send
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
