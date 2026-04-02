@@ -1,62 +1,84 @@
 "use server";
 
+import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
-
 import { createClient } from "@/lib/supabase/server";
+import { ownershipSchema } from "@/lib/validations/ownership";
+import { type OwnershipActionState } from "./ownership.types";
 
-export type OwnershipActionState = {
-  status: "idle" | "success" | "error";
-  message: string;
-};
-
-export const initialOwnershipActionState: OwnershipActionState = {
-  status: "idle",
-  message: "",
-};
-
+/**
+ * Submits a new ownership signal (concern or recognition).
+ */
 export async function submitOwnershipSignal(
   _prevState: OwnershipActionState,
   formData: FormData
 ): Promise<OwnershipActionState> {
-  const type = formData.get("type");
-  const title = formData.get("title");
-  const details = formData.get("details");
-  const isAnonymous = formData.get("isAnonymous") === "on";
+  const { userId } = await auth();
 
-  if (type !== "concern" && type !== "recognition") {
-    return { status: "error", message: "Please choose a valid signal type." };
-  }
-
-  if (typeof title !== "string" || title.trim().length < 4) {
-    return { status: "error", message: "Title must be at least 4 characters." };
-  }
-
-  if (typeof details !== "string" || details.trim().length < 10) {
+  if (!userId) {
     return {
       status: "error",
-      message: "Details must be at least 10 characters for useful context.",
+      message: "Unauthorized",
     };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.from("ownership_signals").insert({
-    type,
-    title: title.trim(),
-    details: details.trim(),
-    is_anonymous: isAnonymous,
-  });
-
-  if (error) {
-    return {
-      status: "error",
-      message: `Submission failed: ${error.message}`,
-    };
-  }
-
-  revalidatePath("/");
-
-  return {
-    status: "success",
-    message: "Signal submitted successfully.",
+  const raw = {
+    type: formData.get("type"),
+    title: formData.get("title"),
+    details: formData.get("details"),
+    isAnonymous: formData.get("isAnonymous") === "on",
   };
+
+  const validated = ownershipSchema.safeParse(raw);
+
+  if (!validated.success) {
+    return {
+      status: "error",
+      message: "Invalid signal data",
+      errors: validated.error.flatten().fieldErrors,
+    };
+  }
+
+  const values = validated.data;
+  const supabase = await createClient();
+
+  try {
+    // Get current employee for the logged in user
+    const { data: employee, error: empError } = await supabase
+      .from("employees")
+      .select("id")
+      .eq("auth_id", userId)
+      .maybeSingle();
+
+    if (empError || !employee) {
+      return {
+        status: "error",
+        message: "Employee profile not found.",
+      };
+    }
+
+    // Insert into signals table as achievement/concern based on type
+    const { error: insertError } = await supabase
+      .from("signals")
+      .insert({
+        author_employee_id: employee.id,
+        is_anonymous: values.isAnonymous,
+        category: values.type === "recognition" ? "achievement" : "concern",
+        title: values.title.trim(),
+        details: values.details.trim(),
+        is_public: true,
+      });
+
+    if (insertError) {
+      return {
+        status: "error",
+        message: insertError.message,
+      };
+    }
+
+    revalidatePath("/dashboard");
+    return { status: "success", message: "Ownership signal submitted." };
+  } catch (e) {
+    return { status: "error", message: e instanceof Error ? e.message : "Internal Error" };
+  }
 }

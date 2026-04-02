@@ -1,0 +1,89 @@
+{
+  "Landing": {
+    "title": "Speak Up and Recognize Positive Ownership",
+    "description": "A safe internal platform for employees to raise concerns early and acknowledge peers who show ownership. Improve transparency, trust, and accountability within your team.",
+    "getStarted": "Get Started",
+    "goDashboard": "Go to Dashboard",
+    "learnMore": "Learn More",
+    "badge": "Project Sprout Ownership",
+    "features": {
+      "safe": {
+        "title": "Safe & Anonymous",
+        "description": "Submit concerns without fear. Optional anonymity ensures every voice is heard."
+      },
+      "peer": {
+        "title": "Peer Recognition",
+        "description": "Highlight excellent performance and ownership. Build a culture of appreciation."
+      },
+      "rapid": {
+        "title": "Rapid Feedback",
+        "description": "Get internal signals directly to decision makers to resolve blockers fast."
+      }
+    }
+  },
+  "Dashboard": {
+    "title": "Team Dashboard",
+    "welcome": "Welcome back, {name}",
+    "subtitle": "Your personal sanctuary for team clarity, focus, and connection.",
+    "quote": {
+      "text": "Psychological safety is the bridge between individual talent and collective genius.",
+      "author": "SIGNAL SANCTUARY AI"
+    },
+    "overview": "Overview",
+    "nav": {
+      "dashboard": "Dashboard",
+      "projects": "Projects",
+      "myConcern": "My Concern",
+      "myAchievement": "My Achievement",
+      "privateFeedback": "Private Feedback",
+      "aiAssistant": "AI Assistant"
+    }
+  },
+  "Unauthorized": {
+    "title": "Access Denied",
+    "description": "You are trying to access a protected area. Please sign in to continue or return to the landing page.",
+    "signIn": "Sign In Now",
+    "backHome": "Back to Home"
+  },
+  "Form": {
+    "title": "Speak Up or Recognize a Peer",
+    "type": "Signal Type",
+    "typeConcern": "Concern / Risk",
+    "typeRecognition": "Recognition / Positive Ownership",
+    "titleLabel": "Title",
+    "titlePlaceholder": "Example: Blocker in API dependency",
+    "detailsLabel": "Details",
+    "detailsPlaceholder": "Add enough context so others can take action.",
+    "anonymous": "Submit anonymously",
+    "submit": "Submit Signal",
+    "submitting": "Submitting...",
+    "success": "Signal submitted successfully.",
+    "error": "Please fix the errors in the form.",
+    "unauthorized": "Unauthorized. Please sign in to submit a signal.",
+    "failed": "Submission failed"
+  },
+  "Recent": {
+    "title": "Recent Signals",
+    "empty": "No signals yet."
+  },
+  "Common": {
+    "signIn": "Sign In",
+    "dashboard": "Dashboard",
+    "anonymous": "Anonymous"
+  },
+  "Projects": {
+    "label": "Team Projects",
+    "title": "Ongoing Projects",
+    "subtitle": "Track and manage your team's tactical and strategic ownership initiatives."
+  },
+  "ProjectDetail": {
+    "back": "Back to Projects",
+    "overview": "Project Overview",
+    "squad": "Squad Hub",
+    "activity": "Project Feed",
+    "noActivity": "No recent activity recorded.",
+    "healthLabel": "Team Pulse",
+    "concernsLabel": "Active Concerns",
+    "achievementsLabel": "Key Achievements"
+  }
+}
