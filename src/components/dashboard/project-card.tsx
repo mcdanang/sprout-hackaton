@@ -34,7 +34,7 @@ const statusStyles: Record<ProjectStatus, string> = {
 };
 
 const healthStyles: Record<ProjectHealthStatus, string> = {
-  Stable: "bg-[#FFD300]", // Signal Brand Yellow
+  Stable: "bg-green-500", // Signal Brand Yellow
   "At Risk": "bg-orange-500",
   Critical: "bg-red-500",
 };
