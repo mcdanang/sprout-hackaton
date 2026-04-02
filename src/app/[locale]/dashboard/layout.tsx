@@ -1,7 +1,7 @@
 import { UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
-import { Signal } from "lucide-react";
 import { Link, redirect } from "@/i18n/routing";
+import Image from "next/image";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { getLocale } from "next-intl/server";
 
@@ -22,11 +22,19 @@ export default async function DashboardLayout({
       {/* Dashboard Header */}
       <header className="sticky top-0 z-30 flex h-16 items-center border-b bg-background/80 backdrop-blur-md px-6 shadow-sm">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-2 font-bold text-black dark:text-white">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FFD300] text-black shadow-sm">
-              <Signal className="h-5 w-5" />
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FFD300] shadow-sm overflow-hidden">
+              <Image 
+                src="/signal_logo.svg" 
+                alt="Signal Logo" 
+                width={20} 
+                height={20} 
+                className="object-contain"
+              />
             </div>
-            <span className="tracking-tight">Signal</span>
+            <span className="font-open-sans text-[20px] font-bold leading-[27px] text-[#081021]">
+              Signal
+            </span>
           </Link>
           <div className="flex items-center gap-4">
             <LanguageSwitcher />

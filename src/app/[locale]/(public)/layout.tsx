@@ -1,6 +1,6 @@
 import { SignInButton, Show, UserButton } from "@clerk/nextjs";
-import { Signal } from "lucide-react";
 import { Link } from "@/i18n/routing";
+import Image from "next/image";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { useTranslations } from "next-intl";
 
@@ -14,11 +14,19 @@ export default function PublicLayout({
   return (
     <div className="flex min-h-screen flex-col">
       <header className="flex justify-between items-center p-4 h-16 border-b bg-background/80 backdrop-blur-md sticky top-0 z-50">
-        <Link href="/" className="flex items-center gap-2 font-bold text-black dark:text-white">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FFD300] text-black shadow-sm">
-            <Signal className="h-5 w-5" />
+        <Link href="/" className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FFD300] shadow-sm overflow-hidden">
+            <Image 
+              src="/signal_logo.svg" 
+              alt="Signal Logo" 
+              width={20} 
+              height={20} 
+              className="object-contain"
+            />
           </div>
-          <span className="tracking-tight">Signal</span>
+          <span className="font-open-sans text-[20px] font-bold leading-[27px] text-[#081021]">
+            Signal
+          </span>
         </Link>
         <div className="flex items-center gap-4">
           <LanguageSwitcher />
