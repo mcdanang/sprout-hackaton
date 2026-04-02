@@ -27,10 +27,9 @@ export function ProjectDetailClient({ project, activities }: Props) {
 	const sentinelRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		const observer = new IntersectionObserver(
-			([entry]) => setScrolled(!entry.isIntersecting),
-			{ threshold: 0 },
-		);
+		const observer = new IntersectionObserver(([entry]) => setScrolled(!entry.isIntersecting), {
+			threshold: 0,
+		});
 		if (sentinelRef.current) observer.observe(sentinelRef.current);
 		return () => observer.disconnect();
 	}, []);
@@ -38,12 +37,14 @@ export function ProjectDetailClient({ project, activities }: Props) {
 	return (
 		<div className="max-w-5xl mx-auto space-y-10 pb-20 animate-in fade-in duration-700">
 			{/* Sticky header */}
-			<div className={cn(
-				"md:sticky z-30 flex items-center justify-between transition-all duration-500",
-				scrolled
-					? "md:top-3 py-3 px-5 md:rounded-2xl md:bg-white/60 md:backdrop-blur-xl md:border md:border-slate-200/50 md:shadow-md"
-					: "md:top-0 py-4 bg-transparent",
-			)}>
+			<div
+				className={cn(
+					"md:sticky z-30 flex items-center justify-between transition-all duration-500",
+					scrolled
+						? "md:top-3 py-3 px-5 md:rounded-2xl md:bg-white/60 md:backdrop-blur-xl md:border md:border-slate-200/50 md:shadow-md"
+						: "md:top-0 py-4 bg-transparent",
+				)}
+			>
 				<button
 					onClick={() => router.back()}
 					className="group flex items-center gap-2 text-slate-500 hover:text-brand-primary transition-colors font-plus-jakarta text-sm font-semibold"
@@ -106,7 +107,9 @@ export function ProjectDetailClient({ project, activities }: Props) {
 			<div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm space-y-6">
 				<div className="flex items-center justify-between">
 					<div className="space-y-1">
-						<h2 className="font-plus-jakarta text-xl font-bold text-brand-primary">{t("healthLabel")}</h2>
+						<h2 className="font-plus-jakarta text-xl font-bold text-brand-primary">
+							{t("healthLabel")}
+						</h2>
 						<p className="text-sm text-slate-600 leading-none font-medium">
 							Real-time team performance and psychological safety indicator
 						</p>
@@ -120,7 +123,10 @@ export function ProjectDetailClient({ project, activities }: Props) {
 				<Progress value={project.health} className="h-3 w-full">
 					<ProgressTrack className="h-full w-full bg-slate-50">
 						<ProgressIndicator
-							className={cn("h-full transition-all duration-1000", healthStyles[project.healthStatus])}
+							className={cn(
+								"h-full transition-all duration-1000",
+								healthStyles[project.healthStatus],
+							)}
 						/>
 					</ProgressTrack>
 				</Progress>

@@ -18,6 +18,7 @@ export interface ActivityItem {
 	timestamp: string; // ISO string
 	likesCount: number;
 	isLiked: boolean;
+	isPublic: boolean;
 	replies?: ReplyItem[];
 }
 
@@ -35,6 +36,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
 		timestamp: "2026-04-02T08:30:00Z",
 		likesCount: 12,
 		isLiked: true,
+		isPublic: true,
 		replies: [
 			{
 				id: "rep-1",
@@ -59,6 +61,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
 		timestamp: "2026-04-02T09:15:00Z",
 		likesCount: 2,
 		isLiked: false,
+		isPublic: true,
 		replies: [
 			{
 				id: "rep-2",
@@ -92,6 +95,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
 		timestamp: "2026-04-02T10:00:00Z",
 		likesCount: 8,
 		isLiked: true,
+		isPublic: true,
 	},
 	{
 		id: "act-101",
@@ -104,6 +108,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
 		timestamp: "2026-04-01T15:30:00Z",
 		likesCount: 24,
 		isLiked: false,
+		isPublic: true,
 	},
 	{
 		id: "act-102",
@@ -116,6 +121,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
 		timestamp: "2026-04-01T16:45:00Z",
 		likesCount: 15,
 		isLiked: true,
+		isPublic: true,
 	},
 	{
 		id: "act-103",
@@ -129,6 +135,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
 		timestamp: "2026-04-01T18:10:00Z",
 		likesCount: 4,
 		isLiked: false,
+		isPublic: true,
 	},
 	{
 		id: "act-104",
@@ -141,6 +148,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
 		timestamp: "2026-03-31T10:20:00Z",
 		likesCount: 19,
 		isLiked: false,
+		isPublic: true,
 	},
 	{
 		id: "act-105",
@@ -154,6 +162,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
 		timestamp: "2026-03-31T11:45:00Z",
 		likesCount: 11,
 		isLiked: true,
+		isPublic: true,
 	},
 	{
 		id: "act-106",
@@ -167,6 +176,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
 		timestamp: "2023-03-31T14:00:00Z",
 		likesCount: 30,
 		isLiked: true,
+		isPublic: true,
 	},
 	{
 		id: "act-107",
@@ -180,6 +190,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
 		timestamp: "2026-03-31T16:30:00Z",
 		likesCount: 8,
 		isLiked: false,
+		isPublic: true,
 	},
 	{
 		id: "act-108",
@@ -193,6 +204,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
 		timestamp: "2026-03-31T17:45:00Z",
 		likesCount: 42,
 		isLiked: false,
+		isPublic: true,
 	},
 	{
 		id: "act-109",
@@ -205,6 +217,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
 		timestamp: "2026-03-31T18:20:00Z",
 		likesCount: 22,
 		isLiked: true,
+		isPublic: true,
 	},
 	{
 		id: "act-110",
@@ -218,6 +231,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
 		timestamp: "2026-03-30T09:00:00Z",
 		likesCount: 18,
 		isLiked: false,
+		isPublic: true,
 	},
 	{
 		id: "act-111",
@@ -231,6 +245,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
 		timestamp: "2026-03-30T10:30:00Z",
 		likesCount: 6,
 		isLiked: false,
+		isPublic: true,
 	},
 	{
 		id: "act-112",
@@ -243,6 +258,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
 		timestamp: "2026-03-30T13:45:00Z",
 		likesCount: 14,
 		isLiked: false,
+		isPublic: true,
 	},
 	{
 		id: "act-113",
@@ -255,6 +271,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
 		timestamp: "2026-03-30T14:15:00Z",
 		likesCount: 9,
 		isLiked: true,
+		isPublic: true,
 	},
 
 	// Security Audit 2026 (Project 2)
@@ -270,6 +287,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
 		timestamp: "2026-04-02T11:20:00Z",
 		likesCount: 5,
 		isLiked: false,
+		isPublic: true,
 	},
 	{
 		id: "act-6",
@@ -282,6 +300,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
 		timestamp: "2026-04-02T12:05:00Z",
 		likesCount: 3,
 		isLiked: true,
+		isPublic: true,
 	},
 
 	// Dashboard UI Revamp (Project 3)
@@ -296,6 +315,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
 		timestamp: "2026-04-02T07:45:00Z",
 		likesCount: 15,
 		isLiked: true,
+		isPublic: true,
 	},
 	{
 		id: "act-8",
@@ -308,5 +328,6 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
 		timestamp: "2026-04-02T09:30:00Z",
 		likesCount: 9,
 		isLiked: false,
+		isPublic: true,
 	},
 ];

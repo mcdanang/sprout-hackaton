@@ -6,6 +6,7 @@ import { getDashboardProjects } from "@/app/actions/projects";
 export default async function ProjectsPage() {
 	const t = await getTranslations("Projects");
 	const projects = await getDashboardProjects();
+	console.log(projects,"ini dicek")
 
 	return (
 		<div className="max-w-5xl mx-auto space-y-12 pb-20">

@@ -65,6 +65,7 @@ export async function getEmployees(filters?: EmployeesListFilters) {
 	if (filters?.onlyActive) query = query.eq("is_active", true);
 	if (organizationId) query = query.eq("organization_id", organizationId);
 	if (roleId) query = query.eq("role_id", roleId);
+	if (filters?.projectId) query = query.eq("project_id", filters.projectId);
 
 	const { data: employees, error } = await query;
 

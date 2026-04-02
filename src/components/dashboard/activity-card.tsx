@@ -1,38 +1,71 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Heart, Clock } from "lucide-react";
+import { Heart, Clock, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type ActivityItem } from "@/lib/constants/activity";
 import { activityTypeStyles } from "@/lib/constants/project-ui";
 import { getRelativeTime } from "@/lib/utils/time";
 import { ReplyItem } from "./reply-item";
 import { ReplyInput } from "./reply-input";
+import { createSignalReply, toggleSignalLike } from "@/app/actions/signal-interactions";
 
 interface Props {
   activity: ActivityItem;
   index: number;
+  onReplyCreated?: (params: {
+    activityId: string;
+    reply: NonNullable<ActivityItem["replies"]>[number];
+  }) => void;
 }
 
-export function ActivityCard({ activity, index }: Props) {
+export function ActivityCard({ activity, index, onReplyCreated }: Props) {
   const [isReplying, setIsReplying] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isLikeLoading, setIsLikeLoading] = useState(false);
+
+  const [likesCount, setLikesCount] = useState(activity.likesCount);
+  const [isLiked, setIsLiked] = useState(activity.isLiked);
+  const [replies, setReplies] = useState(activity.replies ?? []);
+
+  useEffect(() => {
+    setLikesCount(activity.likesCount);
+    setIsLiked(activity.isLiked);
+    setReplies(activity.replies ?? []);
+  }, [activity.id, activity.likesCount, activity.isLiked, activity.replies]);
 
   const Style = activityTypeStyles[activity.type as Exclude<ActivityItem["type"], "status">];
   const Icon = Style.icon;
 
-  const handleSend = () => {
+  const handleSend = async (content: string) => {
     setIsSending(true);
-    setTimeout(() => {
-      setIsSending(false);
+    try {
+      const reply = await createSignalReply({ signalId: activity.id, content });
+      const newReply = {
+        id: reply.replyId,
+        userId: reply.userId,
+        userName: reply.userName,
+        userAvatar: reply.userAvatar,
+        content: reply.content,
+        timestamp: reply.timestamp,
+      };
+      setReplies(prev => [...prev, newReply]);
+      onReplyCreated?.({ activityId: activity.id, reply: newReply });
       setIsReplying(false);
-    }, 1500);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
     <div
-      className="group relative bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-brand-primary/10 animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both"
+      className={cn(
+        "group relative bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-brand-primary/10 animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both",
+        !activity.isPublic && "border-l-4 border-l-slate-200"
+      )}
       style={{ animationDelay: `${(index % 5) * 100}ms` }}
     >
       <div className="flex gap-5">
@@ -52,40 +85,77 @@ export function ActivityCard({ activity, index }: Props) {
               </div>
               <span className="font-plus-jakarta text-sm font-bold text-brand-primary">{activity.userName}</span>
             </div>
-            <div className="flex items-center gap-1.5 text-slate-600 shrink-0">
-              <Clock className="h-3 w-3" />
-              <span className="text-[10px] font-bold uppercase tracking-wider">
-                {getRelativeTime(activity.timestamp)}
-              </span>
+            <div className="flex items-center gap-2 text-slate-600 shrink-0">
+              {!activity.isPublic && (
+                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                  <Lock className="h-2.5 w-2.5" />
+                  Private
+                </span>
+              )}
+              <div className="flex items-center gap-1.5">
+                <Clock className="h-3 w-3" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">
+                  {getRelativeTime(activity.timestamp)}
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Content */}
-          <p className="font-plus-jakarta text-[15px] text-slate-600 leading-relaxed">
-            {activity.content}
-          </p>
+          <div className="font-plus-jakarta text-[15px] text-slate-600 leading-relaxed whitespace-pre-wrap">
+            {activity.content.split(/(@\[[^\]]+\]\([^)]+\))/g).map((part, i) => {
+              const match = part.match(/@\[([^\]]+)\]\(([^)]+)\)/);
+              if (match) {
+                const name = match[1];
+                return (
+                  <span
+                    key={i}
+                    className="inline-flex items-center bg-brand-primary/5 text-brand-primary px-1.5 py-0.5 rounded-lg font-bold text-[14px] leading-none mx-0.5 align-baseline -translate-y-px"
+                  >
+                    @{name}
+                  </span>
+                );
+              }
+              return part;
+            })}
+          </div>
 
           {/* Like & Reply actions */}
           <div className="flex items-center gap-3 pt-1">
             <button className={cn(
               "flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all group/like",
-              activity.isLiked
+              isLiked
                 ? "bg-pink-50/50 border-pink-100"
                 : "bg-white border-slate-100 hover:border-pink-200 hover:bg-pink-50/30"
-            )}>
+            )}
+              onClick={async () => {
+                if (isLikeLoading) return;
+                setIsLikeLoading(true);
+                try {
+                  const res = await toggleSignalLike(activity.id);
+                  setLikesCount(res.likesCount);
+                  setIsLiked(res.isLiked);
+                } catch (e) {
+                  console.error(e);
+                } finally {
+                  setIsLikeLoading(false);
+                }
+              }}
+              disabled={isLikeLoading}
+            >
               <Heart className={cn(
                 "h-3.5 w-3.5 transition-all",
-                activity.isLiked
+                isLiked
                   ? "text-pink-500 fill-pink-500"
                   : "text-slate-500 group-hover/like:text-pink-500 group-hover/like:fill-pink-500"
               )} />
               <span className={cn(
                 "font-plus-jakarta text-xs font-bold transition-colors",
-                activity.isLiked
+                isLiked
                   ? "text-pink-600"
                   : "text-slate-600 group-hover/like:text-pink-600"
               )}>
-                {activity.likesCount}
+                {likesCount}
               </span>
             </button>
 
@@ -106,10 +176,10 @@ export function ActivityCard({ activity, index }: Props) {
           </div>
 
           {/* Threaded replies */}
-          {activity.replies && activity.replies.length > 0 && (
+          {replies.length > 0 && (
             <div className="mt-8 space-y-5 relative">
               <div className="absolute left-[23px] top-0 bottom-6 w-px bg-slate-100" />
-              {activity.replies.map((reply) => (
+              {replies.map((reply) => (
                 <ReplyItem key={reply.id} reply={reply} />
               ))}
             </div>

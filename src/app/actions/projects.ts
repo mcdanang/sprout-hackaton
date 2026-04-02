@@ -1,5 +1,6 @@
 "use server";
 
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { createClient } from "@/lib/supabase/server";
 
 import type { ActivityItem } from "@/lib/constants/activity";
@@ -37,6 +38,43 @@ function computeHealth(concernsCount: number, achievementsCount: number): Projec
 		health: Math.round(clamp(health, 0, 100)),
 		healthStatus,
 	};
+}
+
+async function getCurrentEmployeeId(
+	supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<string | null> {
+	const { userId } = await auth();
+	if (!userId) return null;
+
+	const user = await currentUser();
+	const primaryEmailId = user?.primaryEmailAddressId;
+	const orderedEmails: string[] = [];
+
+	if (primaryEmailId) {
+		const primary = user?.emailAddresses.find(e => e.id === primaryEmailId)?.emailAddress;
+		if (primary) orderedEmails.push(primary);
+	}
+
+	for (const e of user?.emailAddresses ?? []) {
+		if (!orderedEmails.includes(e.emailAddress)) {
+			orderedEmails.push(e.emailAddress);
+		}
+	}
+
+	for (const rawEmail of orderedEmails) {
+		const normalizedEmail = rawEmail.trim().toLowerCase();
+		if (!normalizedEmail) continue;
+
+		const { data: employee } = await supabase
+			.from("employees")
+			.select("id")
+			.ilike("email", normalizedEmail)
+			.maybeSingle();
+
+		if (employee?.id) return employee.id;
+	}
+
+	return null;
 }
 
 export async function getDashboardProjects(): Promise<Project[]> {
@@ -152,11 +190,10 @@ export async function getProjectDetail(projectId: string): Promise<{
 		),
 	);
 
-	// 3) Signals for metrics + timeline
 	const { data: signals } = await supabase
 		.from("signals")
 		.select(
-			"id, project_id, author_employee_id, is_anonymous, category, title, details, created_at",
+			"id, project_id, author_employee_id, is_anonymous, category, title, details, created_at, is_public",
 		)
 		.eq("project_id", projectId)
 		.order("created_at", { ascending: false });
@@ -200,6 +237,75 @@ export async function getProjectDetail(projectId: string): Promise<{
 		authorById.set(a.id, { full_name: a.full_name, email: a.email });
 	}
 
+	const signalIds = safeSignals.map(s => s.id);
+	const currentEmployeeId = await getCurrentEmployeeId(supabase);
+
+	let likesBySignal = new Map<string, number>();
+	const likedSignalIds = new Set<string>();
+	let repliesBySignal = new Map<string, ActivityItem["replies"]>();
+
+	if (signalIds.length > 0) {
+		const { data: allLikes } = await supabase
+			.from("signal_likes")
+			.select("signal_id, author_employee_id")
+			.in("signal_id", signalIds);
+
+		const likeCountMap = new Map<string, number>();
+		for (const like of allLikes ?? []) {
+			if (!like?.signal_id) continue;
+			likeCountMap.set(like.signal_id, (likeCountMap.get(like.signal_id) ?? 0) + 1);
+			if (currentEmployeeId && like.author_employee_id === currentEmployeeId) {
+				likedSignalIds.add(like.signal_id);
+			}
+		}
+		likesBySignal = likeCountMap;
+
+		const { data: replies } = await supabase
+			.from("signal_replies")
+			.select("id, signal_id, author_employee_id, content, created_at")
+			.in("signal_id", signalIds)
+			.order("created_at", { ascending: true });
+
+		const replyAuthorIds = Array.from(
+			new Set((replies ?? []).map(r => r.author_employee_id).filter(Boolean)),
+		);
+		let replyAuthorById = new Map<string, { full_name: string; email: string }>();
+		if (replyAuthorIds.length > 0) {
+			const { data: replyAuthors } = await supabase
+				.from("employees")
+				.select("id, full_name, email")
+				.in("id", replyAuthorIds);
+
+			replyAuthorById = new Map(
+				(replyAuthors ?? [])
+					.filter((a): a is { id: string; full_name: string; email: string } => Boolean(a?.id))
+					.map(a => [a.id, { full_name: a.full_name, email: a.email }]),
+			);
+		}
+
+		const groupedReplies = new Map<string, NonNullable<ActivityItem["replies"]>>();
+		for (const reply of replies ?? []) {
+			if (!reply?.signal_id || !reply?.id || !reply?.author_employee_id) continue;
+
+			const replyAuthor = replyAuthorById.get(reply.author_employee_id);
+			const replyUserName = replyAuthor?.full_name ?? "Unknown";
+			const replyAvatarSeed = replyAuthor?.email ?? reply.author_employee_id;
+			const replyUserAvatar = `https://i.pravatar.cc/150?u=${encodeURIComponent(replyAvatarSeed)}`;
+
+			const list = groupedReplies.get(reply.signal_id) ?? [];
+			list.push({
+				id: reply.id,
+				userId: reply.author_employee_id,
+				userName: replyUserName,
+				userAvatar: replyUserAvatar,
+				content: reply.content ?? "",
+				timestamp: new Date(reply.created_at).toISOString(),
+			});
+			groupedReplies.set(reply.signal_id, list);
+		}
+		repliesBySignal = groupedReplies;
+	}
+
 	const activities: ActivityItem[] = safeSignals.map(s => {
 		const activityType =
 			s.category === "concern" ? "concern" : s.category === "achievement" ? "achievement" : "kudos";
@@ -220,8 +326,10 @@ export async function getProjectDetail(projectId: string): Promise<{
 			type: activityType,
 			content: s.details,
 			timestamp: new Date(s.created_at).toISOString(),
-			likesCount: 0,
-			isLiked: false,
+			likesCount: likesBySignal.get(s.id) ?? 0,
+			isLiked: likedSignalIds.has(s.id),
+			isPublic: s.is_public ?? true,
+			replies: repliesBySignal.get(s.id) ?? [],
 		};
 	});
 

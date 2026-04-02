@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
@@ -8,34 +8,38 @@ import { signalSchema } from "@/lib/validations/signal";
 
 import { type SignalActionState } from "./signal.types";
 
-async function assertExistsById(params: {
-	supabase: Awaited<ReturnType<typeof createClient>>;
-	table: "employees" | "roles" | "projects";
-	id: string;
-	entityLabel: string;
-}): Promise<void> {
-	const { data, error } = await params.supabase
-		.from(params.table)
-		.select("id")
-		.eq("id", params.id)
-		.maybeSingle();
-
-	if (error || !data) {
-		throw new Error(`${params.entityLabel} not found.`);
-	}
-}
-
 export async function createSignal(
 	_prevState: SignalActionState,
 	formData: FormData,
 ): Promise<SignalActionState> {
 	const { userId } = await auth();
+	if (!userId) return { status: "error", message: "Unauthorized" };
 
-	if (!userId) {
-		return {
-			status: "error",
-			message: "Unauthorized",
-		};
+	const supabase = await createClient();
+
+	// Resolve author from Clerk auth_id — never trust client-sent employee ID
+	let { data: employee, error: empError } = await supabase
+		.from("employees")
+		.select("id")
+		.eq("auth_id", userId)
+		.maybeSingle();
+
+	// Fallback: look up by Clerk primary email (for seeded accounts without auth_id)
+	if (empError || !employee) {
+		const user = await currentUser();
+		const email = user?.emailAddresses?.[0]?.emailAddress;
+		if (email) {
+			const { data: byEmail } = await supabase
+				.from("employees")
+				.select("id")
+				.eq("email", email)
+				.maybeSingle();
+			if (byEmail) employee = byEmail;
+		}
+	}
+
+	if (!employee) {
+		return { status: "error", message: "Employee profile not found." };
 	}
 
 	const raw = {
@@ -45,129 +49,63 @@ export async function createSignal(
 		isAnonymous: formData.get("isAnonymous") === "on",
 		isPublic: formData.get("isPublic") === "on",
 		projectId: formData.get("projectId") || null,
-		authorEmployeeId: formData.get("authorEmployeeId"),
-		targetType: formData.get("targetType"),
-		targetRoleId: formData.get("targetRoleId") || null,
-		targetEmployeeId: formData.get("targetEmployeeId") || null,
+		targetEmployeeIds: formData.getAll("targetEmployeeIds[]").filter(Boolean),
 	};
 
 	const validated = signalSchema.safeParse(raw);
-
 	if (!validated.success) {
+		const fieldErrors = validated.error.flatten().fieldErrors;
+		const firstError = Object.values(fieldErrors).flat()[0] ?? "Invalid signal data";
 		return {
 			status: "error",
-			message: "Invalid signal data",
-			errors: validated.error.flatten().fieldErrors,
+			message: firstError,
+			errors: fieldErrors,
 		};
 	}
 
-	const values = validated.data;
-	const supabase = await createClient();
-
-	if (values.targetType === "role" && !values.targetRoleId) {
-		return {
-			status: "error",
-			message: "Target role is required.",
-		};
-	}
-
-	if (values.targetType === "employee" && !values.targetEmployeeId) {
-		return {
-			status: "error",
-			message: "Target employee is required.",
-		};
-	}
+	const v = validated.data;
 
 	try {
-		await assertExistsById({
-			supabase,
-			table: "employees",
-			id: values.authorEmployeeId,
-			entityLabel: "Author employee",
-		});
-
-		if (values.projectId) {
-			await assertExistsById({
-				supabase,
-				table: "projects",
-				id: values.projectId,
-				entityLabel: "Project",
-			});
-		}
-
-		if (values.targetType === "role" && values.targetRoleId) {
-			await assertExistsById({
-				supabase,
-				table: "roles",
-				id: values.targetRoleId,
-				entityLabel: "Target role",
-			});
-		}
-
-		if (values.targetType === "employee" && values.targetEmployeeId) {
-			await assertExistsById({
-				supabase,
-				table: "employees",
-				id: values.targetEmployeeId,
-				entityLabel: "Target employee",
-			});
-		}
-
 		const { data: created, error: insertError } = await supabase
 			.from("signals")
 			.insert({
-				author_employee_id: values.authorEmployeeId,
-				is_anonymous: values.isAnonymous,
-				category: values.category,
-				title: values.title.trim(),
-				details: values.details.trim(),
-				project_id: values.projectId ?? null,
-				is_public: values.isPublic,
+				author_employee_id: employee.id,
+				is_anonymous: v.isAnonymous,
+				category: v.category,
+				title: v.title.trim(),
+				details: v.details.trim(),
+				project_id: v.projectId ?? null,
+				is_public: v.isPublic,
 			})
 			.select("id")
 			.maybeSingle();
 
 		if (insertError || !created?.id) {
-			return {
-				status: "error",
-				message: insertError?.message ?? "Failed to create signal",
-			};
+			return { status: "error", message: insertError?.message ?? "Failed to create signal" };
 		}
 
-		if (values.targetType === "all") {
-			const { error: targetsError } = await supabase.from("signal_targets").insert({
+		if (v.targetEmployeeIds.length > 0) {
+			// @mentions present → always insert one row per mentioned employee.
+			// is_public controls WHO CAN SEE the signal, not whether targets exist.
+			await supabase.from("signal_targets").insert(
+				v.targetEmployeeIds.map(empId => ({
+					signal_id: created.id,
+					target_type: "employee",
+					target_role_id: null,
+					target_employee_id: empId,
+				})),
+			);
+		} else {
+			// No @mentions → fallback: visible to all (regardless of is_public toggle)
+			await supabase.from("signal_targets").insert({
 				signal_id: created.id,
 				target_type: "all",
 				target_role_id: null,
 				target_employee_id: null,
 			});
-			if (targetsError) {
-				return { status: "error", message: targetsError.message };
-			}
-		} else if (values.targetType === "role" && values.targetRoleId) {
-			const { error: targetsError } = await supabase.from("signal_targets").insert({
-				signal_id: created.id,
-				target_type: "role",
-				target_role_id: values.targetRoleId,
-				target_employee_id: null,
-			});
-			if (targetsError) {
-				return { status: "error", message: targetsError.message };
-			}
-		} else if (values.targetType === "employee" && values.targetEmployeeId) {
-			const { error: targetsError } = await supabase.from("signal_targets").insert({
-				signal_id: created.id,
-				target_type: "employee",
-				target_role_id: null,
-				target_employee_id: values.targetEmployeeId,
-			});
-			if (targetsError) {
-				return { status: "error", message: targetsError.message };
-			}
 		}
 
 		revalidatePath("/");
-
 		return { status: "success", message: "Signal created." };
 	} catch (e) {
 		return { status: "error", message: e instanceof Error ? e.message : "Error" };
