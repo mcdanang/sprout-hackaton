@@ -7,12 +7,11 @@ import { getTranslations } from "next-intl/server";
 export async function RecentSignals() {
   const t = await getTranslations("Recent");
   const commonT = await getTranslations("Common");
-  const formT = await getTranslations("Form");
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("ownership_signals")
-    .select("id, type, title, created_at, is_anonymous")
+    .from("signals")
+    .select("id, category, title, created_at, is_anonymous")
     .order("created_at", { ascending: false })
     .limit(5);
 
@@ -55,10 +54,14 @@ export async function RecentSignals() {
                 <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Badge
-                      variant={item.type === "recognition" ? "default" : "secondary"}
+                      variant={item.category === "appreciation" ? "default" : "secondary"}
                       className="text-[10px] font-bold uppercase tracking-wider px-2"
                     >
-                      {item.type === "recognition" ? formT("typeRecognition") : formT("typeConcern")}
+                      {item.category === "concern"
+                        ? "Concern"
+                        : item.category === "achievement"
+                          ? "Achievement"
+                          : "Appreciation"}
                     </Badge>
                     {item.is_anonymous && (
                       <Badge variant="outline" className="text-[10px] font-semibold uppercase tracking-wider bg-background/50">

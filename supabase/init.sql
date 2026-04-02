@@ -3,6 +3,18 @@
 -- Run this in Supabase SQL Editor (top to bottom).
 -- ============================================================
 
+-- ============================================================
+-- RESET (Rerunnable)
+-- ============================================================
+-- Safe to run multiple times; drops tables with dependencies.
+drop table if exists public.signal_targets cascade;
+drop table if exists public.signals cascade;
+drop table if exists public.employees cascade;
+drop table if exists public.projects cascade;
+drop table if exists public.organizations cascade;
+drop table if exists public.roles cascade;
+
+
 -- 1. ORGANIZATIONS
 create table if not exists public.organizations (
   id uuid primary key default gen_random_uuid(),
@@ -19,6 +31,9 @@ alter table public.organizations disable row level security;
 create table if not exists public.projects (
   id uuid primary key default gen_random_uuid(),
   name text not null unique,
+  description text not null default '',
+  status text not null default 'Development'
+    check (status in ('Planning', 'Development', 'UAT', 'Deployment', 'Maintenance')),
   created_at timestamptz not null default now()
 );
 
@@ -59,6 +74,13 @@ create policy "employees readable by authenticated" on public.employees
 create policy "employees can update own profile" on public.employees
   for update to authenticated using (auth.uid() = auth_id);
 alter table public.employees disable row level security;
+
+-- 4.1. PROJECT SQUAD LEAD (FK to employees)
+alter table public.projects
+  add column if not exists squad_lead_employee_id uuid
+  references public.employees(id) on delete set null;
+create index if not exists projects_squad_lead_employee_id_idx
+  on public.projects(squad_lead_employee_id);
 
 -- 5. SIGNALS
 create table if not exists public.signals (
@@ -133,20 +155,20 @@ insert into public.organizations (name) values
 on conflict (name) do nothing;
 
 -- Projects
-insert into public.projects (name) values
-  ('SPROUT'),
-  ('HI-FELLA'),
-  ('KHONIC'),
-  ('SMARCO'),
-  ('LABAMU SINGAPORE'),
-  ('BOUCHON'),
-  ('JAPFA'),
-  ('TOCO'),
-  ('SPECTRA'),
-  ('QINERJA'),
-  ('LABAMU'),
-  ('EDOTCO'),
-  ('ALODOKTER')
+insert into public.projects (name, description, status) values
+  ('SPROUT', 'Sprout project', 'Development'),
+  ('HI-FELLA', 'HI-FELLA project', 'Development'),
+  ('KHONIC', 'KHONIC project', 'Development'),
+  ('SMARCO', 'SMARCO project', 'Development'),
+  ('LABAMU SINGAPORE', 'LABAMU SINGAPORE project', 'Development'),
+  ('BOUCHON', 'BOUCHON project', 'Development'),
+  ('JAPFA', 'JAPFA project', 'Development'),
+  ('TOCO', 'TOCO project', 'Development'),
+  ('SPECTRA', 'SPECTRA project', 'Development'),
+  ('QINERJA', 'QINERJA project', 'Development'),
+  ('LABAMU', 'LABAMU project', 'Development'),
+  ('EDOTCO', 'EDOTCO project', 'Development'),
+  ('ALODOKTER', 'ALODOKTER project', 'Development')
 on conflict (name) do nothing;
 
 -- Roles
@@ -236,3 +258,406 @@ insert into public.employees (full_name, email, job_position, organization_id, p
   ('Herjuno Pangestu',                            'herjuno.pangestu@sprout.co.id',        'DevOps',                               (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'STAFF')),
   ('Ahmad Dhiya Ilmam Putra',                     'ahmad.dhiya@sprout.co.id',             'Jr DevOps',                            (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'QINERJA'),         (select id from public.roles where name = 'STAFF')),
   ('Harun Arasyid',                               'harun.arasyid@sprout.co.id',           'Sr DevOps',                            (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'STAFF'));
+
+-- Set squad leads per project (based on provided mapping)
+update public.projects
+set squad_lead_employee_id = (
+  select id from public.employees where full_name = 'Alistair Tody' limit 1
+)
+where name = 'HI-FELLA';
+
+update public.projects
+set squad_lead_employee_id = (
+  select id from public.employees where full_name = 'Tjiong Teguh Arianto' limit 1
+)
+where name in ('LABAMU SINGAPORE', 'JAPFA');
+
+update public.projects
+set squad_lead_employee_id = (
+  select id from public.employees where full_name = 'Reynaldo Damara Salim' limit 1
+)
+where name = 'BOUCHON';
+
+update public.projects
+set squad_lead_employee_id = (
+  select id from public.employees where full_name = 'Glenn Vhalado Dykaputra L. Toruan' limit 1
+)
+where name = 'SPECTRA';
+
+update public.projects
+set squad_lead_employee_id = (
+  select id from public.employees where full_name = 'Marlon P V M Keintjem' limit 1
+)
+where name = 'EDOTCO';
+
+update public.projects
+set squad_lead_employee_id = (
+  select id from public.employees where full_name = 'Faisal Ariyanto' limit 1
+)
+where name = 'ALODOKTER';
+
+-- ============================================================
+-- SEED SIGNALS (for simulation / dashboards)
+-- ============================================================
+
+insert into public.signals (
+  author_employee_id,
+  is_anonymous,
+  category,
+  title,
+  details,
+  project_id,
+  is_public
+) values
+  -- SPROUT
+  (
+    (select id from public.employees where full_name = 'Christina Devi Ariyani' limit 1)
+  , false
+  , 'concern'
+  , 'SPROUT - Deploy Delay'
+  , 'Deploy pipeline is taking longer than expected during peak hours. Suggest checking caching and queue configuration.'
+  , (select id from public.projects where name = 'SPROUT' limit 1)
+  , true
+  ),
+  (
+    (select id from public.employees where full_name = 'Marlon P V M Keintjem' limit 1)
+  , false
+  , 'achievement'
+  , 'SPROUT - On-time Release'
+  , 'Delivered the release on schedule and coordinated cross-team handoff successfully. Great ownership.'
+  , (select id from public.projects where name = 'SPROUT' limit 1)
+  , true
+  ),
+  (
+    (select id from public.employees where full_name = 'Egg Arnold Sebastian' limit 1)
+  , false
+  , 'achievement'
+  , 'SPROUT - Mentored Ownership'
+  , 'Supported team members with clear guidance and encouraged early risk surfacing. Positive impact observed.'
+  , (select id from public.projects where name = 'SPROUT' limit 1)
+  , true
+  ),
+  (
+    (select id from public.employees where full_name = 'Patricia Timothy' limit 1)
+  , true
+  , 'appreciation'
+  , 'SPROUT - Great Collaboration'
+  , 'Appreciate the collaboration and quick response during the last sprint. Felt safe and aligned throughout.'
+  , (select id from public.projects where name = 'SPROUT' limit 1)
+  , false
+  ),
+  (
+    (select id from public.employees where full_name = 'Sukardi' limit 1)
+  , false
+  , 'achievement'
+  , 'SPROUT - Better Reporting'
+  , 'Improved reporting quality and transparency by consolidating updates into a single weekly view.'
+  , (select id from public.projects where name = 'SPROUT' limit 1)
+  , true
+  ),
+
+  -- HI-FELLA
+  (
+    (select id from public.employees where full_name = 'Eldaa Warapsari' limit 1)
+  , false
+  , 'concern'
+  , 'HI-FELLA - Requirement Volatility'
+  , 'Noticed frequent changes to requirements late in the cycle. Consider locking scope earlier or using change checkpoints.'
+  , (select id from public.projects where name = 'HI-FELLA' limit 1)
+  , true
+  ),
+  (
+    (select id from public.employees where full_name = 'Briyan Benget Alfonsius' limit 1)
+  , false
+  , 'concern'
+  , 'HI-FELLA - Payment Edge Cases'
+  , 'Some payment edge cases are not covered in current tests. Recommend adding regression scenarios for uncommon flows.'
+  , (select id from public.projects where name = 'HI-FELLA' limit 1)
+  , false
+  ),
+  (
+    (select id from public.employees where full_name = 'Alistair Tody' limit 1)
+  , false
+  , 'achievement'
+  , 'HI-FELLA - Customer Feedback Actioned'
+  , 'Turned customer feedback into prioritized backlog items and aligned stakeholders within 48 hours.'
+  , (select id from public.projects where name = 'HI-FELLA' limit 1)
+  , true
+  ),
+  (
+    (select id from public.employees where full_name = 'Vania Aribowo' limit 1)
+  , true
+  , 'appreciation'
+  , 'HI-FELLA - Fast Stakeholder Updates'
+  , 'Thank you for keeping stakeholders updated with clear progress notes. It improved trust and reduced last-minute surprises.'
+  , (select id from public.projects where name = 'HI-FELLA' limit 1)
+  , true
+  ),
+
+  -- KHONIC
+  (
+    (select id from public.employees where full_name = 'Nathanneal Audris' limit 1)
+  , false
+  , 'achievement'
+  , 'KHONIC - Clean Backlog Grooming'
+  , 'Held effective backlog grooming and removed ambiguity early. Team velocity improved next sprint.'
+  , (select id from public.projects where name = 'KHONIC' limit 1)
+  , true
+  ),
+  (
+    (select id from public.employees where full_name = 'Lamhot Pardamean Siahaan' limit 1)
+  , false
+  , 'concern'
+  , 'KHONIC - QA Regression Risk'
+  , 'Potential regression risk due to rushed merges. Recommend tighter PR checks and smoke test automation.'
+  , (select id from public.projects where name = 'KHONIC' limit 1)
+  , false
+  ),
+  (
+    (select id from public.employees where full_name = 'Sanny Martin' limit 1)
+  , true
+  , 'appreciation'
+  , 'KHONIC - Cross-team Support'
+  , 'Appreciate the support from Sales to clarify requirements and unblock delivery. Great ownership.'
+  , (select id from public.projects where name = 'KHONIC' limit 1)
+  , true
+  ),
+
+  -- SMARCO
+  (
+    (select id from public.employees where full_name = 'Lamhot Pardamean Siahaan' limit 1)
+  , false
+  , 'concern'
+  , 'SMARCO - Sprint Scope Creep'
+  , 'Scope is expanding during sprint execution. Consider a strict mid-sprint review to prevent late churn.'
+  , (select id from public.projects where name = 'SMARCO' limit 1)
+  , true
+  ),
+  (
+    (select id from public.employees where full_name = 'Lamhot Pardamean Siahaan' limit 1)
+  , false
+  , 'concern'
+  , 'SMARCO - Test Coverage Gap'
+  , 'Unit test coverage is currently uneven. Requesting a quick coverage audit and prioritized test additions.'
+  , (select id from public.projects where name = 'SMARCO' limit 1)
+  , false
+  ),
+  (
+    (select id from public.employees where full_name = 'Teddy Adji Pangestu' limit 1)
+  , false
+  , 'appreciation'
+  , 'SMARCO - Quick Bug Fix'
+  , 'Thanks for responding quickly to production issues and communicating the mitigation plan clearly.'
+  , (select id from public.projects where name = 'SMARCO' limit 1)
+  , true
+  ),
+
+  -- LABAMU SINGAPORE
+  (
+    (select id from public.employees where full_name = 'Grisviany' limit 1)
+  , false
+  , 'achievement'
+  , 'LABAMU SG - Strategy Clarity'
+  , 'Provided clear product strategy and aligned stakeholders early. Reduced ambiguity and improved follow-through.'
+  , (select id from public.projects where name = 'LABAMU SINGAPORE' limit 1)
+  , true
+  ),
+  (
+    (select id from public.employees where full_name = 'Bimo Prayogo Muhammad' limit 1)
+  , false
+  , 'achievement'
+  , 'LABAMU SG - UX Improvement'
+  , 'Improved UX flows based on feedback and ensured accessibility considerations were included.'
+  , (select id from public.projects where name = 'LABAMU SINGAPORE' limit 1)
+  , true
+  ),
+  (
+    (select id from public.employees where full_name = 'Gaizka Valencia' limit 1)
+  , false
+  , 'achievement'
+  , 'LABAMU SG - Feature Delivery'
+  , 'Delivered requested improvements with strong documentation and safe incremental rollouts.'
+  , (select id from public.projects where name = 'LABAMU SINGAPORE' limit 1)
+  , true
+  ),
+  (
+    (select id from public.employees where full_name = 'Devi Rahmawati' limit 1)
+  , false
+  , 'concern'
+  , 'LABAMU SG - QA Bottleneck'
+  , 'QA throughput is limited due to review queues. Suggest scheduling earlier test planning to reduce bottlenecks.'
+  , (select id from public.projects where name = 'LABAMU SINGAPORE' limit 1)
+  , false
+  ),
+  (
+    (select id from public.employees where full_name = 'Marcellus Denta Widyapramana' limit 1)
+  , true
+  , 'appreciation'
+  , 'LABAMU SG - Reliable Support'
+  , 'Appreciate the reliable support during integration. It felt safe to speak up when issues appeared.'
+  , (select id from public.projects where name = 'LABAMU SINGAPORE' limit 1)
+  , true
+  ),
+
+  -- BOUCHON
+  (
+    (select id from public.employees where full_name = 'Reynaldo Damara Salim' limit 1)
+    , false
+    , 'achievement'
+    , 'BOUCHON - Feature Alignment'
+    , 'Aligned feature scope with stakeholders and removed blockers early through clear communication.'
+    , (select id from public.projects where name = 'BOUCHON' limit 1)
+    , true
+  ),
+
+  -- JAPFA
+  (
+    (select id from public.employees where full_name = 'Shafa Matahati' limit 1)
+    , false
+    , 'concern'
+    , 'JAPFA - Late UI Feedback'
+    , 'Received late UI feedback which impacted sprint planning. Recommend earlier review checkpoints and tighter design sign-offs.'
+    , (select id from public.projects where name = 'JAPFA' limit 1)
+    , false
+  ),
+
+  -- TOCO
+  (
+    (select id from public.employees where full_name = 'Moch Baiz Kamarulredzuan' limit 1)
+    , true
+    , 'appreciation'
+    , 'TOCO - Great Responsiveness'
+    , 'Thank you for responding quickly to design questions and keeping delivery on track. It improved team confidence.'
+    , (select id from public.projects where name = 'TOCO' limit 1)
+    , true
+  ),
+
+  -- SPECTRA
+  (
+    (select id from public.employees where full_name = 'Glenn Vhalado Dykaputra L. Toruan' limit 1)
+    , false
+    , 'achievement'
+    , 'SPECTRA - Stable Release'
+    , 'Maintained stable release cadence and ensured quality gates were met before production rollout.'
+    , (select id from public.projects where name = 'SPECTRA' limit 1)
+    , true
+  ),
+
+  -- QINERJA
+  (
+    (select id from public.employees where full_name = 'Leni Hendra' limit 1)
+    , false
+    , 'concern'
+    , 'QINERJA - Test Delays'
+    , 'Test execution is delayed due to environment availability. Propose scheduling environments earlier and assigning backup test windows.'
+    , (select id from public.projects where name = 'QINERJA' limit 1)
+    , true
+  ),
+
+  -- LABAMU
+  (
+    (select id from public.employees where full_name = 'Maya Andira' limit 1)
+    , false
+    , 'achievement'
+    , 'LABAMU - Sprint Coaching'
+    , 'Provided coaching that improved team estimates and reduced scope changes during sprint execution.'
+    , (select id from public.projects where name = 'LABAMU' limit 1)
+    , true
+  ),
+
+  -- EDOTCO
+  (
+    (select id from public.employees where full_name = 'Muhammad Firza' limit 1)
+    , false
+    , 'appreciation'
+    , 'EDOTCO - Data Quality Improvement'
+    , 'Improved data pipeline validation, resulting in fewer downstream issues and clearer reporting. Great ownership.'
+    , (select id from public.projects where name = 'EDOTCO' limit 1)
+    , true
+  ),
+
+  -- ALODOKTER
+  (
+    (select id from public.employees where full_name = 'Faisal Ariyanto' limit 1)
+    , false
+    , 'concern'
+    , 'ALODOKTER - Resource Constraints'
+    , 'Resource constraints are impacting delivery timelines. Consider reallocating tasks or adjusting milestones to keep commitments realistic.'
+    , (select id from public.projects where name = 'ALODOKTER' limit 1)
+    , false
+  )
+;
+
+-- Targets for the seeded signals.
+-- Each signal gets exactly one target row for simulation.
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'SPROUT - Deploy Delay';
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'role',
+  (select r.id from public.roles r where r.name = 'SQUAD LEAD' limit 1),
+  null
+from public.signals s where s.title = 'SPROUT - On-time Release';
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'SPROUT - Mentored Ownership';
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'employee',
+  null,
+  (select e.id from public.employees e where e.full_name = 'Angelina Kesya Christinatalia' limit 1)
+from public.signals s where s.title = 'SPROUT - Great Collaboration';
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'SPROUT - Better Reporting';
+
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'HI-FELLA - Requirement Volatility';
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'role',
+  (select r.id from public.roles r where r.name = 'SQUAD LEAD' limit 1),
+  null
+from public.signals s where s.title = 'HI-FELLA - Payment Edge Cases';
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'HI-FELLA - Customer Feedback Actioned';
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'employee',
+  null,
+  (select e.id from public.employees e where e.full_name = 'Vania Aribowo' limit 1)
+from public.signals s where s.title = 'HI-FELLA - Fast Stakeholder Updates';
+
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'KHONIC - Clean Backlog Grooming';
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'KHONIC - QA Regression Risk';
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'role',
+  (select r.id from public.roles r where r.name = 'STAFF' limit 1),
+  null
+from public.signals s where s.title = 'KHONIC - Cross-team Support';
+
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'SMARCO - Sprint Scope Creep';
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'role',
+  (select r.id from public.roles r where r.name = 'SQUAD LEAD' limit 1),
+  null
+from public.signals s where s.title = 'SMARCO - Test Coverage Gap';
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'employee',
+  null,
+  (select e.id from public.employees e where e.full_name = 'Teddy Adji Pangestu' limit 1)
+from public.signals s where s.title = 'SMARCO - Quick Bug Fix';
+
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'LABAMU SG - Strategy Clarity';
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'LABAMU SG - UX Improvement';
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'role',
+  (select r.id from public.roles r where r.name = 'SQUAD LEAD' limit 1),
+  null
+from public.signals s where s.title = 'LABAMU SG - Feature Delivery';
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'LABAMU SG - QA Bottleneck';
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'employee',
+  null,
+  (select e.id from public.employees e where e.full_name = 'Marcellus Denta Widyapramana' limit 1)
+from public.signals s where s.title = 'LABAMU SG - Reliable Support';
