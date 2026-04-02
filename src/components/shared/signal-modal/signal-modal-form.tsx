@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useActionState } from "react";
+import { useEffect, useState, useRef, useActionState, useTransition } from "react";
 import { toast } from "sonner";
 import { Send, Loader2, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -29,7 +29,8 @@ export function SignalModalForm({ projectId, onClose }: Props) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
 
-  const [state, dispatch, isPending] = useActionState(createSignal, initialSignalActionState);
+  const [state, dispatch] = useActionState(createSignal, initialSignalActionState);
+  const [isPending, startTransition] = useTransition();
   const activeType = SIGNAL_TYPES.find((t) => t.id === selectedType);
 
   useEffect(() => {
@@ -155,7 +156,7 @@ export function SignalModalForm({ projectId, onClose }: Props) {
       setIsAnalyzing(false);
     }
 
-    dispatch(formData);
+    startTransition(() => { dispatch(formData); });
   }
 
   const displayLength = content.replace(/@\[([^\]]+)\]\([^)]+\)/g, "@$1").length;
