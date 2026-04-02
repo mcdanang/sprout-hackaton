@@ -30,7 +30,7 @@ export default function DashboardPage() {
         "relative overflow-hidden rounded-[32px] p-10 md:p-14",
         "bg-[#FFFBEB] border border-[#FEF3C7] shadow-sm"
       )}>
-        <Quote className="h-10 w-10 text-[#FEF3C7] mb-8" />
+        <Quote className="h-10 w-10 text-text-primary mb-8" />
         
         <div className="space-y-8">
           <p className="font-plus-jakarta text-[32px] md:text-[40px] font-medium leading-tight tracking-tight text-brand-primary">
@@ -38,7 +38,7 @@ export default function DashboardPage() {
           </p>
           
           <div className="flex items-center gap-3">
-            <div className="h-[2px] w-8 bg-[#FEF3C7]" />
+            <div className="h-[2px] w-8 text-primary" />
             <span className="font-plus-jakarta text-[14px] font-bold tracking-[1.5px] uppercase text-[#3F484A]">
               {t("quote.author")}
             </span>
