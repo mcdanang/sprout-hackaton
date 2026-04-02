@@ -171,7 +171,7 @@ export function ProjectDetailClient({ project, activities }: Props) {
 				</div>
 			</div>
 
-			{/* Activity Feed */}
+			{/* Project Feed */}
 			<ActivityFeed activities={activities} projectName={project.name} />
 
 			{/* Mobile FAB */}

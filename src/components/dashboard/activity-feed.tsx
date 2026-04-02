@@ -88,7 +88,7 @@ export function ActivityFeed({ activities, projectName }: Props) {
           {!hasMore && (
             <div className="flex flex-col items-center justify-center py-12 text-slate-400 space-y-2">
               <div className="h-px w-12 bg-slate-100" />
-              <span className="text-[11px] font-bold uppercase tracking-widest">End of Activity Feed</span>
+              <span className="text-[11px] font-bold uppercase tracking-widest">End of Project Feed</span>
             </div>
           )}
         </div>
