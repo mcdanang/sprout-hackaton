@@ -4,6 +4,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { analyzeSignalWithMockAI } from "@/lib/signal-ai";
 import { signalSchema } from "@/lib/validations/signal";
 
 import { type SignalActionState } from "./signal.types";
@@ -64,6 +65,11 @@ export async function createSignal(
 	}
 
 	const v = validated.data;
+	const aiAnalysis = analyzeSignalWithMockAI({
+		category: v.category,
+		title: v.title,
+		details: v.details,
+	});
 
 	try {
 		const { data: created, error: insertError } = await supabase
@@ -76,6 +82,8 @@ export async function createSignal(
 				details: v.details.trim(),
 				project_id: v.projectId ?? null,
 				is_public: v.isPublic,
+				sentiment_score: aiAnalysis.sentiment,
+				ai_issue_category: aiAnalysis.issueCategory,
 			})
 			.select("id")
 			.maybeSingle();

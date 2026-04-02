@@ -13,6 +13,8 @@ drop table if exists public.employees cascade;
 drop table if exists public.projects cascade;
 drop table if exists public.organizations cascade;
 drop table if exists public.roles cascade;
+drop table if exists public.signal_likes cascade;
+drop table if exists public.signal_replies cascade;
 
 
 -- 1. ORGANIZATIONS
@@ -93,6 +95,20 @@ create table if not exists public.signals (
   category text not null check (category in ('concern', 'achievement', 'appreciation')),
   title text not null,
   details text not null,
+  sentiment_score int check (sentiment_score between 0 and 100),
+  ai_issue_category text check (
+    ai_issue_category in (
+      'Burnout Alert',
+      'Scope Creep',
+      'Process Bottleneck',
+      'Communication Gap',
+      'Technical Debt',
+      'Micro-management',
+      'Professional Growth',
+      'Office Environment',
+      'others'
+    )
+  ),
 
   project_id uuid references public.projects(id) on delete set null,
   is_public boolean not null default false,
@@ -102,6 +118,28 @@ create table if not exists public.signals (
 
 create index if not exists signals_project_id_idx on public.signals(project_id);
 create index if not exists signals_created_at_idx on public.signals(created_at desc);
+
+-- Backward-compatible in case table already exists in an environment.
+alter table public.signals add column if not exists sentiment_score int;
+alter table public.signals add column if not exists ai_issue_category text;
+alter table public.signals drop constraint if exists signals_sentiment_score_check;
+alter table public.signals add constraint signals_sentiment_score_check
+  check (sentiment_score between 0 and 100);
+alter table public.signals drop constraint if exists signals_ai_issue_category_check;
+alter table public.signals add constraint signals_ai_issue_category_check
+  check (
+    ai_issue_category in (
+      'Burnout Alert',
+      'Scope Creep',
+      'Process Bottleneck',
+      'Communication Gap',
+      'Technical Debt',
+      'Micro-management',
+      'Professional Growth',
+      'Office Environment',
+      'others'
+    )
+  );
 
 alter table public.signals enable row level security;
 create policy "signals readable by authenticated" on public.signals
