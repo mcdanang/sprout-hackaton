@@ -1,4 +1,4 @@
-import { Project } from "@/components/dashboard/project-card";
+import { Project } from "@/lib/types/project";
 
 export const DUMMY_PROJECTS: Project[] = [
   {

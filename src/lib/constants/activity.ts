@@ -7,6 +7,8 @@ export interface ActivityItem {
   type: 'concern' | 'achievement' | 'kudos' | 'status';
   content: string;
   timestamp: string; // ISO string
+  likesCount: number;
+  isLiked: boolean;
 }
 
 export const DUMMY_ACTIVITIES: ActivityItem[] = [
@@ -20,6 +22,8 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
     type: "achievement",
     content: "Successfully deployed the new edge-auth service to 3 global regions with <10ms latency overhead.",
     timestamp: "2026-04-02T08:30:00Z",
+    likesCount: 12,
+    isLiked: true,
   },
   {
     id: "act-2",
@@ -30,6 +34,8 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
     type: "concern",
     content: "Observing sporadic rate-limiting issues in the Singapore region. Investigating the worker node scaling logic.",
     timestamp: "2026-04-02T09:15:00Z",
+    likesCount: 2,
+    isLiked: false,
   },
   {
     id: "act-3",
@@ -40,6 +46,8 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
     type: "kudos",
     content: "Huge thanks to Sarah for quickly identifying the regional scaling bug. Realy saved us during the peak traffic hour!",
     timestamp: "2026-04-02T10:00:00Z",
+    likesCount: 8,
+    isLiked: true,
   },
   
   // Security Audit 2026 (Project 2)
@@ -52,6 +60,8 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
     type: "achievement",
     content: "Completed the initial security scan of all S3 buckets. 100% compliance achieved on encryption-at-rest.",
     timestamp: "2026-04-02T11:20:00Z",
+    likesCount: 5,
+    isLiked: false,
   },
   {
     id: "act-6",
@@ -62,6 +72,8 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
     type: "kudos",
     content: "Great job on the S3 scan, Devon! Clean report always makes me happy.",
     timestamp: "2026-04-02T12:05:00Z",
+    likesCount: 3,
+    isLiked: true,
   },
 
   // Dashboard UI Revamp (Project 3)
@@ -74,6 +86,8 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
     type: "achievement",
     content: "Finalized the Glassmorphism theme implementation for the main dashboard shell.",
     timestamp: "2026-04-02T07:45:00Z",
+    likesCount: 15,
+    isLiked: true,
   },
   {
     id: "act-8",
@@ -84,5 +98,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
     type: "achievement",
     content: "Added full accessibility coverage (WCAG 2.1) to the new navigation components.",
     timestamp: "2026-04-02T09:30:00Z",
+    likesCount: 9,
+    isLiked: false,
   },
 ];

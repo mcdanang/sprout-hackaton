@@ -3,23 +3,13 @@
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { ArrowLeft, AlertCircle, Trophy, Share2, Heart, Clock, Zap, LucideIcon } from "lucide-react";
+import { ArrowLeft, AlertCircle, Trophy, Share2, Heart, Clock, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
 import { DUMMY_PROJECTS } from "@/lib/constants/projects";
 import { DUMMY_ACTIVITIES, type ActivityItem } from "@/lib/constants/activity";
-
-const healthStyles: Record<string, string> = {
-  Healthy: "bg-green-500",
-  Stable: "bg-[#FFD300]",
-  "At Risk": "bg-red-500",
-};
-
-const activityTypeStyles: Record<Exclude<ActivityItem["type"], "status">, { icon: LucideIcon, color: string, bgColor: string }> = {
-  achievement: { icon: Trophy, color: "text-emerald-500", bgColor: "bg-emerald-50" },
-  concern: { icon: AlertCircle, color: "text-red-500", bgColor: "bg-red-50" },
-  kudos: { icon: Heart, color: "text-pink-500", bgColor: "bg-pink-50" },
-};
+import { getRelativeTime } from "@/lib/utils/time";
+import { healthStyles, activityTypeStyles } from "@/lib/constants/project-ui";
 
 export default function ProjectDetailPage() {
   const { id } = useParams();
@@ -61,18 +51,40 @@ export default function ProjectDetailPage() {
         </button>
       </div>
 
-      {/* Hero Header Card with Rotating Border */}
+      {/* Hero Header Card with Rotating Border & Integrated Squad Hub */}
       <div className="group relative rounded-[32px] p-[1.5px] overflow-hidden border border-slate-100">
         <div className="absolute -inset-full [background:conic-gradient(from_0deg,transparent_0_80%,#FFD300_100%)] animate-[border-rotate_8s_linear_infinite]" />
         
-        <div className="relative z-10 bg-white rounded-[30.5px] p-8 md:p-12 space-y-6">
-          <h1 className="font-plus-jakarta text-4xl md:text-5xl font-bold text-brand-primary tracking-tight">
-            {project.name}
-          </h1>
-          
-          <p className="font-plus-jakarta text-lg text-slate-500 max-w-3xl leading-relaxed">
-            {project.description}
-          </p>
+        <div className="relative z-10 bg-white rounded-[30.5px] p-8 md:p-12 space-y-10">
+          <div className="space-y-6">
+            <h1 className="font-plus-jakarta text-4xl md:text-5xl font-bold text-brand-primary tracking-tight">
+              {project.name}
+            </h1>
+            <p className="font-plus-jakarta text-lg text-slate-500 max-w-3xl leading-relaxed">
+              {project.description}
+            </p>
+          </div>
+
+          <div className="pt-8 border-t border-slate-100/60 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-4">
+               <span className="text-[11px] font-bold text-slate-600 uppercase tracking-widest block">
+                {project.team.length} Members Collaborating
+              </span>
+              <div className="flex -space-x-3">
+                {project.team.map((avatar: string, i: number) => (
+                  <div key={i} className="relative h-12 w-12 rounded-full border-4 border-white shadow-sm overflow-hidden bg-slate-50 transition-transform hover:scale-110 hover:z-20 cursor-pointer">
+                    <Image src={avatar} alt="Squad member" fill className="object-cover" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="hidden md:block">
+              <button className="px-5 py-2.5 rounded-2xl bg-brand-primary/5 text-brand-primary font-plus-jakarta text-sm font-bold hover:bg-brand-primary hover:text-white transition-all">
+                Manage Squad
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -141,30 +153,6 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      {/* Squad Overview Section */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-          <h2 className="font-plus-jakarta text-xl font-bold text-brand-primary">{t("squad")}</h2>
-          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-widest">{project.team.length} Members Collaborating</span>
-        </div>
-        
-        <div className="flex overflow-x-auto gap-4 pb-4 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
-          {project.team.map((avatar, i) => (
-            <div key={i} className="flex flex-col items-center gap-3 bg-white rounded-[24px] p-6 border border-slate-100 min-w-[160px] text-center hover:shadow-md transition-all group">
-              <div className="relative h-16 w-16 rounded-full overflow-hidden border-2 border-white shadow-md">
-                <Image src={avatar} alt="Squad member" fill className="object-cover group-hover:scale-110 transition-transform" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-bold text-brand-primary truncate w-full">
-                  Member #{i + 1}
-                </p>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Contributor</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Main Activity Hub: Dynamic List */}
       <div className="space-y-6">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -192,20 +180,42 @@ export default function ProjectDetailPage() {
                             <Image src={activity.userAvatar} alt={activity.userName} fill className="object-cover" />
                           </div>
                           <span className="font-plus-jakarta text-sm font-bold text-brand-primary">{activity.userName}</span>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 py-0.5 bg-slate-50 rounded-full border border-slate-100">
-                            {activity.type}
-                          </span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-slate-400">
+                        <div className="flex items-center gap-1.5 text-slate-600">
                           <Clock className="h-3 w-3" />
                           <span className="text-[10px] font-bold uppercase tracking-wider">
-                            {new Date(activity.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                            {getRelativeTime(activity.timestamp)}
                           </span>
                         </div>
                       </div>
                       <p className="font-plus-jakarta text-[15px] text-slate-600 leading-relaxed">
                         {activity.content}
                       </p>
+                      
+                      {/* Heart Like Pill Implementation with Active State */}
+                      <div className="flex items-center justify-start pt-1">
+                        <button className={cn(
+                          "flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all group/like",
+                          activity.isLiked 
+                            ? "bg-pink-50/50 border-pink-100" 
+                            : "bg-white border-slate-100 hover:border-pink-200 hover:bg-pink-50/30"
+                        )}>
+                          <Heart className={cn(
+                            "h-3.5 w-3.5 transition-all",
+                            activity.isLiked 
+                                ? "text-pink-500 fill-pink-500" 
+                                : "text-slate-500 group-hover/like:text-pink-500 group-hover/like:fill-pink-500"
+                          )} />
+                          <span className={cn(
+                            "font-plus-jakarta text-xs font-bold transition-colors",
+                            activity.isLiked 
+                                ? "text-pink-600" 
+                                : "text-slate-600 group-hover/like:text-pink-600"
+                          )}>
+                            {activity.likesCount}
+                          </span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
