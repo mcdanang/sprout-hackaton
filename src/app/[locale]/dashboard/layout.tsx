@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "@/i18n/routing";
 import { getLocale } from "next-intl/server";
-import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 
 export default async function DashboardLayout({
   children,
@@ -16,13 +16,8 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen">
-      <DashboardSidebar />
-      <div className="flex-1 flex flex-col bg-muted/20">
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          {children}
-        </main>
-      </div>
-    </div>
+    <DashboardShell>
+      {children}
+    </DashboardShell>
   );
 }

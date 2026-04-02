@@ -10,7 +10,9 @@ import {
   ShieldCheck, 
   Flash,
   Menu,
-  Xmark
+  Xmark,
+  NavArrowLeft,
+  NavArrowRight
 } from "iconoir-react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
@@ -27,26 +29,39 @@ const navItems = [
   { href: "/dashboard/ai-assistant", icon: Flash, label: "aiAssistant" },
 ];
 
-export function DashboardSidebar() {
+interface DashboardSidebarProps {
+  isCollapsed: boolean;
+  onToggle: () => void;
+}
+
+export function DashboardSidebar({ isCollapsed, onToggle }: DashboardSidebarProps) {
   const t = useTranslations("Dashboard");
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
   const sidebarContent = (
-    <div className="flex h-full flex-col bg-background px-4 py-6">
+    <div className={cn(
+      "flex h-full flex-col bg-background py-6 transition-all duration-300 ease-in-out",
+      isCollapsed ? "px-3" : "px-4"
+    )}>
       {/* Logo */}
-      <div className="mb-10 px-2">
+      <div className={cn(
+        "mb-10 px-2 transition-all duration-300",
+        isCollapsed ? "flex justify-center" : ""
+      )}>
         <Link href="/dashboard" className="flex items-center gap-3">
           <Image 
             src="/signal_logo.svg" 
             alt="Signal Logo" 
             width={32} 
             height={32} 
-            className="object-contain"
+            className="object-contain min-w-[32px]"
           />
-          <span className="font-open-sans text-[22px] font-bold tracking-tight text-[#081021]">
-            Signal
-          </span>
+          {!isCollapsed && (
+            <span className="font-open-sans text-[22px] font-bold tracking-tight text-[#081021] whitespace-nowrap animate-in fade-in duration-300">
+              Signal
+            </span>
+          )}
         </Link>
       </div>
 
@@ -62,22 +77,33 @@ export function DashboardSidebar() {
               href={item.href}
               onClick={() => setIsOpen(false)}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 transition-all duration-200 rounded-full font-open-sans text-[14px] leading-[19px] tracking-[0.25px]",
+                "flex items-center transition-all duration-300 rounded-full font-open-sans text-[14px] leading-[19px] tracking-[0.25px]",
+                isCollapsed ? "justify-center p-3" : "gap-3 px-4 py-3",
                 isActive 
                   ? "bg-[#FFD300] text-[#282828] font-bold shadow-sm" 
-                  : "text-[#64748B] font-semibold hover:bg-slate-100 hover:text-slate-900"
+                  : "text-[#64748B] font-semibold hover:bg-slate-50 hover:text-slate-900"
               )}
             >
-              <Icon className={cn("h-5 w-5", isActive ? "stroke-[2.5px]" : "stroke-[1.5px]")} />
-              {t(`nav.${item.label}`)}
+              <Icon className={cn("h-5 w-5 min-w-[20px]", isActive ? "stroke-[2.5px]" : "stroke-[1.5px]")} />
+              {!isCollapsed && (
+                <span className="whitespace-nowrap animate-in fade-in slide-in-from-left-1 duration-300">
+                  {t(`nav.${item.label}`)}
+                </span>
+              )}
             </Link>
           );
         })}
       </nav>
 
       {/* Footer / Account Settings */}
-      <div className="mt-auto border-t pt-6 space-y-4">
-        <div className="flex items-center justify-between px-2">
+      <div className={cn(
+        "mt-auto border-t pt-6 transition-all duration-300",
+        isCollapsed ? "px-0" : "px-2"
+      )}>
+        <div className={cn(
+          "flex items-center gap-4",
+          isCollapsed ? "flex-col" : "justify-between"
+        )}>
           <LanguageSwitcher />
           <UserButton />
         </div>
@@ -97,10 +123,27 @@ export function DashboardSidebar() {
         </button>
       </div>
 
-      {/* Desktop Sidebar */}
-      <aside className="hidden w-72 border-r bg-background md:block h-screen sticky top-0">
+      {/* Desktop Sidebar Container */}
+      <div className={cn(
+        "hidden border-r bg-background md:block transition-all duration-300 ease-in-out h-screen sticky top-0",
+        isCollapsed ? "w-20" : "w-72"
+      )}>
+        {/* Toggle Button */}
+        <button
+          onClick={onToggle}
+          className={cn(
+            "absolute -right-4 top-12 z-50 flex h-8 w-8 items-center justify-center rounded-full border bg-white shadow-sm transition-transform hover:scale-110",
+          )}
+        >
+          {isCollapsed ? (
+            <NavArrowRight className="h-5 w-5 text-slate-600" />
+          ) : (
+            <NavArrowLeft className="h-5 w-5 text-slate-600" />
+          )}
+        </button>
+
         {sidebarContent}
-      </aside>
+      </div>
 
       {/* Mobile Overlay */}
       {isOpen && (
@@ -115,7 +158,53 @@ export function DashboardSidebar() {
         "fixed inset-y-0 left-0 z-50 w-72 bg-background shadow-2xl transition-transform duration-300 ease-in-out md:hidden",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        {sidebarContent}
+        {/* Pass dummy props for mobile always expanded */}
+        <div className="flex h-full flex-col bg-background px-4 py-6">
+          {/* Logo */}
+          <div className="mb-10 px-2">
+            <Link href="/dashboard" className="flex items-center gap-3">
+              <Image 
+                src="/signal_logo.svg" 
+                alt="Signal Logo" 
+                width={32} 
+                height={32} 
+                className="object-contain"
+              />
+              <span className="font-open-sans text-[22px] font-bold tracking-tight text-[#081021]">
+                Signal
+              </span>
+            </Link>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 space-y-2">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+              const Icon = item.icon;
+              
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setIsOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 transition-all duration-300 rounded-full font-open-sans text-[14px] leading-[19px] tracking-[0.25px]",
+                    isActive 
+                      ? "bg-[#FFD300] text-[#282828] font-bold shadow-sm" 
+                      : "text-[#64748B] font-semibold hover:bg-slate-50 hover:text-slate-900"
+                  )}
+                >
+                  <Icon className={cn("h-5 w-5", isActive ? "stroke-[2.5px]" : "stroke-[1.5px]")} />
+                  <span>{t(`nav.${item.label}`)}</span>
+                </Link>
+              );
+            })}
+          </nav>
+          <div className="mt-auto border-t pt-6 flex items-center justify-between px-2">
+            <LanguageSwitcher />
+            <UserButton />
+          </div>
+        </div>
       </aside>
     </>
   );
