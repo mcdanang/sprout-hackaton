@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Heart, Clock, Lock, User } from "lucide-react";
+import { Heart, Clock, Lock, User, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type ActivityItem } from "@/lib/constants/activity";
 import { activityTypeStyles } from "@/lib/constants/project-ui";
@@ -134,12 +134,16 @@ export function ActivityCard({ activity, index, onReplyCreated }: Props) {
               }}
               disabled={isLikeLoading}
             >
-              <Heart className={cn(
-                "h-3.5 w-3.5 transition-all",
-                isLiked
-                  ? "text-pink-500 fill-pink-500"
-                  : "text-slate-500 group-hover/like:text-pink-500 group-hover/like:fill-pink-500"
-              )} />
+              {isLikeLoading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-pink-500" />
+              ) : (
+                <Heart className={cn(
+                  "h-3.5 w-3.5 transition-all",
+                  isLiked
+                    ? "text-pink-500 fill-pink-500"
+                    : "text-slate-500 group-hover/like:text-pink-500 group-hover/like:fill-pink-500"
+                )} />
+              )}
               <span className={cn(
                 "font-plus-jakarta text-xs font-bold transition-colors",
                 isLiked
