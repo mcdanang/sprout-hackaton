@@ -1,8 +1,26 @@
 -- ============================================================
 -- SPROUT OWNERSHIP PLATFORM — Seed data (optional)
--- Run after init.sql on a fresh DB. Inserts orgs, projects, roles, employees,
--- employee_projects, squad leads, sample signals, and signal_targets.
+-- Run after init.sql. Truncates app tables below, then inserts seed rows.
+-- WARNING: Destroys all data in these tables. Use dev/staging or intentional re-seed.
 -- ============================================================
+
+-- Empty tables (FK-safe: children first; clear squad lead before employees)
+truncate table
+  public.signal_targets,
+  public.signal_replies,
+  public.signal_likes,
+  public.signals,
+  public.employee_projects
+restart identity cascade;
+
+update public.projects set squad_lead_employee_id = null;
+
+truncate table
+  public.employees,
+  public.projects,
+  public.organizations,
+  public.roles
+restart identity cascade;
 
 -- Organizations
 insert into public.organizations (name) values
@@ -165,7 +183,6 @@ inner join (
     ('ugan.saripudin@sprout.co.id', 'LABAMU'),
     ('faisal.ariyanto@sprout.co.id', 'ALODOKTER'),
     ('kevin.gading@sprout.co.id', 'HI-FELLA'),
-    ('azki.darmawan@sprout.co.id', 'SPROUT'),
     ('bagus.kurnianto@sprout.co.id', 'LABAMU SINGAPORE'),
     ('hendy.odwin@sprout.co.id', 'LABAMU SINGAPORE'),
     ('david.santoso@sprout.co.id', 'LABAMU'),
@@ -193,6 +210,21 @@ inner join (
 ) as v(email, project_name)
   on e.email = v.email
 inner join public.projects p on p.name = v.project_name;
+
+-- Every employee is also on SPROUT (multiple projects per person where applicable).
+insert into public.employee_projects (employee_id, project_id)
+select e.id, p.id
+from public.employees e
+inner join public.projects p on p.name = 'SPROUT'
+on conflict (employee_id, project_id) do nothing;
+
+-- Muhammad Azki Darmawan on every project.
+insert into public.employee_projects (employee_id, project_id)
+select e.id, p.id
+from public.employees e
+cross join public.projects p
+where e.email = 'azki.darmawan@sprout.co.id'
+on conflict (employee_id, project_id) do nothing;
 
 -- Set squad leads per project (based on provided mapping)
 update public.projects
