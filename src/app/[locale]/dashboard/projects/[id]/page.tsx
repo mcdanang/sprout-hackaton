@@ -88,23 +88,15 @@ export default function ProjectDetailPage() {
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <h2 className="font-plus-jakarta text-xl font-bold text-brand-primary">{t("healthLabel")}</h2>
-            <p className="text-sm text-slate-500 leading-none font-medium opacity-80 italic">
+            <p className="text-sm text-slate-600 leading-none font-medium italic">
               Real-time team performance and psychological safety indicator
             </p>
           </div>
           <div className="flex flex-col items-end gap-1 text-right">
-            <span className={cn("text-2xl font-bold font-plus-jakarta", 
-              project.healthStatus === "Healthy" ? "text-green-600" : 
-              project.healthStatus === "At Risk" ? "text-red-500" : 
-              "text-[#FFD300]"
-            )}>
+            <span className="text-2xl font-bold font-plus-jakarta text-slate-900">
               {project.healthStatus}
             </span>
-            <span className={cn("text-[11px] font-extrabold uppercase tracking-[0.2em]", 
-              project.healthStatus === "Healthy" ? "text-green-600/70" : 
-              project.healthStatus === "At Risk" ? "text-red-500/70" : 
-              "text-brand-primary/70"
-            )}>
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-700">
               {project.health}% Optimal
             </span>
           </div>
