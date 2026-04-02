@@ -1,14 +1,17 @@
-"use client";
-
-import { useTranslations } from "next-intl";
-import { useUser } from "@clerk/nextjs";
+// src/app/[locale]/dashboard/page.tsx
+import { getTranslations } from "next-intl/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { Quote } from "iconoir-react";
 import { cn } from "@/lib/utils";
+import { getAiInsights } from "@/app/actions/ai-insights";
+import { AiInsightCards } from "@/components/dashboard/ai-insight-cards";
 
-export default function DashboardPage() {
-  const t = useTranslations("Dashboard");
-  const { user } = useUser();
-  const firstName = user?.firstName || "Alex"; // Fallback to Alex as in the mockup
+export default async function DashboardPage() {
+  const t = await getTranslations("Dashboard");
+  const user = await currentUser();
+  const firstName = user?.firstName || "there";
+
+  const insights = await getAiInsights();
 
   return (
     <div className="max-w-5xl mx-auto space-y-12">
@@ -25,16 +28,18 @@ export default function DashboardPage() {
         </p>
       </div>
 
+      {/* AI Insight Cards — role-aware, data from OpenAI */}
+      <AiInsightCards insights={insights.insights} generatedAt={insights.generatedAt} />
+
       {/* AI Sanctuary Quote Card */}
       <div className={cn(
         "relative overflow-hidden rounded-[32px] p-10 md:p-14",
         "bg-[#FFFBEB] border border-[#FEF3C7] shadow-sm"
       )}>
         <Quote className="h-10 w-10 text-text-primary mb-8" />
-        
         <div className="space-y-8">
           <p className="font-plus-jakarta text-[32px] md:text-[40px] font-medium leading-tight tracking-tight text-brand-primary">
-           {t("quote.text")}
+            {t("quote.text")}
           </p>
           <Quote className="h-10 w-10 text-text-primary mb-8" />
           <div className="flex items-center gap-3">
@@ -44,8 +49,6 @@ export default function DashboardPage() {
             </span>
           </div>
         </div>
-
-        {/* Decorative background element if needed, though simple is better here */}
       </div>
     </div>
   );
