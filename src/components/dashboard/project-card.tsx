@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { User } from "iconoir-react";
+import { AlertCircle, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
 
@@ -16,6 +17,8 @@ export interface Project {
   team: string[]; // Array of avatar URLs
   health: number; // 0-100
   healthStatus: ProjectHealthStatus;
+  concernsCount: number;
+  achievementsCount: number;
 }
 
 interface ProjectCardProps {
@@ -91,11 +94,33 @@ export function ProjectCard({ project }: ProjectCardProps) {
             <span className="text-slate-600">Project Health</span>
             <span className="text-brand-primary">{project.healthStatus}</span>
           </div>
-          <Progress value={project.health} className="flex-col gap-0 h-1.5">
-            <ProgressTrack className="h-full bg-slate-100">
+          <Progress value={project.health} className="flex-col gap-0 h-1.5 w-full">
+            <ProgressTrack className="h-full w-full bg-slate-100">
               <ProgressIndicator className={cn("h-full transition-all", healthStyles[project.healthStatus])} />
             </ProgressTrack>
           </Progress>
+        </div>
+
+        {/* Compact Info Cards */}
+        <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100/50 flex flex-col gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+              <span className="font-plus-jakarta text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">Concerns</span>
+            </div>
+            <div className="font-plus-jakarta text-lg font-bold text-brand-primary leading-none">
+              {project.concernsCount}
+            </div>
+          </div>
+          <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100/50 flex flex-col gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <TrendingUp className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+              <span className="font-plus-jakarta text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">Achievements</span>
+            </div>
+            <div className="font-plus-jakarta text-lg font-bold text-brand-primary leading-none">
+              {project.achievementsCount}
+            </div>
+          </div>
         </div>
       </div>
 
