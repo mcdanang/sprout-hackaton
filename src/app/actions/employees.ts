@@ -16,15 +16,15 @@ async function resolveIdByName(params: {
 	supabase: Awaited<ReturnType<typeof createClient>>;
 	table: "organizations" | "roles" | "projects";
 	name: string;
-}): Promise<string | null> {
+}): Promise<string | undefined> {
 	const { data, error } = await params.supabase
 		.from(params.table)
 		.select("id")
 		.eq("name", params.name)
 		.maybeSingle();
 
-	if (error) return null;
-	return data?.id ?? null;
+	if (error) return undefined;
+	return data?.id ?? undefined;
 }
 
 export async function getEmployees(filters?: EmployeesListFilters) {

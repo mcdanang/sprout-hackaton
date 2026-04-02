@@ -60,6 +60,62 @@ create policy "employees can update own profile" on public.employees
   for update to authenticated using (auth.uid() = auth_id);
 alter table public.employees disable row level security;
 
+-- 5. SIGNALS
+create table if not exists public.signals (
+  id uuid primary key default gen_random_uuid(),
+
+  author_employee_id uuid not null
+    references public.employees(id) on delete cascade,
+
+  is_anonymous boolean not null default false,
+  category text not null check (category in ('concern', 'achievement', 'appreciation')),
+  title text not null,
+  details text not null,
+
+  project_id uuid references public.projects(id) on delete set null,
+  is_public boolean not null default false,
+
+  created_at timestamptz not null default now()
+);
+
+create index if not exists signals_project_id_idx on public.signals(project_id);
+create index if not exists signals_created_at_idx on public.signals(created_at desc);
+
+alter table public.signals enable row level security;
+create policy "signals readable by authenticated" on public.signals
+  for select to authenticated using (true);
+alter table public.signals disable row level security;
+
+-- 6. SIGNAL TARGETS
+create table if not exists public.signal_targets (
+  id uuid primary key default gen_random_uuid(),
+
+  signal_id uuid not null
+    references public.signals(id) on delete cascade,
+
+  target_type text not null check (target_type in ('all', 'role', 'employee')),
+  target_role_id uuid references public.roles(id) on delete set null,
+  target_employee_id uuid references public.employees(id) on delete set null,
+
+  created_at timestamptz not null default now(),
+
+  -- Basic consistency rules between target_type and the provided target ids
+  constraint signal_targets_target_consistency check (
+    (target_type = 'all' and target_role_id is null and target_employee_id is null)
+    or (target_type = 'role' and target_role_id is not null and target_employee_id is null)
+    or (target_type = 'employee' and target_role_id is null and target_employee_id is not null)
+  )
+);
+
+create index if not exists signal_targets_signal_id_idx on public.signal_targets(signal_id);
+create index if not exists signal_targets_target_role_id_idx on public.signal_targets(target_role_id);
+create index if not exists signal_targets_target_employee_id_idx on public.signal_targets(target_employee_id);
+
+alter table public.signal_targets enable row level security;
+create policy "signal_targets readable by authenticated" on public.signal_targets
+  for select to authenticated using (true);
+alter table public.signal_targets disable row level security;
+
 
 -- ============================================================
 -- SEED DATA
