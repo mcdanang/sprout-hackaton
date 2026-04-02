@@ -4,9 +4,12 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
 import {
-  initialOwnershipActionState,
   submitOwnershipSignal,
 } from "@/app/actions/ownership";
+import {
+  initialOwnershipActionState,
+  OwnershipActionState,
+} from "@/app/actions/ownership.types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
