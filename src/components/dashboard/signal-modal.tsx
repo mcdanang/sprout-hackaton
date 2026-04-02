@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { toast } from "sonner";
 import Image from "next/image";
 import { AlertCircle, Trophy, Heart, Send, Loader2, X, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -116,12 +117,15 @@ function SignalModalContent({ projectName, projectId, onClose }: Omit<Props, "is
     });
   }, []);
 
-  // Close on success
+  // Handle action result
   useEffect(() => {
     if (state.status === "success") {
+      toast.success("Signal posted successfully!");
       onClose();
+    } else if (state.status === "error") {
+      toast.error(state.message || "Failed to post signal. Please try again.");
     }
-  }, [state.status, onClose]);
+  }, [state.status, state.message, onClose]);
 
   // Close on Escape (but let the mention dropdown intercept first)
   useEffect(() => {
@@ -132,17 +136,25 @@ function SignalModalContent({ projectName, projectId, onClose }: Omit<Props, "is
     return () => window.removeEventListener("keydown", handleKey);
   }, [handleClose]);
 
-  // Focus editor when type is selected
-  useEffect(() => {
-    if (selectedType && editorRef.current) {
+  function handleTypeSelect(type: SignalType) {
+    setSelectedType(type);
+    setContent("");
+    setTaggedEmployees([]);
+    setMentionQuery(null);
+    if (type !== "concern") setIsPublic(true);
+
+    // Clear editor DOM and focus — use setTimeout so the editor is visible first
+    setTimeout(() => {
+      if (!editorRef.current) return;
+      editorRef.current.innerHTML = "";
       editorRef.current.focus();
       const range = document.createRange();
       range.selectNodeContents(editorRef.current);
       range.collapse(false);
       window.getSelection()?.removeAllRanges();
       window.getSelection()?.addRange(range);
-    }
-  }, [selectedType]);
+    }, 0);
+  }
 
   function handleEditorInput(e: React.FormEvent<HTMLDivElement>) {
     const editor = e.currentTarget;
@@ -265,7 +277,7 @@ function SignalModalContent({ projectName, projectId, onClose }: Omit<Props, "is
               return (
                 <button
                   key={type.id}
-                  onClick={() => setSelectedType(type.id)}
+                  onClick={() => handleTypeSelect(type.id)}
                   className={cn(
                     "flex flex-col items-center justify-center gap-2.5 py-4 px-3 rounded-2xl border transition-all duration-200 group",
                     isActive
@@ -299,8 +311,8 @@ function SignalModalContent({ projectName, projectId, onClose }: Omit<Props, "is
             })}
           </div>
 
-          {/* Visibility Toggle */}
-          {selectedType && (
+          {/* Visibility Toggle — Concern only */}
+          {selectedType === "concern" && (
             <div className="px-8 pb-6 flex items-center justify-between border-b border-slate-50 mb-6">
               <div className="space-y-0.5">
                 <p className="font-plus-jakarta text-sm font-bold text-brand-primary">
@@ -469,11 +481,6 @@ function SignalModalContent({ projectName, projectId, onClose }: Omit<Props, "is
                 </div>
               </form>
             </div>
-            {state.status === "error" && (
-              <p className="mt-2 text-center text-xs font-bold text-red-500 animate-in fade-in slide-in-from-top-1">
-                {state.message}
-              </p>
-            )}
           </div>
 
           {/* Footer hint */}
