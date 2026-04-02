@@ -24,7 +24,15 @@
   "Dashboard": {
     "title": "Pusat Kepemilikan",
     "description": "Bangun budaya tanggung jawab dan pengakuan dengan berbagi sinyal kepemilikan kepada tim Anda.",
-    "overview": "Ikhtisar"
+    "overview": "Ikhtisar",
+    "nav": {
+      "dashboard": "Dashboard",
+      "projects": "Proyek",
+      "myConcern": "Keluhan Saya",
+      "myAchievement": "Pencapaian Saya",
+      "privateFeedback": "Umpan Balik Privat",
+      "aiAssistant": "Asisten AI"
+    }
   },
   "Unauthorized": {
     "title": "Akses Ditolak",

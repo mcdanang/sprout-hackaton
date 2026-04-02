@@ -24,7 +24,15 @@
   "Dashboard": {
     "title": "Ownership Center",
     "description": "Foster a culture of responsibility and recognition by sharing ownership signals with your team.",
-    "overview": "Overview"
+    "overview": "Overview",
+    "nav": {
+      "dashboard": "Dashboard",
+      "projects": "Projects",
+      "myConcern": "My Concern",
+      "myAchievement": "My Achievement",
+      "privateFeedback": "Private Feedback",
+      "aiAssistant": "AI Assistant"
+    }
   },
   "Unauthorized": {
     "title": "Access Denied",
