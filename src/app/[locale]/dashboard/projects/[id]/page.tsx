@@ -240,7 +240,7 @@ export default function ProjectDetailPage() {
                 >
                   <div className="flex gap-5">
                     <div className="shrink-0">
-                      <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", Style.bgColor, Style.color)}>
+                      <div className={cn("h-12 w-12 rounded-full flex items-center justify-center transition-transform group-hover:scale-110", Style.bgColor, Style.color)}>
                         <Icon className="h-6 w-6" />
                       </div>
                     </div>
@@ -248,7 +248,7 @@ export default function ProjectDetailPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className="relative h-6 w-6 rounded-full overflow-hidden border border-slate-100">
-                            <Image src={activity.userAvatar} alt={activity.userName} fill className="object-cover" />
+                            <Image src={activity.userAvatar} alt={activity.userName} fill className="object-cover rounded-full" />
                           </div>
                           <span className="font-plus-jakarta text-sm font-bold text-brand-primary">{activity.userName}</span>
                         </div>
@@ -315,7 +315,7 @@ export default function ProjectDetailPage() {
                             <div key={reply.id} className="relative flex gap-4 pl-10 animate-in fade-in slide-in-from-left-2 duration-300">
                               <div className="shrink-0 relative">
                                 <div className="h-8 w-8 rounded-full overflow-hidden border-2 border-white shadow-sm">
-                                  <Image src={reply.userAvatar} alt={reply.userName} fill className="object-cover" />
+                                  <Image src={reply.userAvatar} alt={reply.userName} fill className="object-cover rounded-full" />
                                 </div>
                                 {/* Small connector branch */}
                                 <div className="absolute -left-6 top-4 w-6 h-px bg-slate-50" />
