@@ -1,9 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { AlertCircle, TrendingUp } from "lucide-react";
 import { ProjectCard, type Project } from "@/components/dashboard/project-card";
-import { ShortInfoCard } from "@/components/dashboard/short-info-card";
 
 // Dummy Data
 const DUMMY_PROJECTS: Project[] = [
@@ -74,10 +72,6 @@ const DUMMY_PROJECTS: Project[] = [
 export default function ProjectsPage() {
   const t = useTranslations("Projects");
 
-  // Aggregate stats for top overview
-  const totalConcerns = DUMMY_PROJECTS.reduce((acc, p) => acc + p.concernsCount, 0);
-  const totalAchievements = DUMMY_PROJECTS.reduce((acc, p) => acc + p.achievementsCount, 0);
-
   return (
     <div className="max-w-5xl mx-auto space-y-12 pb-20">
       {/* Hero Section */}
@@ -91,24 +85,6 @@ export default function ProjectsPage() {
         <p className="font-plus-jakarta text-[18px] font-normal leading-[28px] text-dashboard-description max-w-2xl">
           {t("subtitle")}
         </p>
-      </div>
-
-      {/* Team Stats Overview */}
-      <div className="flex flex-wrap gap-4 pt-4">
-        <ShortInfoCard 
-          title="Team Concerns" 
-          value={totalConcerns} 
-          icon={AlertCircle} 
-          iconClassName="text-red-500"
-          className="flex-1 min-w-[200px]"
-        />
-        <ShortInfoCard 
-          title="Team Achievements" 
-          value={totalAchievements} 
-          icon={TrendingUp} 
-          iconClassName="text-emerald-500"
-          className="flex-1 min-w-[200px]"
-        />
       </div>
 
       {/* Projects Grid */}
