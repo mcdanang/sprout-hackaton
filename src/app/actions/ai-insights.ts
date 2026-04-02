@@ -20,37 +20,10 @@ export type AiInsightsResult = {
   generatedAt: string;
 };
 
-// Cached per employee — revalidates every hour (3600s)
-const fetchInsightsForEmployee = unstable_cache(
-  async (employeeId: string, isTopManagement: boolean): Promise<AiInsightsResult> => {
-    const supabase = await createClient();
-    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-
-    const { data: signals } = await supabase
-      .from("signals")
-      .select(`
-        id, category, ai_issue_category, sentiment_score, concern_status, created_at,
-        project:projects(id, name)
-      `)
-      .gte("created_at", since)
-      .order("created_at", { ascending: false })
-      .limit(100);
-
-    if (!signals?.length) {
-      return {
-        insights: [
-          {
-            level: "nudge",
-            title: "No signals yet",
-            body: "No signals have been submitted in the last 30 days. Encourage your team to share.",
-          },
-        ],
-        generatedAt: new Date().toISOString(),
-      };
-    }
-
-    const summary = buildSignalSummary(signals);
-
+// Only the OpenAI call is cached — no cookies/DB access inside.
+// Cache key = summary content + isTopManagement. Revalidates every hour.
+const callOpenAiForInsights = unstable_cache(
+  async (summary: string, isTopManagement: boolean): Promise<AiInsightsResult> => {
     const systemPrompt = isTopManagement
       ? `You are an HR analytics AI for a software company. Analyze team signals and return 3-5 actionable insight cards for top management. Focus on project health, burnout risk, and team morale trends. Be specific and data-backed. Return valid JSON only.`
       : `You are a personal work-wellbeing assistant. Analyze signals from the employee's team and return 2-3 personal nudge cards. Focus on encouragement, awareness of team mood, and gentle prompts to engage. Return valid JSON only.`;
@@ -110,29 +83,54 @@ Respond with ONLY the JSON array, no markdown, no explanation.
       };
     }
   },
-  // Cache key prefix — employeeId + isTopManagement are appended as args automatically
   ["ai-insights"],
-  { revalidate: 3600 }, // 1 hour
+  { revalidate: 3600 },
 );
 
+// DB query runs every time (needs cookies via createClient).
+// OpenAI is only called when summary changes or cache expires.
 export async function getAiInsights(): Promise<AiInsightsResult> {
   const employee = await getCurrentEmployee();
   if (!employee) return { insights: [], generatedAt: new Date().toISOString() };
 
-  return fetchInsightsForEmployee(employee.id, employee.isTopManagement);
+  const supabase = await createClient();
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: signals } = await supabase
+    .from("signals")
+    .select(`
+      id, category, ai_issue_category, sentiment_score, concern_status, created_at,
+      project:projects(id, name)
+    `)
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (!signals?.length) {
+    return {
+      insights: [
+        {
+          level: "nudge",
+          title: "No signals yet",
+          body: "No signals have been submitted in the last 30 days. Encourage your team to share.",
+        },
+      ],
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
+  const summary = buildSignalSummary(signals);
+  return callOpenAiForInsights(summary, employee.isTopManagement);
 }
 
 function buildSignalSummary(signals: any[]): string {
   const byProject = new Map<string, { name: string; signals: any[] }>();
-  const noProject: any[] = [];
 
   for (const s of signals) {
     const proj = s.project as { id: string; name: string } | null;
     if (proj?.id) {
       if (!byProject.has(proj.id)) byProject.set(proj.id, { name: proj.name, signals: [] });
       byProject.get(proj.id)!.signals.push(s);
-    } else {
-      noProject.push(s);
     }
   }
 
