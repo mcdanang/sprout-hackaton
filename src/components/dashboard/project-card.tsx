@@ -117,33 +117,41 @@ export function ProjectCard({ project }: ProjectCardProps) {
             </Progress>
           </div>
 
-          {/* Metrics Grid: Concerns, Achievements, Kudos */}
-          <div className="grid grid-cols-3 gap-2 pt-2">
-            <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-100/50 flex flex-col gap-1.5 min-w-0">
-              <div className="flex items-center gap-1 min-w-0">
-                <AlertCircle className="h-3 w-3 text-red-500 shrink-0" />
-                <span className="font-plus-jakarta text-[8px] font-bold text-slate-500 uppercase tracking-tight truncate">Concerns</span>
+          {/* Metrics Grid: Concerns, Achievements, Kudos - Revamped for Better Spacing */}
+          <div className="grid grid-cols-3 gap-2.5 pt-2">
+            <div className="bg-slate-50/50 rounded-2xl p-2.5 border border-slate-100 flex items-center gap-2 min-w-0 hover:bg-white hover:shadow-sm transition-all">
+              <div className="h-7 w-7 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+                <AlertCircle className="h-4 w-4 text-red-500" />
               </div>
-              <div className="font-plus-jakarta text-sm font-bold text-brand-primary">
-                {project.concernsCount}
-              </div>
-            </div>
-            <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-100/50 flex flex-col gap-1.5 min-w-0">
-              <div className="flex items-center gap-1 min-w-0">
-                <TrendingUp className="h-3 w-3 text-emerald-500 shrink-0" />
-                <span className="font-plus-jakarta text-[8px] font-bold text-slate-500 uppercase tracking-tight truncate">Achievements</span>
-              </div>
-              <div className="font-plus-jakarta text-sm font-bold text-brand-primary">
-                {project.achievementsCount}
+              <div className="flex flex-col min-w-0">
+                <span className="font-plus-jakarta text-[8px] font-bold text-slate-400 uppercase tracking-wider truncate">Rip</span>
+                <span className="font-plus-jakarta text-sm font-bold text-brand-primary leading-none">
+                  {project.concernsCount}
+                </span>
               </div>
             </div>
-            <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-100/50 flex flex-col gap-1.5 min-w-0">
-              <div className="flex items-center gap-1 min-w-0">
-                <Heart className="h-3 w-3 text-pink-500 shrink-0 fill-pink-500/10" />
-                <span className="font-plus-jakarta text-[8px] font-bold text-slate-500 uppercase tracking-tight truncate">Kudos</span>
+
+            <div className="bg-slate-50/50 rounded-2xl p-2.5 border border-slate-100 flex items-center gap-2 min-w-0 hover:bg-white hover:shadow-sm transition-all">
+              <div className="h-7 w-7 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
+                <TrendingUp className="h-4 w-4 text-emerald-500" />
               </div>
-              <div className="font-plus-jakarta text-sm font-bold text-brand-primary">
-                {project.kudosCount}
+              <div className="flex flex-col min-w-0">
+                <span className="font-plus-jakarta text-[8px] font-bold text-slate-400 uppercase tracking-wider truncate">Win</span>
+                <span className="font-plus-jakarta text-sm font-bold text-brand-primary leading-none">
+                  {project.achievementsCount}
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-slate-50/50 rounded-2xl p-2.5 border border-slate-100 flex items-center gap-2 min-w-0 hover:bg-white hover:shadow-sm transition-all">
+              <div className="h-7 w-7 rounded-lg bg-pink-50 flex items-center justify-center shrink-0">
+                <Heart className="h-4 w-4 text-pink-500 fill-pink-500/10" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="font-plus-jakarta text-[8px] font-bold text-slate-400 uppercase tracking-wider truncate">Kudos</span>
+                <span className="font-plus-jakarta text-sm font-bold text-brand-primary leading-none">
+                  {project.kudosCount}
+                </span>
               </div>
             </div>
           </div>
