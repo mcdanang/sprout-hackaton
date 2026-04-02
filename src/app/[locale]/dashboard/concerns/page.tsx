@@ -1,31 +1,14 @@
-import { ChatLines } from "iconoir-react";
-import { useTranslations } from "next-intl";
+import { getConcernFormOptions, getMyConcerns } from "@/app/actions/concerns";
+import { MyConcernsClient } from "@/components/dashboard/my-concerns-client";
 
-export default function ConcernsPage() {
-  const t = useTranslations("Dashboard.nav");
+export default async function ConcernsPage() {
+	const [concerns, options] = await Promise.all([getMyConcerns(), getConcernFormOptions()]);
 
-  return (
-    <div className="flex flex-col gap-6">
-      <section className="flex flex-col gap-2">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <ChatLines className="h-4 w-4" />
-          <span className="text-sm font-medium uppercase tracking-wider">{t("myConcern")}</span>
-        </div>
-        <h1 className="text-4xl font-extrabold tracking-tight">
-          {t("myConcern")}
-        </h1>
-        <p className="max-w-2xl text-lg text-muted-foreground">
-          Track and follow up on the concerns you've raised within the platform.
-        </p>
-      </section>
-      
-      <div className="rounded-xl border border-dashed p-20 flex flex-col items-center justify-center text-center bg-background/50">
-        <ChatLines className="h-12 w-12 text-muted-foreground/30 mb-4" />
-        <h3 className="text-lg font-semibold text-muted-foreground">No concerns yet</h3>
-        <p className="text-sm text-muted-foreground/60 max-w-xs">
-          This page is currently a placeholder and will be functional soon.
-        </p>
-      </div>
-    </div>
-  );
+	return (
+		<MyConcernsClient
+			initialConcerns={concerns}
+			organizations={options.organizations}
+			employees={options.employees}
+		/>
+	);
 }

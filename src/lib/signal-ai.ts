@@ -9,6 +9,18 @@ export type SignalIssueCategory =
 	| "Office Environment"
 	| "others";
 
+export const SIGNAL_ISSUE_CATEGORIES: SignalIssueCategory[] = [
+	"Burnout Alert",
+	"Scope Creep",
+	"Process Bottleneck",
+	"Communication Gap",
+	"Technical Debt",
+	"Micro-management",
+	"Professional Growth",
+	"Office Environment",
+	"others",
+];
+
 export function clamp(n: number, min: number, max: number) {
 	return Math.max(min, Math.min(max, n));
 }
@@ -52,4 +64,20 @@ export function analyzeSignalWithMockAI(signal: {
 	if (issueCategory === "Professional Growth") baseSentiment += 8;
 
 	return { sentiment: Math.round(clamp(baseSentiment, 0, 100)), issueCategory };
+}
+
+/** Sentiment for a concern when the user picks the issue category (not inferred from text). */
+export function computeConcernSentimentFromIssueCategory(
+	issueCategory: SignalIssueCategory,
+	details: string,
+): number {
+	const text = details.toLowerCase();
+	let baseSentiment = 32;
+	if (/(blocked|delay|risk|issue|problem|conflict|unclear|late)/.test(text)) baseSentiment -= 10;
+	if (/(resolved|improved|great|success|supportive|helpful|efficient)/.test(text))
+		baseSentiment += 10;
+	if (issueCategory === "Burnout Alert" || issueCategory === "Micro-management") baseSentiment -= 8;
+	if (issueCategory === "Professional Growth") baseSentiment += 8;
+
+	return Math.round(clamp(baseSentiment, 0, 100));
 }
