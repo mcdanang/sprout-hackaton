@@ -155,7 +155,7 @@ export default function ProjectDetailPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <h2 className="font-plus-jakarta text-xl font-bold text-brand-primary">{t("squad")}</h2>
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">{project.team.length} Members Collaborating</span>
+          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-widest">{project.team.length} Members Collaborating</span>
         </div>
         
         <div className="flex overflow-x-auto gap-4 pb-4 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
