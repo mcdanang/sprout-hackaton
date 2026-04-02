@@ -305,6 +305,35 @@ export default function ProjectDetailPage() {
                         </button>
                       </div>
 
+                      {/* Threaded Replies Visualization */}
+                      {activity.replies && activity.replies.length > 0 && (
+                        <div className="mt-6 space-y-4 relative">
+                          {/* Thread Connector Line */}
+                          <div className="absolute left-[23px] top-0 bottom-4 w-0.5 bg-slate-50" />
+                          
+                          {activity.replies.map((reply) => (
+                            <div key={reply.id} className="relative flex gap-4 pl-10 animate-in fade-in slide-in-from-left-2 duration-300">
+                              <div className="shrink-0 relative">
+                                <div className="h-8 w-8 rounded-xl overflow-hidden border-2 border-white shadow-sm">
+                                  <Image src={reply.userAvatar} alt={reply.userName} fill className="object-cover" />
+                                </div>
+                                {/* Small connector branch */}
+                                <div className="absolute -left-6 top-4 w-6 h-px bg-slate-50" />
+                              </div>
+                              <div className="flex-1 bg-slate-50/40 rounded-2xl p-4 border border-slate-100/50">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-plus-jakarta text-[13px] font-bold text-brand-primary">{reply.userName}</span>
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{getRelativeTime(reply.timestamp)}</span>
+                                </div>
+                                <p className="font-plus-jakarta text-sm text-slate-600 leading-relaxed">
+                                  {reply.content}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
                       {/* Expanding Reply Contextual Field */}
                       {replyingToId === activity.id && (
                         <div className="pt-4 animate-in fade-in slide-in-from-top-2 duration-300">

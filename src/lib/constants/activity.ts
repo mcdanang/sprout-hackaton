@@ -1,3 +1,12 @@
+export interface ReplyItem {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  content: string;
+  timestamp: string; // ISO string
+}
+
 export interface ActivityItem {
   id: string;
   projectId: string;
@@ -9,10 +18,11 @@ export interface ActivityItem {
   timestamp: string; // ISO string
   likesCount: number;
   isLiked: boolean;
+  replies?: ReplyItem[];
 }
 
 export const DUMMY_ACTIVITIES: ActivityItem[] = [
-  // Internal API Platform (Project 1) - EXTENDED for Infinite Scroll Demo
+  // Internal API Platform (Project 1) - EXTENDED for Replies Demo
   {
     id: "act-1",
     projectId: "1",
@@ -24,6 +34,16 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
     timestamp: "2026-04-02T08:30:00Z",
     likesCount: 12,
     isLiked: true,
+    replies: [
+      {
+        id: "rep-1",
+        userId: "u5",
+        userName: "Jack Thompson",
+        userAvatar: "https://i.pravatar.cc/150?u=5",
+        content: "Huge win for the edge strategy! This makes our Singapore expansion so much easier.",
+        timestamp: "2026-04-02T08:45:00Z"
+      }
+    ]
   },
   {
     id: "act-2",
@@ -36,6 +56,24 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
     timestamp: "2026-04-02T09:15:00Z",
     likesCount: 2,
     isLiked: false,
+    replies: [
+      {
+        id: "rep-2",
+        userId: "u3",
+        userName: "Michael Song",
+        userAvatar: "https://i.pravatar.cc/150?u=3",
+        content: "I'll double-check the VPC peering rules in that region, could be a routing bottleneck.",
+        timestamp: "2026-04-02T09:30:00Z"
+      },
+      {
+        id: "rep-3",
+        userId: "u2",
+        userName: "Sarah Chen",
+        userAvatar: "https://i.pravatar.cc/150?u=2",
+        content: "@Michael, that would be helpful. I'm seeing 502s on about 2% of traffic currently.",
+        timestamp: "2026-04-02T09:40:00Z"
+      }
+    ]
   },
   {
     id: "act-3",
@@ -117,7 +155,7 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
     userAvatar: "https://i.pravatar.cc/150?u=3",
     type: "achievement",
     content: "Internal API Documentation (v2) is now live on the developer portal. Full Swagger support included.",
-    timestamp: "2026-03-31T14:00:00Z",
+    timestamp: "2023-03-31T14:00:00Z",
     likesCount: 30,
     isLiked: true,
   },
