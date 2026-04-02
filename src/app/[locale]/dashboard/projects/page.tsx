@@ -1,13 +1,63 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Folder } from "iconoir-react";
+import { ProjectCard, type Project } from "@/components/dashboard/project-card";
+
+// Dummy Data
+const DUMMY_PROJECTS: Project[] = [
+  {
+    id: "1",
+    name: "Internal API Platform",
+    description: "Modernizing our internal gateway with high-performance edge computing and unified authentication.",
+    status: "active",
+    team: [
+      "https://i.pravatar.cc/150?u=1",
+      "https://i.pravatar.cc/150?u=2",
+      "https://i.pravatar.cc/150?u=3",
+      "https://i.pravatar.cc/150?u=4",
+      "https://i.pravatar.cc/150?u=5",
+    ],
+  },
+  {
+    id: "2",
+    name: "Security Audit 2026",
+    description: "Comprehensive review of all data-at-rest and in-transit protocols for the upcoming compliance cycle.",
+    status: "planning",
+    team: [
+      "https://i.pravatar.cc/150?u=10",
+      "https://i.pravatar.cc/150?u=11",
+    ],
+  },
+  {
+    id: "3",
+    name: "Dashboard UI Revamp",
+    description: "Shifting our admin interface to a more fluid, component-based architecture with better accessibility.",
+    status: "completed",
+    team: [
+      "https://i.pravatar.cc/150?u=20",
+      "https://i.pravatar.cc/150?u=21",
+      "https://i.pravatar.cc/150?u=22",
+    ],
+  },
+  {
+    id: "4",
+    name: "Cross-platform Mobile App",
+    description: "Building the next-gen Signal mobile companion using React Native and shared business logic layers.",
+    status: "on-hold",
+    team: [
+      "https://i.pravatar.cc/150?u=30",
+      "https://i.pravatar.cc/150?u=31",
+      "https://i.pravatar.cc/150?u=32",
+      "https://i.pravatar.cc/150?u=33",
+    ],
+  },
+];
 
 export default function ProjectsPage() {
   const t = useTranslations("Projects");
 
   return (
-    <div className="max-w-5xl mx-auto space-y-12">
+    <div className="max-w-5xl mx-auto space-y-12 pb-20">
       {/* Hero Section */}
       <div className="space-y-4">
         <p className="font-plus-jakarta text-[12px] font-semibold leading-[16px] tracking-[1.2px] uppercase text-[#B09100]">
@@ -21,17 +71,11 @@ export default function ProjectsPage() {
         </p>
       </div>
 
-      {/* Projects Content Placeholder */}
-      <div className="rounded-[32px] border border-dashed border-slate-200 p-20 flex flex-col items-center justify-center text-center bg-white/50 shadow-sm">
-        <div className="h-16 w-16 rounded-2xl bg-slate-50 flex items-center justify-center mb-6">
-          <Folder className="h-8 w-8 text-slate-300" />
-        </div>
-        <h3 className="font-plus-jakarta text-xl font-bold text-brand-primary mb-2">
-          No projects yet
-        </h3>
-        <p className="font-plus-jakarta text-slate-500 max-w-xs">
-          This page is currently a placeholder and will be functional soon.
-        </p>
+      {/* Projects Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {DUMMY_PROJECTS.map((project) => (
+          <ProjectCard key={project.id} project={project} />
+        ))}
       </div>
     </div>
   );
