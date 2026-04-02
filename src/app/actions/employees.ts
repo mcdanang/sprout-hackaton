@@ -57,15 +57,22 @@ export async function getEmployees(filters?: EmployeesListFilters) {
 		return { status: "success", employees: [] } satisfies EmployeesListResult;
 	}
 
+	const projectFilter = filters?.projectId;
+	const selectProjects = projectFilter
+		? "employee_projects!inner(project_id)"
+		: "employee_projects(project_id)";
+
 	let query = supabase
 		.from("employees")
-		.select("id, full_name, email, job_position, organization_id, project_id, role_id, is_active")
+		.select(
+			`id, full_name, email, job_position, organization_id, role_id, is_active, ${selectProjects}`,
+		)
 		.order("full_name", { ascending: true });
 
 	if (filters?.onlyActive) query = query.eq("is_active", true);
 	if (organizationId) query = query.eq("organization_id", organizationId);
 	if (roleId) query = query.eq("role_id", roleId);
-	if (filters?.projectId) query = query.eq("project_id", filters.projectId);
+	if (projectFilter) query = query.eq("employee_projects.project_id", projectFilter);
 
 	const { data: employees, error } = await query;
 
@@ -81,7 +88,12 @@ export async function getEmployees(filters?: EmployeesListFilters) {
 	}
 
 	const organizationIds = unique(employees.map(e => e.organization_id));
-	const projectIds = unique(employees.map(e => e.project_id));
+	const projectIds = unique(
+		employees.flatMap(e => {
+			const links = e.employee_projects as { project_id: string }[] | null | undefined;
+			return (links ?? []).map(l => l.project_id);
+		}),
+	);
 	const roleIds = unique(employees.map(e => e.role_id));
 
 	const [{ data: orgs }, { data: projects }, { data: roles }] = await Promise.all([
@@ -94,16 +106,22 @@ export async function getEmployees(filters?: EmployeesListFilters) {
 	const projectById = new Map((projects ?? []).map(p => [p.id, p.name]));
 	const roleById = new Map((roles ?? []).map(r => [r.id, r.name]));
 
-	const result: EmployeeRecord[] = employees.map(e => ({
-		id: e.id,
-		fullName: e.full_name,
-		email: e.email,
-		jobPosition: e.job_position,
-		organization: orgById.get(e.organization_id) ?? "",
-		project: projectById.get(e.project_id) ?? "",
-		role: roleById.get(e.role_id) ?? "",
-		isActive: e.is_active,
-	}));
+	const result: EmployeeRecord[] = employees.map(e => {
+		const links = e.employee_projects as { project_id: string }[] | null | undefined;
+		const names = (links ?? [])
+			.map(l => projectById.get(l.project_id))
+			.filter(Boolean) as string[];
+		return {
+			id: e.id,
+			fullName: e.full_name,
+			email: e.email,
+			jobPosition: e.job_position,
+			organization: orgById.get(e.organization_id) ?? "",
+			projects: names.length ? names.sort().join(", ") : "",
+			role: roleById.get(e.role_id) ?? "",
+			isActive: e.is_active,
+		};
+	});
 
 	return { status: "success", employees: result } satisfies EmployeesListResult;
 }

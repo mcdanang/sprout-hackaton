@@ -1,6 +1,7 @@
 -- ============================================================
--- SPROUT OWNERSHIP PLATFORM — Schema
--- Run this in Supabase SQL Editor (top to bottom).
+-- SPROUT OWNERSHIP PLATFORM — Schema only
+-- Tables, indexes, constraints, RLS. Run in Supabase SQL Editor.
+-- Optional demo data: run seed.sql after this on a fresh database.
 -- ============================================================
 
 -- ============================================================
@@ -9,10 +10,13 @@
 -- Safe to run multiple times; drops tables with dependencies.
 drop table if exists public.signal_targets cascade;
 drop table if exists public.signals cascade;
+drop table if exists public.employee_projects cascade;
 drop table if exists public.employees cascade;
 drop table if exists public.projects cascade;
 drop table if exists public.organizations cascade;
 drop table if exists public.roles cascade;
+drop table if exists public.signal_likes cascade;
+drop table if exists public.signal_replies cascade;
 
 
 -- 1. ORGANIZATIONS
@@ -62,7 +66,6 @@ create table if not exists public.employees (
   email text not null unique,
   job_position text not null,
   organization_id uuid not null references public.organizations(id),
-  project_id uuid not null references public.projects(id),
   role_id uuid not null references public.roles(id),
   is_active boolean not null default true,
   created_at timestamptz not null default now()
@@ -74,6 +77,20 @@ create policy "employees readable by authenticated" on public.employees
 create policy "employees can update own profile" on public.employees
   for update to authenticated using (auth.uid() = auth_id);
 alter table public.employees disable row level security;
+
+-- 4.0. EMPLOYEE ↔ PROJECT (many-to-many)
+create table if not exists public.employee_projects (
+  employee_id uuid not null references public.employees(id) on delete cascade,
+  project_id uuid not null references public.projects(id) on delete cascade,
+  primary key (employee_id, project_id)
+);
+
+create index if not exists employee_projects_project_id_idx on public.employee_projects(project_id);
+
+alter table public.employee_projects enable row level security;
+create policy "employee_projects readable by authenticated" on public.employee_projects
+  for select to authenticated using (true);
+alter table public.employee_projects disable row level security;
 
 -- 4.1. PROJECT SQUAD LEAD (FK to employees)
 alter table public.projects
@@ -93,15 +110,60 @@ create table if not exists public.signals (
   category text not null check (category in ('concern', 'achievement', 'appreciation')),
   title text not null,
   details text not null,
+  sentiment_score int check (sentiment_score between 0 and 100),
+  ai_issue_category text check (
+    ai_issue_category in (
+      'Burnout Alert',
+      'Scope Creep',
+      'Process Bottleneck',
+      'Communication Gap',
+      'Technical Debt',
+      'Micro-management',
+      'Professional Growth',
+      'Office Environment',
+      'others'
+    )
+  ),
 
   project_id uuid references public.projects(id) on delete set null,
   is_public boolean not null default false,
+
+  concern_status text check (
+    concern_status is null or concern_status in ('open', 'in_progress', 'closed')
+  ),
 
   created_at timestamptz not null default now()
 );
 
 create index if not exists signals_project_id_idx on public.signals(project_id);
 create index if not exists signals_created_at_idx on public.signals(created_at desc);
+
+-- Backward-compatible in case table already exists in an environment.
+alter table public.signals add column if not exists sentiment_score int;
+alter table public.signals add column if not exists ai_issue_category text;
+alter table public.signals add column if not exists concern_status text;
+alter table public.signals drop constraint if exists signals_concern_status_check;
+alter table public.signals add constraint signals_concern_status_check check (
+  concern_status is null or concern_status in ('open', 'in_progress', 'closed')
+);
+alter table public.signals drop constraint if exists signals_sentiment_score_check;
+alter table public.signals add constraint signals_sentiment_score_check
+  check (sentiment_score between 0 and 100);
+alter table public.signals drop constraint if exists signals_ai_issue_category_check;
+alter table public.signals add constraint signals_ai_issue_category_check
+  check (
+    ai_issue_category in (
+      'Burnout Alert',
+      'Scope Creep',
+      'Process Bottleneck',
+      'Communication Gap',
+      'Technical Debt',
+      'Micro-management',
+      'Professional Growth',
+      'Office Environment',
+      'others'
+    )
+  );
 
 alter table public.signals enable row level security;
 create policy "signals readable by authenticated" on public.signals
@@ -115,23 +177,39 @@ create table if not exists public.signal_targets (
   signal_id uuid not null
     references public.signals(id) on delete cascade,
 
-  target_type text not null check (target_type in ('all', 'role', 'employee')),
+  target_type text not null check (target_type in ('all', 'role', 'employee', 'organization')),
   target_role_id uuid references public.roles(id) on delete set null,
   target_employee_id uuid references public.employees(id) on delete set null,
+  target_organization_id uuid references public.organizations(id) on delete set null,
 
   created_at timestamptz not null default now(),
 
   -- Basic consistency rules between target_type and the provided target ids
   constraint signal_targets_target_consistency check (
-    (target_type = 'all' and target_role_id is null and target_employee_id is null)
-    or (target_type = 'role' and target_role_id is not null and target_employee_id is null)
-    or (target_type = 'employee' and target_role_id is null and target_employee_id is not null)
+    (target_type = 'all' and target_role_id is null and target_employee_id is null and target_organization_id is null)
+    or (target_type = 'role' and target_role_id is not null and target_employee_id is null and target_organization_id is null)
+    or (target_type = 'employee' and target_role_id is null and target_employee_id is not null and target_organization_id is null)
+    or (target_type = 'organization' and target_role_id is null and target_employee_id is null and target_organization_id is not null)
   )
 );
 
 create index if not exists signal_targets_signal_id_idx on public.signal_targets(signal_id);
 create index if not exists signal_targets_target_role_id_idx on public.signal_targets(target_role_id);
 create index if not exists signal_targets_target_employee_id_idx on public.signal_targets(target_employee_id);
+create index if not exists signal_targets_target_organization_id_idx on public.signal_targets(target_organization_id);
+
+-- Backward-compatible: widen target_type + add organization column on existing DBs.
+alter table public.signal_targets add column if not exists target_organization_id uuid references public.organizations(id) on delete set null;
+alter table public.signal_targets drop constraint if exists signal_targets_target_type_check;
+alter table public.signal_targets add constraint signal_targets_target_type_check
+  check (target_type in ('all', 'role', 'employee', 'organization'));
+alter table public.signal_targets drop constraint if exists signal_targets_target_consistency;
+alter table public.signal_targets add constraint signal_targets_target_consistency check (
+  (target_type = 'all' and target_role_id is null and target_employee_id is null and target_organization_id is null)
+  or (target_type = 'role' and target_role_id is not null and target_employee_id is null and target_organization_id is null)
+  or (target_type = 'employee' and target_role_id is null and target_employee_id is not null and target_organization_id is null)
+  or (target_type = 'organization' and target_role_id is null and target_employee_id is null and target_organization_id is not null)
+);
 
 alter table public.signal_targets enable row level security;
 create policy "signal_targets readable by authenticated" on public.signal_targets
@@ -194,526 +272,3 @@ create policy "signal_replies insertable by authenticated" on public.signal_repl
   for insert to authenticated with check (true);
 alter table public.signal_replies disable row level security;
 
-
--- ============================================================
--- SEED DATA
--- ============================================================
-
--- Organizations
-insert into public.organizations (name) values
-  ('CEO'),
-  ('HR/GA'),
-  ('Sales'),
-  ('Product'),
-  ('UI/UX'),
-  ('Quality Assurance'),
-  ('Tech')
-on conflict (name) do nothing;
-
--- Projects
-insert into public.projects (name, description, status) values
-  ('SPROUT', 'Sprout project', 'Development'),
-  ('HI-FELLA', 'HI-FELLA project', 'Development'),
-  ('KHONIC', 'KHONIC project', 'Development'),
-  ('SMARCO', 'SMARCO project', 'Development'),
-  ('LABAMU SINGAPORE', 'LABAMU SINGAPORE project', 'Development'),
-  ('BOUCHON', 'BOUCHON project', 'Development'),
-  ('JAPFA', 'JAPFA project', 'Development'),
-  ('TOCO', 'TOCO project', 'Development'),
-  ('SPECTRA', 'SPECTRA project', 'Development'),
-  ('QINERJA', 'QINERJA project', 'Development'),
-  ('LABAMU', 'LABAMU project', 'Development'),
-  ('EDOTCO', 'EDOTCO project', 'Development'),
-  ('ALODOKTER', 'ALODOKTER project', 'Development')
-on conflict (name) do nothing;
-
--- Roles
-insert into public.roles (name) values
-  ('TOP MANAGEMENT'),
-  ('SQUAD LEAD'),
-  ('STAFF')
-on conflict (name) do nothing;
-
--- Employees (full_name, email, job_position, organization, project, role)
--- Omitted from seed (no email provided): Muh Syaipullah, Ibnu Triyardi Muda, Farid Nugroho, Pradytia Herlyansah
-insert into public.employees (full_name, email, job_position, organization_id, project_id, role_id) values
-  -- CEO
-  ('Egg Arnold Sebastian',                        'arnold.sebastian@sprout.co.id',        'CEO',                                  (select id from public.organizations where name = 'CEO'),               (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-
-  -- HR/GA
-  ('Angelina Kesya Christinatalia',               'angelina.kesya@sprout.co.id',          'HR Officer',                           (select id from public.organizations where name = 'HR/GA'),             (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-  ('Christina Devi Ariyani',                      'christina.devi@sprout.co.id',          'Office Manager',                       (select id from public.organizations where name = 'HR/GA'),             (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-  ('Rebecca Deborah Aritonang',                   'rebecca.deborah@sprout.co.id',         'Legal Officer',                        (select id from public.organizations where name = 'HR/GA'),             (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-  ('Sukardi',                                     'sukardi@sprout.co.id',                 'Finance & Accounting',                 (select id from public.organizations where name = 'HR/GA'),             (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-  ('Patricia Timothy',                            'patricia.timothy@sprout.co.id',        'HR Officer',                           (select id from public.organizations where name = 'HR/GA'),             (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-
-  -- Sales
-  ('Gilang Satrya Putra',                         'gilang.satrya@sprout.co.id',           'Admin Staff Coordinator',              (select id from public.organizations where name = 'Sales'),             (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-  ('Vania Aribowo',                               'vania.aribowo@sprout.co.id',           'Business Development Manager',         (select id from public.organizations where name = 'Sales'),             (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-  ('Sanny Martin',                                'sanny.martin@sprout.co.id',            'Head of Sales',                        (select id from public.organizations where name = 'Sales'),             (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-  ('Sakti Ambawani',                              'sakti.ambawani@sprout.co.id',          'Business Development Manager',         (select id from public.organizations where name = 'Sales'),             (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-
-  -- Product
-  ('Alistair Tody',                               'alistair.tody@sprout.co.id',           'Business & Strategic Development Lead',(select id from public.organizations where name = 'Product'),           (select id from public.projects where name = 'HI-FELLA'),        (select id from public.roles where name = 'SQUAD LEAD')),
-  ('Nathanneal Audris',                           'nathanneal.audris@sprout.co.id',       'Project Manager',                      (select id from public.organizations where name = 'Product'),           (select id from public.projects where name = 'KHONIC'),          (select id from public.roles where name = 'STAFF')),
-  ('Lamhot Pardamean Siahaan',                    'lamhot.siahaan@sprout.co.id',          'Junior Technical Product',             (select id from public.organizations where name = 'Product'),           (select id from public.projects where name = 'SMARCO'),          (select id from public.roles where name = 'STAFF')),
-  ('Tjiong Teguh Arianto',                        'teguh.arianto@sprout.co.id',           'Sr Product Manager',                   (select id from public.organizations where name = 'Product'),           (select id from public.projects where name = 'LABAMU SINGAPORE'),(select id from public.roles where name = 'SQUAD LEAD')),
-  ('Marlon P V M Keintjem',                       'marlon.keintjem@sprout.co.id',        'VP of Product',                        (select id from public.organizations where name = 'Product'),           (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-  ('Briyan Benget Alfonsius',                     'briyan.benget@sprout.co.id',           'Product Manager Support',              (select id from public.organizations where name = 'Product'),           (select id from public.projects where name = 'HI-FELLA'),        (select id from public.roles where name = 'SQUAD LEAD')),
-  ('Eldaa Warapsari',                             'eldaa.warapsari@sprout.co.id',         'Product Manager Officer',              (select id from public.organizations where name = 'Product'),           (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'SQUAD LEAD')),
-  ('Reynaldo Damara Salim',                       'reynaldo.damara@sprout.co.id',         'Associate Product Manager',            (select id from public.organizations where name = 'Product'),           (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'SQUAD LEAD')),
-  ('Shafa Matahati',                              'shafa.matahati@sprout.co.id',          'Jr Product Manager',                   (select id from public.organizations where name = 'Product'),           (select id from public.projects where name = 'JAPFA'),           (select id from public.roles where name = 'SQUAD LEAD')),
-  ('Grisviany',                                   'grisviany@sprout.co.id',               'Product Manager',                      (select id from public.organizations where name = 'Product'),           (select id from public.projects where name = 'LABAMU SINGAPORE'),(select id from public.roles where name = 'STAFF')),
-
-  -- UI/UX
-  ('Vanessa Gunawan',                             'vanessa.gunawan@sprout.co.id',         'UI/UX Designer Lead',                  (select id from public.organizations where name = 'UI/UX'),             (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'SQUAD LEAD')),
-  ('Moch Baiz Kamarulredzuan',                    'moch.baiz@sprout.co.id',               'Jr UI/UX Designer',                    (select id from public.organizations where name = 'UI/UX'),             (select id from public.projects where name = 'TOCO'),            (select id from public.roles where name = 'STAFF')),
-  ('Darren Ekaseptian',                           'darren.ekaseptian@sprout.co.id',       'UI/UX Designer',                       (select id from public.organizations where name = 'UI/UX'),             (select id from public.projects where name = 'JAPFA'),           (select id from public.roles where name = 'STAFF')),
-  ('Bimo Prayogo Muhammad',                       'bimo.prayogo@sprout.co.id',            'UI/UX Designer',                       (select id from public.organizations where name = 'UI/UX'),             (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'STAFF')),
-  ('Glenn Vhalado Dykaputra L. Toruan',           'glenn.vhalado@sprout.co.id',           'UI/UX Designer',                       (select id from public.organizations where name = 'UI/UX'),             (select id from public.projects where name = 'SPECTRA'),         (select id from public.roles where name = 'STAFF')),
-
-  -- Quality Assurance
-  ('Wirapa Pillay',                               'wirapa.pillay@sprout.co.id',           'VP of Quality Assurance',              (select id from public.organizations where name = 'Quality Assurance'), (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'SQUAD LEAD')),
-  ('Devi Rahmawati',                              'devi.rahmawati@sprout.co.id',          'QA Engineer Associate',                (select id from public.organizations where name = 'Quality Assurance'), (select id from public.projects where name = 'JAPFA'),           (select id from public.roles where name = 'STAFF')),
-  ('Sangan Nathan',                               'sangan.nathan@sprout.co.id',           'QA Lead',                              (select id from public.organizations where name = 'Quality Assurance'), (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'STAFF')),
-  ('Triisya Velly',                               'triisya.velly@sprout.co.id',           'QA Engineer Associate',                (select id from public.organizations where name = 'Quality Assurance'), (select id from public.projects where name = 'JAPFA'),           (select id from public.roles where name = 'STAFF')),
-  ('Rahadiyan Koesandrianto',                     'rahadiyan.koesandrianto@sprout.co.id', 'QA Engineer (Associate)',              (select id from public.organizations where name = 'Quality Assurance'), (select id from public.projects where name = 'LABAMU SINGAPORE'),(select id from public.roles where name = 'STAFF')),
-  ('Dian Marsha Putri',                           'dian.marsha@sprout.co.id',             'Sr QA Engineer',                       (select id from public.organizations where name = 'Quality Assurance'), (select id from public.projects where name = 'LABAMU SINGAPORE'),(select id from public.roles where name = 'STAFF')),
-  ('Muhammad Raihan Mubaroq',                     'muhammad.raihan@sprout.co.id',         'QA Engineer Junior',                   (select id from public.organizations where name = 'Quality Assurance'), (select id from public.projects where name = 'LABAMU SINGAPORE'),(select id from public.roles where name = 'STAFF')),
-  ('Leni Hendra',                                 'leni.hendra@sprout.co.id',             'QA Engineer Associate',                (select id from public.organizations where name = 'Quality Assurance'), (select id from public.projects where name = 'QINERJA'),         (select id from public.roles where name = 'STAFF')),
-
-  -- Tech
-  ('Heri Herlambang Lumanto',                     'heri.herlambang@sprout.co.id',         'IT System Admin',                      (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'STAFF')),
-  ('Maya Andira',                                 'maya.andira@sprout.co.id',             'Scrum Master',                         (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU'),          (select id from public.roles where name = 'STAFF')),
-  ('Muhammad Firza',                              'muhammad.firza@sprout.co.id',          'Data Engineer',                        (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'EDOTCO'),          (select id from public.roles where name = 'STAFF')),
-  ('Ugan Saripudin',                              'ugan.saripudin@sprout.co.id',          'Tech Lead',                            (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU'),          (select id from public.roles where name = 'SQUAD LEAD')),
-  ('Faisal Ariyanto',                             'faisal.ariyanto@sprout.co.id',         'Team Lead',                            (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'ALODOKTER'),       (select id from public.roles where name = 'SQUAD LEAD')),
-  ('Kevin Godrikus Archibald Tagading P',         'kevin.gading@sprout.co.id',            'Team Lead',                            (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'HI-FELLA'),        (select id from public.roles where name = 'STAFF')),
-  ('Muhammad Azki Darmawan',                      'azki.darmawan@sprout.co.id',           'Tech Lead',                            (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-  ('Bagus Kurnianto',                             'bagus.kurnianto@sprout.co.id',         'Lead Mobile Developer',                (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU SINGAPORE'),(select id from public.roles where name = 'STAFF')),
-  ('Valentinus Hendy Odwin Santoso',              'hendy.odwin@sprout.co.id',             'Sr. Mobile Developer',                 (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU SINGAPORE'),(select id from public.roles where name = 'STAFF')),
-  ('David Santoso',                               'david.santoso@sprout.co.id',           'Mobile Developer',                     (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU'),          (select id from public.roles where name = 'STAFF')),
-  ('Sesaka Aji Nursah Bantani',                   'sesaka.aji@sprout.co.id',              'Jr Mobile Developer',                  (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'KHONIC'),          (select id from public.roles where name = 'STAFF')),
-  ('Jaka Hajar Wiguna',                           'jaka.hajar@sprout.co.id',              'Mobile Developer',                     (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'QINERJA'),         (select id from public.roles where name = 'STAFF')),
-  ('Zikry Kurniawan',                             'zikry.kurniawan@sprout.co.id',         'Sr. Backend Engineer',                 (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU'),          (select id from public.roles where name = 'STAFF')),
-  ('Alda Delas',                                  'alda.delas@sprout.co.id',              'Software Engineer',                    (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU SINGAPORE'),(select id from public.roles where name = 'STAFF')),
-  ('Bintang Muhammad Wahid',                      'bintang.muhammad@sprout.co.id',        'Backend Engineer',                     (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'SMARCO'),          (select id from public.roles where name = 'STAFF')),
-  ('Fakhrul Muhammad Rijal',                      'fakhrul.rijal@sprout.co.id',           'Backend Engineer',                     (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'SPECTRA'),         (select id from public.roles where name = 'STAFF')),
-  ('Teddy Adji Pangestu',                         'teddy.adji@sprout.co.id',              'Frontend Engineer',                    (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU'),          (select id from public.roles where name = 'STAFF')),
-  ('Gaizka Valencia',                             'gaizka.valencia@sprout.co.id',         'Jr. Software Engineer',                (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU'),          (select id from public.roles where name = 'STAFF')),
-  ('Fian Febry Ispianto',                         'fian.febry@sprout.co.id',              'Frontend Engineer',                    (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'STAFF')),
-  ('Al Fatih Abdurrahman Syah',                   'al.fatih@sprout.co.id',                'Software Engineer',                    (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU'),          (select id from public.roles where name = 'STAFF')),
-  ('Mahar Prasetio',                              'mahar.prasetio@sprout.co.id',          'Sr. Fullstack Engineer',               (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'STAFF')),
-  ('Irwin Pratajaya',                             'irwin.pratajaya@sprout.co.id',         'Sr. Software Engineer',                (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'JAPFA'),           (select id from public.roles where name = 'STAFF')),
-  ('Muhamad Danang Priambodo',                    'muhamad.danang@sprout.co.id',          'Software Engineer',                    (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'STAFF')),
-  ('Rizky Maulita Putri',                         'rizky.maulita@sprout.co.id',           'Software Engineer',                    (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'STAFF')),
-  ('Ryan Apratama',                               'ryan.apratama@sprout.co.id',           'Software Engineer',                    (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'STAFF')),
-  ('Marcellus Denta Widyapramana',                'marcellus.denta@sprout.co.id',         'Software Engineer',                    (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU SINGAPORE'),(select id from public.roles where name = 'STAFF')),
-  ('Fawaz',                                       'fawaz.hustomi@sprout.co.id',           'Software Engineer',                    (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'STAFF')),
-  ('Yusuf Farhan Abdullah',                       'yusuf.farhan@sprout.co.id',            'Software Engineer',                    (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'JAPFA'),           (select id from public.roles where name = 'STAFF')),
-  ('Herjuno Pangestu',                            'herjuno.pangestu@sprout.co.id',        'DevOps',                               (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'STAFF')),
-  ('Ahmad Dhiya Ilmam Putra',                     'ahmad.dhiya@sprout.co.id',             'Jr DevOps',                            (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'QINERJA'),         (select id from public.roles where name = 'STAFF')),
-  ('Harun Arasyid',                               'harun.arasyid@sprout.co.id',           'Sr DevOps',                            (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'STAFF'));
-
--- Set squad leads per project (based on provided mapping)
-update public.projects
-set squad_lead_employee_id = (
-  select id from public.employees where full_name = 'Alistair Tody' limit 1
-)
-where name = 'HI-FELLA';
-
-update public.projects
-set squad_lead_employee_id = (
-  select id from public.employees where full_name = 'Tjiong Teguh Arianto' limit 1
-)
-where name in ('LABAMU SINGAPORE', 'JAPFA');
-
-update public.projects
-set squad_lead_employee_id = (
-  select id from public.employees where full_name = 'Reynaldo Damara Salim' limit 1
-)
-where name = 'BOUCHON';
-
-update public.projects
-set squad_lead_employee_id = (
-  select id from public.employees where full_name = 'Glenn Vhalado Dykaputra L. Toruan' limit 1
-)
-where name = 'SPECTRA';
-
-update public.projects
-set squad_lead_employee_id = (
-  select id from public.employees where full_name = 'Marlon P V M Keintjem' limit 1
-)
-where name = 'EDOTCO';
-
-update public.projects
-set squad_lead_employee_id = (
-  select id from public.employees where full_name = 'Faisal Ariyanto' limit 1
-)
-where name = 'ALODOKTER';
-
--- ============================================================
--- SEED SIGNALS (for simulation / dashboards)
--- ============================================================
-
-insert into public.signals (
-  author_employee_id,
-  is_anonymous,
-  category,
-  title,
-  details,
-  project_id,
-  is_public
-) values
-  -- SPROUT
-  (
-    (select id from public.employees where full_name = 'Christina Devi Ariyani' limit 1)
-  , false
-  , 'concern'
-  , 'SPROUT - Deploy Delay'
-  , 'Deploy pipeline is taking longer than expected during peak hours. Suggest checking caching and queue configuration.'
-  , (select id from public.projects where name = 'SPROUT' limit 1)
-  , true
-  ),
-  (
-    (select id from public.employees where full_name = 'Marlon P V M Keintjem' limit 1)
-  , false
-  , 'achievement'
-  , 'SPROUT - On-time Release'
-  , 'Delivered the release on schedule and coordinated cross-team handoff successfully. Great ownership.'
-  , (select id from public.projects where name = 'SPROUT' limit 1)
-  , true
-  ),
-  (
-    (select id from public.employees where full_name = 'Egg Arnold Sebastian' limit 1)
-  , false
-  , 'achievement'
-  , 'SPROUT - Mentored Ownership'
-  , 'Supported team members with clear guidance and encouraged early risk surfacing. Positive impact observed.'
-  , (select id from public.projects where name = 'SPROUT' limit 1)
-  , true
-  ),
-  (
-    (select id from public.employees where full_name = 'Patricia Timothy' limit 1)
-  , true
-  , 'appreciation'
-  , 'SPROUT - Great Collaboration'
-  , 'Appreciate the collaboration and quick response during the last sprint. Felt safe and aligned throughout.'
-  , (select id from public.projects where name = 'SPROUT' limit 1)
-  , false
-  ),
-  (
-    (select id from public.employees where full_name = 'Sukardi' limit 1)
-  , false
-  , 'achievement'
-  , 'SPROUT - Better Reporting'
-  , 'Improved reporting quality and transparency by consolidating updates into a single weekly view.'
-  , (select id from public.projects where name = 'SPROUT' limit 1)
-  , true
-  ),
-
-  -- HI-FELLA
-  (
-    (select id from public.employees where full_name = 'Eldaa Warapsari' limit 1)
-  , false
-  , 'concern'
-  , 'HI-FELLA - Requirement Volatility'
-  , 'Noticed frequent changes to requirements late in the cycle. Consider locking scope earlier or using change checkpoints.'
-  , (select id from public.projects where name = 'HI-FELLA' limit 1)
-  , true
-  ),
-  (
-    (select id from public.employees where full_name = 'Briyan Benget Alfonsius' limit 1)
-  , false
-  , 'concern'
-  , 'HI-FELLA - Payment Edge Cases'
-  , 'Some payment edge cases are not covered in current tests. Recommend adding regression scenarios for uncommon flows.'
-  , (select id from public.projects where name = 'HI-FELLA' limit 1)
-  , false
-  ),
-  (
-    (select id from public.employees where full_name = 'Alistair Tody' limit 1)
-  , false
-  , 'achievement'
-  , 'HI-FELLA - Customer Feedback Actioned'
-  , 'Turned customer feedback into prioritized backlog items and aligned stakeholders within 48 hours.'
-  , (select id from public.projects where name = 'HI-FELLA' limit 1)
-  , true
-  ),
-  (
-    (select id from public.employees where full_name = 'Vania Aribowo' limit 1)
-  , true
-  , 'appreciation'
-  , 'HI-FELLA - Fast Stakeholder Updates'
-  , 'Thank you for keeping stakeholders updated with clear progress notes. It improved trust and reduced last-minute surprises.'
-  , (select id from public.projects where name = 'HI-FELLA' limit 1)
-  , true
-  ),
-
-  -- KHONIC
-  (
-    (select id from public.employees where full_name = 'Nathanneal Audris' limit 1)
-  , false
-  , 'achievement'
-  , 'KHONIC - Clean Backlog Grooming'
-  , 'Held effective backlog grooming and removed ambiguity early. Team velocity improved next sprint.'
-  , (select id from public.projects where name = 'KHONIC' limit 1)
-  , true
-  ),
-  (
-    (select id from public.employees where full_name = 'Lamhot Pardamean Siahaan' limit 1)
-  , false
-  , 'concern'
-  , 'KHONIC - QA Regression Risk'
-  , 'Potential regression risk due to rushed merges. Recommend tighter PR checks and smoke test automation.'
-  , (select id from public.projects where name = 'KHONIC' limit 1)
-  , false
-  ),
-  (
-    (select id from public.employees where full_name = 'Sanny Martin' limit 1)
-  , true
-  , 'appreciation'
-  , 'KHONIC - Cross-team Support'
-  , 'Appreciate the support from Sales to clarify requirements and unblock delivery. Great ownership.'
-  , (select id from public.projects where name = 'KHONIC' limit 1)
-  , true
-  ),
-
-  -- SMARCO
-  (
-    (select id from public.employees where full_name = 'Lamhot Pardamean Siahaan' limit 1)
-  , false
-  , 'concern'
-  , 'SMARCO - Sprint Scope Creep'
-  , 'Scope is expanding during sprint execution. Consider a strict mid-sprint review to prevent late churn.'
-  , (select id from public.projects where name = 'SMARCO' limit 1)
-  , true
-  ),
-  (
-    (select id from public.employees where full_name = 'Lamhot Pardamean Siahaan' limit 1)
-  , false
-  , 'concern'
-  , 'SMARCO - Test Coverage Gap'
-  , 'Unit test coverage is currently uneven. Requesting a quick coverage audit and prioritized test additions.'
-  , (select id from public.projects where name = 'SMARCO' limit 1)
-  , false
-  ),
-  (
-    (select id from public.employees where full_name = 'Teddy Adji Pangestu' limit 1)
-  , false
-  , 'appreciation'
-  , 'SMARCO - Quick Bug Fix'
-  , 'Thanks for responding quickly to production issues and communicating the mitigation plan clearly.'
-  , (select id from public.projects where name = 'SMARCO' limit 1)
-  , true
-  ),
-
-  -- LABAMU SINGAPORE
-  (
-    (select id from public.employees where full_name = 'Grisviany' limit 1)
-  , false
-  , 'achievement'
-  , 'LABAMU SG - Strategy Clarity'
-  , 'Provided clear product strategy and aligned stakeholders early. Reduced ambiguity and improved follow-through.'
-  , (select id from public.projects where name = 'LABAMU SINGAPORE' limit 1)
-  , true
-  ),
-  (
-    (select id from public.employees where full_name = 'Bimo Prayogo Muhammad' limit 1)
-  , false
-  , 'achievement'
-  , 'LABAMU SG - UX Improvement'
-  , 'Improved UX flows based on feedback and ensured accessibility considerations were included.'
-  , (select id from public.projects where name = 'LABAMU SINGAPORE' limit 1)
-  , true
-  ),
-  (
-    (select id from public.employees where full_name = 'Gaizka Valencia' limit 1)
-  , false
-  , 'achievement'
-  , 'LABAMU SG - Feature Delivery'
-  , 'Delivered requested improvements with strong documentation and safe incremental rollouts.'
-  , (select id from public.projects where name = 'LABAMU SINGAPORE' limit 1)
-  , true
-  ),
-  (
-    (select id from public.employees where full_name = 'Devi Rahmawati' limit 1)
-  , false
-  , 'concern'
-  , 'LABAMU SG - QA Bottleneck'
-  , 'QA throughput is limited due to review queues. Suggest scheduling earlier test planning to reduce bottlenecks.'
-  , (select id from public.projects where name = 'LABAMU SINGAPORE' limit 1)
-  , false
-  ),
-  (
-    (select id from public.employees where full_name = 'Marcellus Denta Widyapramana' limit 1)
-  , true
-  , 'appreciation'
-  , 'LABAMU SG - Reliable Support'
-  , 'Appreciate the reliable support during integration. It felt safe to speak up when issues appeared.'
-  , (select id from public.projects where name = 'LABAMU SINGAPORE' limit 1)
-  , true
-  ),
-
-  -- BOUCHON
-  (
-    (select id from public.employees where full_name = 'Reynaldo Damara Salim' limit 1)
-    , false
-    , 'achievement'
-    , 'BOUCHON - Feature Alignment'
-    , 'Aligned feature scope with stakeholders and removed blockers early through clear communication.'
-    , (select id from public.projects where name = 'BOUCHON' limit 1)
-    , true
-  ),
-
-  -- JAPFA
-  (
-    (select id from public.employees where full_name = 'Shafa Matahati' limit 1)
-    , false
-    , 'concern'
-    , 'JAPFA - Late UI Feedback'
-    , 'Received late UI feedback which impacted sprint planning. Recommend earlier review checkpoints and tighter design sign-offs.'
-    , (select id from public.projects where name = 'JAPFA' limit 1)
-    , false
-  ),
-
-  -- TOCO
-  (
-    (select id from public.employees where full_name = 'Moch Baiz Kamarulredzuan' limit 1)
-    , true
-    , 'appreciation'
-    , 'TOCO - Great Responsiveness'
-    , 'Thank you for responding quickly to design questions and keeping delivery on track. It improved team confidence.'
-    , (select id from public.projects where name = 'TOCO' limit 1)
-    , true
-  ),
-
-  -- SPECTRA
-  (
-    (select id from public.employees where full_name = 'Glenn Vhalado Dykaputra L. Toruan' limit 1)
-    , false
-    , 'achievement'
-    , 'SPECTRA - Stable Release'
-    , 'Maintained stable release cadence and ensured quality gates were met before production rollout.'
-    , (select id from public.projects where name = 'SPECTRA' limit 1)
-    , true
-  ),
-
-  -- QINERJA
-  (
-    (select id from public.employees where full_name = 'Leni Hendra' limit 1)
-    , false
-    , 'concern'
-    , 'QINERJA - Test Delays'
-    , 'Test execution is delayed due to environment availability. Propose scheduling environments earlier and assigning backup test windows.'
-    , (select id from public.projects where name = 'QINERJA' limit 1)
-    , true
-  ),
-
-  -- LABAMU
-  (
-    (select id from public.employees where full_name = 'Maya Andira' limit 1)
-    , false
-    , 'achievement'
-    , 'LABAMU - Sprint Coaching'
-    , 'Provided coaching that improved team estimates and reduced scope changes during sprint execution.'
-    , (select id from public.projects where name = 'LABAMU' limit 1)
-    , true
-  ),
-
-  -- EDOTCO
-  (
-    (select id from public.employees where full_name = 'Muhammad Firza' limit 1)
-    , false
-    , 'appreciation'
-    , 'EDOTCO - Data Quality Improvement'
-    , 'Improved data pipeline validation, resulting in fewer downstream issues and clearer reporting. Great ownership.'
-    , (select id from public.projects where name = 'EDOTCO' limit 1)
-    , true
-  ),
-
-  -- ALODOKTER
-  (
-    (select id from public.employees where full_name = 'Faisal Ariyanto' limit 1)
-    , false
-    , 'concern'
-    , 'ALODOKTER - Resource Constraints'
-    , 'Resource constraints are impacting delivery timelines. Consider reallocating tasks or adjusting milestones to keep commitments realistic.'
-    , (select id from public.projects where name = 'ALODOKTER' limit 1)
-    , false
-  )
-;
-
--- Targets for the seeded signals.
--- Each signal gets exactly one target row for simulation.
-insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
-select s.id, 'all', null, null from public.signals s where s.title = 'SPROUT - Deploy Delay';
-insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
-select s.id, 'role',
-  (select r.id from public.roles r where r.name = 'SQUAD LEAD' limit 1),
-  null
-from public.signals s where s.title = 'SPROUT - On-time Release';
-insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
-select s.id, 'all', null, null from public.signals s where s.title = 'SPROUT - Mentored Ownership';
-insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
-select s.id, 'employee',
-  null,
-  (select e.id from public.employees e where e.full_name = 'Angelina Kesya Christinatalia' limit 1)
-from public.signals s where s.title = 'SPROUT - Great Collaboration';
-insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
-select s.id, 'all', null, null from public.signals s where s.title = 'SPROUT - Better Reporting';
-
-insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
-select s.id, 'all', null, null from public.signals s where s.title = 'HI-FELLA - Requirement Volatility';
-insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
-select s.id, 'role',
-  (select r.id from public.roles r where r.name = 'SQUAD LEAD' limit 1),
-  null
-from public.signals s where s.title = 'HI-FELLA - Payment Edge Cases';
-insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
-select s.id, 'all', null, null from public.signals s where s.title = 'HI-FELLA - Customer Feedback Actioned';
-insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
-select s.id, 'employee',
-  null,
-  (select e.id from public.employees e where e.full_name = 'Vania Aribowo' limit 1)
-from public.signals s where s.title = 'HI-FELLA - Fast Stakeholder Updates';
-
-insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
-select s.id, 'all', null, null from public.signals s where s.title = 'KHONIC - Clean Backlog Grooming';
-insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
-select s.id, 'all', null, null from public.signals s where s.title = 'KHONIC - QA Regression Risk';
-insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
-select s.id, 'role',
-  (select r.id from public.roles r where r.name = 'STAFF' limit 1),
-  null
-from public.signals s where s.title = 'KHONIC - Cross-team Support';
-
-insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
-select s.id, 'all', null, null from public.signals s where s.title = 'SMARCO - Sprint Scope Creep';
-insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
-select s.id, 'role',
-  (select r.id from public.roles r where r.name = 'SQUAD LEAD' limit 1),
-  null
-from public.signals s where s.title = 'SMARCO - Test Coverage Gap';
-insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
-select s.id, 'employee',
-  null,
-  (select e.id from public.employees e where e.full_name = 'Teddy Adji Pangestu' limit 1)
-from public.signals s where s.title = 'SMARCO - Quick Bug Fix';
-
-insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
-select s.id, 'all', null, null from public.signals s where s.title = 'LABAMU SG - Strategy Clarity';
-insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
-select s.id, 'all', null, null from public.signals s where s.title = 'LABAMU SG - UX Improvement';
-insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
-select s.id, 'role',
-  (select r.id from public.roles r where r.name = 'SQUAD LEAD' limit 1),
-  null
-from public.signals s where s.title = 'LABAMU SG - Feature Delivery';
-insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
-select s.id, 'all', null, null from public.signals s where s.title = 'LABAMU SG - QA Bottleneck';
-insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
-select s.id, 'employee',
-  null,
-  (select e.id from public.employees e where e.full_name = 'Marcellus Denta Widyapramana' limit 1)
-from public.signals s where s.title = 'LABAMU SG - Reliable Support';

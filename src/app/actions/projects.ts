@@ -1,83 +1,63 @@
 "use server";
 
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth, currentUser, clerkClient } from "@clerk/nextjs/server";
 import { createClient } from "@/lib/supabase/server";
 
 import type { ActivityItem } from "@/lib/constants/activity";
-import type { Project } from "@/lib/types/project";
+import { analyzeSignalWithMockAI, clamp, type SignalIssueCategory } from "@/lib/signal-ai";
+import { Project, TeamMember } from "@/lib/types/project";
 
 type ProjectMetrics = {
 	health: number;
 	healthStatus: Project["healthStatus"];
+	pulseDescription: string;
 };
-
-function clamp(n: number, min: number, max: number) {
-	return Math.max(min, Math.min(max, n));
-}
-
-type SignalIssueCategory =
-	| "Burnout Alert"
-	| "Scope Creep"
-	| "Process Bottleneck"
-	| "Communication Gap"
-	| "Technical Debt"
-	| "Micro-management"
-	| "Professional Growth"
-	| "Office Environment"
-	| "others";
-
-function categorizeSignalSignalMock(rawText: string): SignalIssueCategory {
-	const text = rawText.toLowerCase();
-	if (/(burnout|overwork|exhaust|fatigue|stress)/.test(text)) return "Burnout Alert";
-	if (/(scope|requirement|rework|changing target|unclear target)/.test(text)) return "Scope Creep";
-	if (/(blocker|bottleneck|approval|slow process|dependency delay)/.test(text))
-		return "Process Bottleneck";
-	if (/(miscommunicat|communication|alignment|handoff|unclear brief)/.test(text))
-		return "Communication Gap";
-	if (/(tech debt|legacy|refactor|fragile code|workaround)/.test(text)) return "Technical Debt";
-	if (/(micromanage|micro-manage|too much control|no autonomy)/.test(text))
-		return "Micro-management";
-	if (/(mentorship|learning|growth|career|promotion|skill)/.test(text))
-		return "Professional Growth";
-	if (/(office|workspace|facility|noise|remote setup|environment)/.test(text))
-		return "Office Environment";
-	return "others";
-}
-
-function analyzeSignalWithMockAI(signal: {
-	category: string | null;
-	title?: string | null;
-	details?: string | null;
-}): { sentiment: number; issueCategory: SignalIssueCategory } {
-	const rawText = `${signal.title ?? ""} ${signal.details ?? ""}`;
-	const issueCategory = categorizeSignalSignalMock(rawText);
-
-	let baseSentiment = 50;
-	if (signal.category === "achievement") baseSentiment = 78;
-	if (signal.category === "appreciation") baseSentiment = 82;
-	if (signal.category === "concern") baseSentiment = 32;
-
-	const text = rawText.toLowerCase();
-	if (/(blocked|delay|risk|issue|problem|conflict|unclear|late)/.test(text)) baseSentiment -= 10;
-	if (/(resolved|improved|great|success|supportive|helpful|efficient)/.test(text))
-		baseSentiment += 10;
-	if (issueCategory === "Burnout Alert" || issueCategory === "Micro-management") baseSentiment -= 8;
-	if (issueCategory === "Professional Growth") baseSentiment += 8;
-
-	return { sentiment: Math.round(clamp(baseSentiment, 0, 100)), issueCategory };
-}
 
 function computeHealth(averageSentiment: number | null): ProjectMetrics {
 	const normalizedSentiment = Math.round(clamp(averageSentiment ?? 50, 0, 100));
 	let healthStatus: Project["healthStatus"];
-	if (normalizedSentiment >= 70) healthStatus = "Healthy";
-	else if (normalizedSentiment <= 40) healthStatus = "At Risk";
-	else healthStatus = "Stable";
+	let pulseDescription: string;
+
+	if (normalizedSentiment >= 75) {
+		healthStatus = "Healthy";
+		pulseDescription = "High psychological safety. Team is thriving and showing strong ownership.";
+	} else if (normalizedSentiment >= 50) {
+		healthStatus = "Stable";
+		pulseDescription = "Balanced team dynamics. Communication is steady but room for more proactive engagement.";
+	} else if (normalizedSentiment >= 35) {
+		healthStatus = "Stable"; // Still stable but on the edge
+		pulseDescription = "Sentiment is softening. Monitor for potential blockers or team fatigue.";
+	} else {
+		healthStatus = "At Risk";
+		pulseDescription = "Low psychological safety detected. Immediate attention to team concerns recommended.";
+	}
 
 	return {
 		health: normalizedSentiment,
 		healthStatus,
+		pulseDescription,
 	};
+}
+
+function isSignalIssueCategory(value: unknown): value is SignalIssueCategory {
+	return (
+		value === "Burnout Alert" ||
+		value === "Scope Creep" ||
+		value === "Process Bottleneck" ||
+		value === "Communication Gap" ||
+		value === "Technical Debt" ||
+		value === "Micro-management" ||
+		value === "Professional Growth" ||
+		value === "Office Environment" ||
+		value === "others"
+	);
+}
+
+/** Supabase may return an embedded relation as an object or a single-element array. */
+function embedOne<T>(row: unknown): T | null {
+	if (row == null) return null;
+	if (Array.isArray(row)) return (row[0] as T | undefined) ?? null;
+	return row as T;
 }
 
 async function getCurrentEmployeeId(
@@ -120,26 +100,90 @@ async function getCurrentEmployeeId(
 export async function getDashboardProjects(): Promise<Project[]> {
 	const supabase = await createClient();
 
+	const employeeId = await getCurrentEmployeeId(supabase);
+	if (!employeeId) return [];
+
+	const { data: membershipLinks } = await supabase
+		.from("employee_projects")
+		.select("project_id")
+		.eq("employee_id", employeeId);
+
+	const allowedProjectIds = new Set(
+		(membershipLinks ?? []).map(l => l.project_id).filter((id): id is string => Boolean(id)),
+	);
+	if (allowedProjectIds.size === 0) return [];
+
+	const projectIdList = [...allowedProjectIds];
+
 	const { data: projects, error: projectsError } = await supabase
 		.from("projects")
 		.select("id, name, description")
+		.in("id", projectIdList)
 		.order("name");
 
 	if (projectsError || !projects) return [];
 
-	// Build "team" from employees assigned to each project.
-	const { data: employees } = await supabase
-		.from("employees")
-		.select("project_id, email")
-		.order("email");
+	// Build "team" from employees assigned to each project (many-to-many), scoped to this user's projects.
+	const { data: projectLinks } = await supabase
+		.from("employee_projects")
+		.select(
+			`
+			project_id,
+			employees (
+				id,
+				email,
+				full_name,
+				job_position
+			)
+		`,
+		)
+		.in("project_id", projectIdList);
 
-	const teamByProjectId = new Map<string, string[]>();
-	for (const e of employees ?? []) {
-		if (!e.project_id || !e.email) continue;
-		const avatar = `https://i.pravatar.cc/150?u=${encodeURIComponent(e.email)}`;
-		const list = teamByProjectId.get(e.project_id) ?? [];
-		list.push(avatar);
-		teamByProjectId.set(e.project_id, Array.from(new Set(list)));
+	type Emb = {
+		id: string;
+		email: string | null;
+		full_name: string;
+		job_position: string;
+	};
+
+	const teamByProjectId = new Map<string, TeamMember[]>();
+	const allTeamEmails: string[] = [];
+	for (const row of projectLinks ?? []) {
+		const e = embedOne<Emb>(row.employees);
+		if (e?.email) allTeamEmails.push(e.email);
+	}
+	const teamEmailToAvatar = new Map<string, string | null>();
+
+	const uniqueTeamEmails = Array.from(new Set(allTeamEmails));
+	if (uniqueTeamEmails.length > 0) {
+		try {
+			const clerk = await clerkClient();
+			const { data: clerkUsers } = await clerk.users.getUserList({
+				emailAddress: uniqueTeamEmails,
+				limit: 100,
+			});
+			for (const u of clerkUsers) {
+				for (const em of u.emailAddresses) {
+					teamEmailToAvatar.set(em.emailAddress, u.imageUrl ?? null);
+				}
+			}
+		} catch (err) {
+			console.error("[dashboard] clerk error:", err);
+		}
+	}
+
+	for (const row of projectLinks ?? []) {
+		const e = embedOne<Emb>(row.employees);
+		if (!row.project_id || !e?.email) continue;
+		const avatar = teamEmailToAvatar.get(e.email) || null;
+		const list = teamByProjectId.get(row.project_id) ?? [];
+		list.push({
+			id: e.id,
+			name: e.full_name,
+			role: e.job_position,
+			avatar,
+		});
+		teamByProjectId.set(row.project_id, list);
 	}
 
 	// Signal metrics.
@@ -148,9 +192,13 @@ export async function getDashboardProjects(): Promise<Project[]> {
 		category: string | null;
 		title?: string | null;
 		details?: string | null;
+		sentiment_score?: number | null;
+		ai_issue_category?: SignalIssueCategory | null;
 	}[] = [];
 	try {
-		const { data } = await supabase.from("signals").select("project_id, category, title, details");
+		const { data } = await supabase
+			.from("signals")
+			.select("project_id, category, title, details, sentiment_score, ai_issue_category");
 		signals = data ?? [];
 	} catch {
 		// If signals table isn't present yet, still return projects.
@@ -170,7 +218,7 @@ export async function getDashboardProjects(): Promise<Project[]> {
 	>();
 
 	for (const s of signals) {
-		if (!s.project_id) continue; // general signals don't affect project metrics
+		if (!s.project_id || !allowedProjectIds.has(s.project_id)) continue;
 		const current = metricsByProjectId.get(s.project_id) ?? {
 			concernsCount: 0,
 			achievementsCount: 0,
@@ -194,10 +242,14 @@ export async function getDashboardProjects(): Promise<Project[]> {
 		if (s.category === "achievement") current.achievementsCount += 1;
 		if (s.category === "appreciation") current.kudosCount += 1;
 		const analyzed = analyzeSignalWithMockAI(s);
-		current.sentimentTotal += analyzed.sentiment;
+		const sentiment =
+			typeof s.sentiment_score === "number" ? s.sentiment_score : analyzed.sentiment;
+		const issueCategory = isSignalIssueCategory(s.ai_issue_category)
+			? s.ai_issue_category
+			: analyzed.issueCategory;
+		current.sentimentTotal += sentiment;
 		current.sentimentCount += 1;
-		current.issueCounts[analyzed.issueCategory] += 1;
-
+		current.issueCounts[issueCategory] += 1;
 		metricsByProjectId.set(s.project_id, current);
 	}
 
@@ -222,7 +274,6 @@ export async function getDashboardProjects(): Promise<Project[]> {
 				others: 0,
 			},
 		};
-
 		const averageSentiment =
 			metrics.sentimentCount > 0 ? metrics.sentimentTotal / metrics.sentimentCount : null;
 		const healthMetrics = computeHealth(averageSentiment);
@@ -233,6 +284,7 @@ export async function getDashboardProjects(): Promise<Project[]> {
 			team: teamByProjectId.get(p.id) ?? [],
 			health: healthMetrics.health,
 			healthStatus: healthMetrics.healthStatus,
+			pulseDescription: healthMetrics.pulseDescription,
 			concernsCount: metrics.concernsCount,
 			achievementsCount: metrics.achievementsCount,
 			kudosCount: metrics.kudosCount,
@@ -259,25 +311,74 @@ export async function getProjectDetail(projectId: string): Promise<{
 		return { project: null, activities: [] };
 	}
 
-	// 2) Team avatars from employees assigned to the project
-	const { data: employeeRows } = await supabase
-		.from("employees")
-		.select("email")
-		.eq("project_id", projectId)
-		.order("email");
+	// 2) Team members from employees assigned to the project
+	const { data: teamLinks } = await supabase
+		.from("employee_projects")
+		.select(
+			`
+			employees (
+				id,
+				full_name,
+				email,
+				job_position,
+				auth_id
+			)
+		`,
+		)
+		.eq("project_id", projectId);
 
-	const team: string[] = Array.from(
-		new Set(
-			(employeeRows ?? [])
-				.filter((e): e is { email: string } => Boolean(e?.email))
-				.map(e => `https://i.pravatar.cc/150?u=${encodeURIComponent(e.email)}`),
-		),
-	);
+	type EmbAuth = {
+		id: string;
+		full_name: string;
+		email: string | null;
+		job_position: string;
+		auth_id: string | null;
+	};
+
+	const employeeRows = (teamLinks ?? [])
+		.map(r => embedOne<EmbAuth>(r.employees))
+		.filter((e): e is EmbAuth => e != null)
+		.sort((a, b) => a.full_name.localeCompare(b.full_name));
+
+	const teamEmails = employeeRows.map(e => e.email).filter(Boolean) as string[];
+	const teamEmailToAvatar = new Map<string, string | null>();
+
+	if (teamEmails.length > 0) {
+		try {
+			const clerk = await clerkClient();
+			const { data: clerkUsers } = await clerk.users.getUserList({
+				emailAddress: teamEmails,
+				limit: 100,
+			});
+			console.log("[team] emails queried:", teamEmails);
+			console.log(
+				"[team] clerk users:",
+				clerkUsers.map(u => ({
+					imageUrl: u.imageUrl,
+					emails: u.emailAddresses.map(e => e.emailAddress),
+				})),
+			);
+			for (const u of clerkUsers) {
+				for (const em of u.emailAddresses) {
+					teamEmailToAvatar.set(em.emailAddress, u.imageUrl ?? null);
+				}
+			}
+		} catch (err) {
+			console.error("[team] clerk error:", err);
+		}
+	}
+
+	const team = employeeRows.map(e => ({
+		id: e.id,
+		name: e.full_name,
+		role: e.job_position,
+		avatar: (e.email ? teamEmailToAvatar.get(e.email) : null) || null,
+	}));
 
 	const { data: signals } = await supabase
 		.from("signals")
 		.select(
-			"id, project_id, author_employee_id, is_anonymous, category, title, details, created_at, is_public",
+			"id, project_id, author_employee_id, is_anonymous, category, title, details, created_at, is_public, sentiment_score, ai_issue_category",
 		)
 		.eq("project_id", projectId)
 		.order("created_at", { ascending: false });
@@ -300,20 +401,22 @@ export async function getProjectDetail(projectId: string): Promise<{
 		"Office Environment": 0,
 		others: 0,
 	};
-
 	for (const s of safeSignals) {
 		if (s.category === "concern") concernsCount += 1;
 		if (s.category === "achievement") achievementsCount += 1;
 		if (s.category === "appreciation") kudosCount += 1;
 		const analyzed = analyzeSignalWithMockAI(s);
-		sentimentTotal += analyzed.sentiment;
+		const sentiment =
+			typeof s.sentiment_score === "number" ? s.sentiment_score : analyzed.sentiment;
+		const issueCategory = isSignalIssueCategory(s.ai_issue_category)
+			? s.ai_issue_category
+			: analyzed.issueCategory;
+		sentimentTotal += sentiment;
 		sentimentCount += 1;
-		issueCounts[analyzed.issueCategory] += 1;
+		issueCounts[issueCategory] += 1;
 	}
-
 	const averageSentiment = sentimentCount > 0 ? sentimentTotal / sentimentCount : null;
 	const healthMetrics = computeHealth(averageSentiment);
-
 	const project: Project = {
 		id: projectRow.id,
 		name: projectRow.name,
@@ -321,17 +424,53 @@ export async function getProjectDetail(projectId: string): Promise<{
 		team,
 		health: healthMetrics.health,
 		healthStatus: healthMetrics.healthStatus,
+		pulseDescription: healthMetrics.pulseDescription,
 		concernsCount,
 		achievementsCount,
 		kudosCount,
 	};
 
-	// 4) Resolve author names/emails for timeline activity cards
+	// 4) Resolve author names + Clerk profile pictures for timeline activity cards
 	const authorIds = Array.from(new Set(safeSignals.map(s => s.author_employee_id).filter(Boolean)));
+	const signalIds = safeSignals.map(s => s.id);
+
+	// Collect ALL unique employee IDs that might need avatars (signal authors + reply authors)
+	let allAvatarEmployeeIds = [...authorIds];
+	let repliesData: { author_employee_id: string | null }[] = [];
+	if (signalIds.length > 0) {
+		const { data: replies } = await supabase
+			.from("signal_replies")
+			.select("author_employee_id")
+			.in("signal_id", signalIds);
+		repliesData = replies ?? [];
+		const replyAuthorIds = repliesData.map(r => r.author_employee_id).filter(Boolean);
+		allAvatarEmployeeIds = Array.from(new Set([...allAvatarEmployeeIds, ...replyAuthorIds]));
+	}
+
 	const { data: authors } = await supabase
 		.from("employees")
-		.select("id, full_name, email")
-		.in("id", authorIds);
+		.select("id, full_name, email, auth_id")
+		.in("id", allAvatarEmployeeIds);
+
+	// Build email → imageUrl map via Clerk for ALL identified authors
+	const emailToAvatar = new Map<string, string | null>();
+	const emails = (authors ?? []).map(a => a.email).filter(Boolean) as string[];
+	if (emails.length > 0) {
+		try {
+			const clerk = await clerkClient();
+			const { data: clerkUsers } = await clerk.users.getUserList({
+				emailAddress: emails,
+				limit: 100,
+			});
+			for (const u of clerkUsers) {
+				for (const em of u.emailAddresses) {
+					emailToAvatar.set(em.emailAddress, u.imageUrl ?? null);
+				}
+			}
+		} catch {
+			// Non-fatal
+		}
+	}
 
 	const authorById = new Map<string, { full_name: string; email: string }>();
 	for (const a of authors ?? []) {
@@ -339,7 +478,6 @@ export async function getProjectDetail(projectId: string): Promise<{
 		authorById.set(a.id, { full_name: a.full_name, email: a.email });
 	}
 
-	const signalIds = safeSignals.map(s => s.id);
 	const currentEmployeeId = await getCurrentEmployeeId(supabase);
 
 	let likesBySignal = new Map<string, number>();
@@ -391,8 +529,8 @@ export async function getProjectDetail(projectId: string): Promise<{
 
 			const replyAuthor = replyAuthorById.get(reply.author_employee_id);
 			const replyUserName = replyAuthor?.full_name ?? "Unknown";
-			const replyAvatarSeed = replyAuthor?.email ?? reply.author_employee_id;
-			const replyUserAvatar = `https://i.pravatar.cc/150?u=${encodeURIComponent(replyAvatarSeed)}`;
+			const replyUserAvatar =
+				(replyAuthor?.email ? emailToAvatar.get(replyAuthor.email) : null) || null;
 
 			const list = groupedReplies.get(reply.signal_id) ?? [];
 			list.push({
@@ -407,17 +545,17 @@ export async function getProjectDetail(projectId: string): Promise<{
 		}
 		repliesBySignal = groupedReplies;
 	}
-
 	const activities: ActivityItem[] = safeSignals.map(s => {
 		const activityType =
 			s.category === "concern" ? "concern" : s.category === "achievement" ? "achievement" : "kudos";
 
 		const author = authorById.get(s.author_employee_id);
 		const userName = s.is_anonymous ? "Anonymous" : (author?.full_name ?? "Unknown");
-		const userAvatarSeed = s.is_anonymous
-			? `anonymous-${s.id}`
-			: (author?.email ?? s.author_employee_id);
-		const userAvatar = `https://i.pravatar.cc/150?u=${encodeURIComponent(userAvatarSeed)}`;
+		const userAvatar = s.is_anonymous
+			? null
+			: author?.email
+				? emailToAvatar.get(author.email) || null
+				: null;
 
 		return {
 			id: s.id,

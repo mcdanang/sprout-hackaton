@@ -26,7 +26,7 @@ const navItems = [
 	{ href: "/dashboard/concerns", icon: ChatLines, label: "myConcern" },
 	// { href: "/dashboard/achievements", icon: Star, label: "myAchievement" },
 	// { href: "/dashboard/feedback", icon: ShieldCheck, label: "privateFeedback" },
-	// { href: "/dashboard/ai-assistant", icon: Flash, label: "aiAssistant" },
+	{ href: "/dashboard/ai-assistant", icon: Flash, label: "aiAssistant" },
 ];
 
 interface DashboardSidebarProps {

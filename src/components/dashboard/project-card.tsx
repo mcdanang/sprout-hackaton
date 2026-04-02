@@ -1,12 +1,13 @@
 "use client";
 
-import { useTranslations } from "next-intl";
-import { AlertCircle, Trophy, ArrowRight, Heart } from "lucide-react";
+import Image from "next/image";
+import { AlertCircle, Trophy, ArrowRight, Heart, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
 import Link from "next/link";
 import { Project } from "@/lib/types/project";
 import { healthStyles } from "@/lib/constants/project-ui";
+import { useTranslations } from "next-intl";
 
 interface ProjectCardProps {
 	project: Project;
@@ -37,12 +38,16 @@ export function ProjectCard({ project }: ProjectCardProps) {
 					</div>
 
 					<div className="flex -space-x-2">
-						{project.team.slice(0, 3).map((avatar, i) => (
+						{project.team.slice(0, 3).map((member, i) => (
 							<div
 								key={i}
-								className="h-8 w-8 rounded-full border-2 border-white overflow-hidden shadow-sm ring-1 ring-slate-100"
+								className="relative h-8 w-8 rounded-full border-2 border-white overflow-hidden shadow-sm ring-1 ring-slate-100 bg-slate-100 flex items-center justify-center"
 							>
-								<img src={avatar} alt="Team member" className="h-full w-full object-cover" />
+								{member.avatar ? (
+									<Image src={member.avatar} alt={member.name} fill className="object-cover" />
+								) : (
+									<User className="h-4 w-4 text-slate-400" />
+								)}
 							</div>
 						))}
 						{project.team.length > 3 && (
@@ -70,10 +75,18 @@ export function ProjectCard({ project }: ProjectCardProps) {
 							<span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400 transition-colors group-hover:text-slate-500">
 								Team Pulse
 							</span>
-							<span className="text-sm font-bold font-plus-jakarta text-slate-900">
+							<span className="text-sm font-bold font-plus-jakarta text-slate-900 flex items-center gap-2">
 								{project.healthStatus}
+								<span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 font-mono">
+									{project.health}%
+								</span>
 							</span>
 						</div>
+						<div className={cn(
+							"h-2 w-2 rounded-full animate-pulse-soft",
+							project.healthStatus === "Healthy" ? "bg-emerald-500" : 
+							project.healthStatus === "At Risk" ? "bg-red-500" : "bg-amber-500"
+						)} />
 					</div>
 					<Progress value={project.health} className="h-2 w-full overflow-hidden rounded-full">
 						<ProgressTrack className="h-full w-full bg-slate-50">

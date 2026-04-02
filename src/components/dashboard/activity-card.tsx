@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Heart, Clock, Lock } from "lucide-react";
+import { Heart, Clock, Lock, User, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type ActivityItem } from "@/lib/constants/activity";
 import { activityTypeStyles } from "@/lib/constants/project-ui";
 import { getRelativeTime } from "@/lib/utils/time";
+import { FormattedContent } from "@/components/shared/formatted-content";
 import { ReplyItem } from "./reply-item";
 import { ReplyInput } from "./reply-input";
 import { createSignalReply, toggleSignalLike } from "@/app/actions/signal-interactions";
@@ -80,8 +81,12 @@ export function ActivityCard({ activity, index, onReplyCreated }: Props) {
           {/* Header: avatar + name + timestamp */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="relative h-6 w-6 rounded-full overflow-hidden border border-slate-100/50 shrink-0 aspect-square">
-                <Image src={activity.userAvatar} alt={activity.userName} fill className="object-cover rounded-full" />
+              <div className="relative h-6 w-6 rounded-full overflow-hidden border border-slate-100/50 shrink-0 aspect-square bg-slate-100 flex items-center justify-center">
+                {activity.userAvatar ? (
+                  <Image src={activity.userAvatar} alt={activity.userName} fill className="object-cover rounded-full" />
+                ) : (
+                  <User className="h-3.5 w-3.5 text-slate-400" />
+                )}
               </div>
               <span className="font-plus-jakarta text-sm font-bold text-brand-primary">{activity.userName}</span>
             </div>
@@ -101,24 +106,10 @@ export function ActivityCard({ activity, index, onReplyCreated }: Props) {
             </div>
           </div>
 
-          {/* Content */}
-          <div className="font-plus-jakarta text-[15px] text-slate-600 leading-relaxed whitespace-pre-wrap">
-            {activity.content.split(/(@\[[^\]]+\]\([^)]+\))/g).map((part, i) => {
-              const match = part.match(/@\[([^\]]+)\]\(([^)]+)\)/);
-              if (match) {
-                const name = match[1];
-                return (
-                  <span
-                    key={i}
-                    className="inline-flex items-center bg-brand-primary/5 text-brand-primary px-1.5 py-0.5 rounded-lg font-bold text-[14px] leading-none mx-0.5 align-baseline -translate-y-px"
-                  >
-                    @{name}
-                  </span>
-                );
-              }
-              return part;
-            })}
-          </div>
+          <FormattedContent 
+            content={activity.content}
+            className="font-plus-jakarta text-[15px] text-slate-600 leading-relaxed whitespace-pre-wrap"
+          />
 
           {/* Like & Reply actions */}
           <div className="flex items-center gap-3 pt-1">
@@ -143,12 +134,16 @@ export function ActivityCard({ activity, index, onReplyCreated }: Props) {
               }}
               disabled={isLikeLoading}
             >
-              <Heart className={cn(
-                "h-3.5 w-3.5 transition-all",
-                isLiked
-                  ? "text-pink-500 fill-pink-500"
-                  : "text-slate-500 group-hover/like:text-pink-500 group-hover/like:fill-pink-500"
-              )} />
+              {isLikeLoading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-pink-500" />
+              ) : (
+                <Heart className={cn(
+                  "h-3.5 w-3.5 transition-all",
+                  isLiked
+                    ? "text-pink-500 fill-pink-500"
+                    : "text-slate-500 group-hover/like:text-pink-500 group-hover/like:fill-pink-500"
+                )} />
+              )}
               <span className={cn(
                 "font-plus-jakarta text-xs font-bold transition-colors",
                 isLiked
