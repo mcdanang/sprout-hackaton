@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { User } from "iconoir-react";
 import { cn } from "@/lib/utils";
 
 export type ProjectStatus = "active" | "completed" | "on-hold" | "planning";
@@ -37,19 +38,27 @@ export function ProjectCard({ project }: ProjectCardProps) {
         </span>
         
         <div className="flex -space-x-2">
-          {project.team.slice(0, 4).map((avatar, i) => (
-            <div key={i} className="relative h-8 w-8 rounded-full border-2 border-white overflow-hidden bg-slate-100">
-              <Image
-                src={avatar}
-                alt="Team member"
-                fill
-                className="object-cover"
-              />
-            </div>
-          ))}
-          {project.team.length > 4 && (
-            <div className="h-8 w-8 rounded-full border-2 border-white bg-slate-50 flex items-center justify-center text-[10px] font-bold text-slate-400">
-              +{project.team.length - 4}
+          {project.team.length > 0 ? (
+            <>
+              {project.team.slice(0, 4).map((avatar, i) => (
+                <div key={i} className="relative h-8 w-8 rounded-full border-2 border-white overflow-hidden bg-slate-100">
+                  <Image
+                    src={avatar}
+                    alt="Team member"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              ))}
+              {project.team.length > 4 && (
+                <div className="h-8 w-8 rounded-full border-2 border-white bg-slate-50 flex items-center justify-center text-[10px] font-bold text-slate-400">
+                  +{project.team.length - 4}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="h-8 w-8 rounded-full border-2 border-white bg-slate-50 flex items-center justify-center">
+              <User className="h-4 w-4 text-slate-300" />
             </div>
           )}
         </div>
