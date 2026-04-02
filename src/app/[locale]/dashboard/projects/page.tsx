@@ -10,6 +10,8 @@ const DUMMY_PROJECTS: Project[] = [
     name: "Internal API Platform",
     description: "Modernizing our internal gateway with high-performance edge computing and unified authentication.",
     status: "active",
+    health: 45,
+    healthStatus: "At Risk",
     team: [
       "https://i.pravatar.cc/150?u=1",
       "https://i.pravatar.cc/150?u=2",
@@ -23,6 +25,8 @@ const DUMMY_PROJECTS: Project[] = [
     name: "Security Audit 2026",
     description: "Comprehensive review of all data-at-rest and in-transit protocols for the upcoming compliance cycle.",
     status: "planning",
+    health: 90,
+    healthStatus: "Stable",
     team: [
       "https://i.pravatar.cc/150?u=10",
       "https://i.pravatar.cc/150?u=11",
@@ -33,6 +37,8 @@ const DUMMY_PROJECTS: Project[] = [
     name: "Dashboard UI Revamp",
     description: "Shifting our admin interface to a more fluid, component-based architecture with better accessibility.",
     status: "completed",
+    health: 100,
+    healthStatus: "Stable",
     team: [
       "https://i.pravatar.cc/150?u=20",
       "https://i.pravatar.cc/150?u=21",
@@ -44,6 +50,8 @@ const DUMMY_PROJECTS: Project[] = [
     name: "Cross-platform Mobile App",
     description: "Building the next-gen Signal mobile companion using React Native and shared business logic layers.",
     status: "on-hold",
+    health: 20,
+    healthStatus: "Critical",
     team: [
       "https://i.pravatar.cc/150?u=30",
       "https://i.pravatar.cc/150?u=31",

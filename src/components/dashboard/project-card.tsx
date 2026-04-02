@@ -3,8 +3,10 @@
 import Image from "next/image";
 import { User } from "iconoir-react";
 import { cn } from "@/lib/utils";
+import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
 
 export type ProjectStatus = "active" | "completed" | "on-hold" | "planning";
+export type ProjectHealthStatus = "Stable" | "At Risk" | "Critical";
 
 export interface Project {
   id: string;
@@ -12,6 +14,8 @@ export interface Project {
   description: string;
   status: ProjectStatus;
   team: string[]; // Array of avatar URLs
+  health: number; // 0-100
+  healthStatus: ProjectHealthStatus;
 }
 
 interface ProjectCardProps {
@@ -23,6 +27,12 @@ const statusStyles: Record<ProjectStatus, string> = {
   completed: "bg-blue-50 text-blue-700 border-blue-100",
   "on-hold": "bg-amber-50 text-amber-700 border-amber-100",
   planning: "bg-slate-50 text-slate-700 border-slate-100",
+};
+
+const healthStyles: Record<ProjectHealthStatus, string> = {
+  Stable: "bg-[#FFD300]", // Signal Brand Yellow
+  "At Risk": "bg-orange-500",
+  Critical: "bg-red-500",
 };
 
 export function ProjectCard({ project }: ProjectCardProps) {
@@ -65,13 +75,28 @@ export function ProjectCard({ project }: ProjectCardProps) {
       </div>
 
       {/* Content Section */}
-      <div className="space-y-2">
-        <h3 className="font-plus-jakarta text-lg font-bold text-brand-primary group-hover:text-dashboard-label transition-colors">
-          {project.name}
-        </h3>
-        <p className="font-plus-jakarta text-sm text-slate-500 leading-relaxed line-clamp-2">
-          {project.description}
-        </p>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <h3 className="font-plus-jakarta text-lg font-bold text-brand-primary group-hover:text-dashboard-label transition-colors">
+            {project.name}
+          </h3>
+          <p className="font-plus-jakarta text-sm text-slate-500 leading-relaxed line-clamp-2">
+            {project.description}
+          </p>
+        </div>
+
+        {/* Project Health Section */}
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center justify-between text-[13px] font-medium font-plus-jakarta">
+            <span className="text-slate-600">Project Health</span>
+            <span className="text-brand-primary">{project.healthStatus}</span>
+          </div>
+          <Progress value={project.health} className="flex-col gap-0 h-1.5">
+            <ProgressTrack className="h-full bg-slate-100">
+              <ProgressIndicator className={cn("h-full transition-all", healthStyles[project.healthStatus])} />
+            </ProgressTrack>
+          </Progress>
+        </div>
       </div>
 
       {/* Footer / Action */}
