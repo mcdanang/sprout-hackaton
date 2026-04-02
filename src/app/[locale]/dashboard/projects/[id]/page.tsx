@@ -60,7 +60,7 @@ export default function ProjectDetailPage() {
 
       {/* Hero Header Card with Rotating Border */}
       <div className="group relative rounded-[32px] p-[1.5px] overflow-hidden border border-slate-100">
-        <div className="absolute inset-[-100%] [background:conic-gradient(from_0deg,transparent_0_80%,#FFD300_100%)] [animation:border-rotate_8s_linear_infinite]" />
+        <div className="absolute -inset-full [background:conic-gradient(from_0deg,transparent_0_80%,#FFD300_100%)] animate-[border-rotate_8s_linear_infinite]" />
         
         <div className="relative z-10 bg-white rounded-[30.5px] p-8 md:p-12 space-y-6">
           <div className="flex flex-wrap items-center gap-4">
@@ -131,46 +131,43 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      {/* Main Content: Squad & Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Squad Hub */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="font-plus-jakarta text-xl font-bold text-brand-primary">{t("squad")}</h2>
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{project.team.length} Members</span>
-          </div>
-          
-          <div className="bg-slate-50/50 rounded-[24px] p-6 border border-slate-100 space-y-4">
-            <div className="flex flex-col gap-4">
-              {project.team.map((avatar, i) => (
-                <div key={i} className="flex items-center gap-3 group">
-                  <div className="relative h-10 w-10 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0">
-                    <Image src={avatar} alt="Squad member" fill className="object-cover" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-brand-primary truncate group-hover:text-dashboard-label transition-colors">
-                      Member #{i + 1}
-                    </p>
-                    <p className="text-[11px] text-slate-500 font-medium">Core Contributor</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* Squad Overview Section */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <h2 className="font-plus-jakarta text-xl font-bold text-brand-primary">{t("squad")}</h2>
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">{project.team.length} Members Collaborating</span>
         </div>
+        
+        <div className="flex overflow-x-auto gap-4 pb-4 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+          {project.team.map((avatar, i) => (
+            <div key={i} className="flex flex-col items-center gap-3 bg-white rounded-[24px] p-6 border border-slate-100 min-w-[160px] text-center hover:shadow-md transition-all group">
+              <div className="relative h-16 w-16 rounded-full overflow-hidden border-2 border-white shadow-md">
+                <Image src={avatar} alt="Squad member" fill className="object-cover group-hover:scale-110 transition-transform" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-brand-primary truncate w-full">
+                  Member #{i + 1}
+                </p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Contributor</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
-        {/* Activity Feed / Detailed Info */}
-        <div className="lg:col-span-2 space-y-6">
-          <h2 className="font-plus-jakarta text-xl font-bold text-brand-primary">{t("activity")}</h2>
-          
-          <div className="bg-white rounded-[24px] p-8 border border-slate-100 shadow-sm min-h-[300px] flex flex-col items-center justify-center text-center space-y-4">
-            <div className="p-4 rounded-full bg-slate-50 text-slate-300">
-              <User className="h-8 w-8" />
-            </div>
-            <div className="space-y-1">
-              <p className="font-plus-jakarta text-slate-500 font-medium">{t("noActivity")}</p>
-              <p className="text-sm text-slate-400">Activity monitoring for {project.name} is active.</p>
-            </div>
+      {/* Main Activity Hub: Full Width */}
+      <div className="space-y-6">
+        <h2 className="font-plus-jakarta text-xl font-bold text-brand-primary">{t("activity")}</h2>
+        
+        <div className="bg-white rounded-[32px] p-12 border border-slate-100 shadow-sm min-h-[400px] flex flex-col items-center justify-center text-center space-y-6 w-full">
+          <div className="p-6 rounded-full bg-slate-50 text-slate-300">
+            <User className="h-12 w-12" />
+          </div>
+          <div className="space-y-2 max-w-md">
+            <p className="font-plus-jakarta text-xl text-slate-600 font-bold">{t("noActivity")}</p>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              Monitoring all ownership signals and tactical updates for <span className="font-bold text-brand-primary font-plus-jakarta">{project.name}</span>. Activity will appear automatically here as signals are submitted.
+            </p>
           </div>
         </div>
       </div>

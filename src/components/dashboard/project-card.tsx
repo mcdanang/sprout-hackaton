@@ -43,18 +43,18 @@ export function ProjectCard({ project }: ProjectCardProps) {
   return (
     <Link 
       href={`/dashboard/projects/${project.id}`}
-      className="group relative bg-white rounded-[24px] p-[1.5px] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col cursor-pointer overflow-hidden border border-slate-100 hover:border-transparent h-full"
+      className="group relative flex h-full flex-col cursor-pointer overflow-hidden rounded-[24px] border border-slate-100 bg-white p-[1.5px] shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-transparent hover:shadow-xl"
     >
       {/* Moving Border Background (only visible on hover) */}
-      <div className="absolute inset-[-100%] opacity-0 group-hover:opacity-100 transition-opacity duration-500 [background:conic-gradient(from_0deg,transparent_0_80%,#FFD300_100%)] [animation:border-rotate_4s_linear_infinite]" />
+      <div className="absolute -inset-full animate-[border-rotate_4s_linear_infinite] opacity-0 transition-opacity duration-500 [background:conic-gradient(from_0deg,transparent_0_80%,#FFD300_100%)] group-hover:opacity-100" />
       
       {/* Inner Mask/Content Wrapper */}
-      <div className="relative z-10 bg-white rounded-[22.5px] p-6 h-full flex flex-col gap-6 w-full">
+      <div className="relative z-10 flex h-full w-full flex-col gap-6 rounded-[22.5px] bg-white p-6">
         {/* Top Section: Status & Team */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className={cn(
-              "px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border",
+              "rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wider",
               statusStyles[project.status]
             )}>
               {project.status.replace("-", " ")}
