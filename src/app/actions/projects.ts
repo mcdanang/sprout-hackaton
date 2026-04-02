@@ -7,9 +7,6 @@ import type { ActivityItem } from "@/lib/constants/activity";
 import type { Project } from "@/lib/types/project";
 
 type ProjectMetrics = {
-	concernsCount: number;
-	achievementsCount: number;
-	kudosCount: number;
 	health: number;
 	healthStatus: Project["healthStatus"];
 };
@@ -18,24 +15,67 @@ function clamp(n: number, min: number, max: number) {
 	return Math.max(min, Math.min(max, n));
 }
 
-function computeHealth(concernsCount: number, achievementsCount: number): ProjectMetrics {
-	const diff = achievementsCount - concernsCount;
+type SignalIssueCategory =
+	| "Burnout Alert"
+	| "Scope Creep"
+	| "Process Bottleneck"
+	| "Communication Gap"
+	| "Technical Debt"
+	| "Micro-management"
+	| "Professional Growth"
+	| "Office Environment"
+	| "others";
+
+function categorizeSignalSignalMock(rawText: string): SignalIssueCategory {
+	const text = rawText.toLowerCase();
+	if (/(burnout|overwork|exhaust|fatigue|stress)/.test(text)) return "Burnout Alert";
+	if (/(scope|requirement|rework|changing target|unclear target)/.test(text)) return "Scope Creep";
+	if (/(blocker|bottleneck|approval|slow process|dependency delay)/.test(text))
+		return "Process Bottleneck";
+	if (/(miscommunicat|communication|alignment|handoff|unclear brief)/.test(text))
+		return "Communication Gap";
+	if (/(tech debt|legacy|refactor|fragile code|workaround)/.test(text)) return "Technical Debt";
+	if (/(micromanage|micro-manage|too much control|no autonomy)/.test(text))
+		return "Micro-management";
+	if (/(mentorship|learning|growth|career|promotion|skill)/.test(text))
+		return "Professional Growth";
+	if (/(office|workspace|facility|noise|remote setup|environment)/.test(text))
+		return "Office Environment";
+	return "others";
+}
+
+function analyzeSignalWithMockAI(signal: {
+	category: string | null;
+	title?: string | null;
+	details?: string | null;
+}): { sentiment: number; issueCategory: SignalIssueCategory } {
+	const rawText = `${signal.title ?? ""} ${signal.details ?? ""}`;
+	const issueCategory = categorizeSignalSignalMock(rawText);
+
+	let baseSentiment = 50;
+	if (signal.category === "achievement") baseSentiment = 78;
+	if (signal.category === "appreciation") baseSentiment = 82;
+	if (signal.category === "concern") baseSentiment = 32;
+
+	const text = rawText.toLowerCase();
+	if (/(blocked|delay|risk|issue|problem|conflict|unclear|late)/.test(text)) baseSentiment -= 10;
+	if (/(resolved|improved|great|success|supportive|helpful|efficient)/.test(text))
+		baseSentiment += 10;
+	if (issueCategory === "Burnout Alert" || issueCategory === "Micro-management") baseSentiment -= 8;
+	if (issueCategory === "Professional Growth") baseSentiment += 8;
+
+	return { sentiment: Math.round(clamp(baseSentiment, 0, 100)), issueCategory };
+}
+
+function computeHealth(averageSentiment: number | null): ProjectMetrics {
+	const normalizedSentiment = Math.round(clamp(averageSentiment ?? 50, 0, 100));
 	let healthStatus: Project["healthStatus"];
-	if (diff >= 4) healthStatus = "Healthy";
-	else if (diff <= -4) healthStatus = "At Risk";
+	if (normalizedSentiment >= 70) healthStatus = "Healthy";
+	else if (normalizedSentiment <= 40) healthStatus = "At Risk";
 	else healthStatus = "Stable";
 
-	// Simple deterministic health score for the progress bar.
-	let health: number;
-	if (healthStatus === "Healthy") health = clamp(65 + diff * 4, 0, 100);
-	else if (healthStatus === "At Risk") health = clamp(35 + diff * 4, 0, 100);
-	else health = 50 + clamp(diff * 2, -15, 15);
-
 	return {
-		concernsCount,
-		achievementsCount,
-		kudosCount: 0, // set later
-		health: Math.round(clamp(health, 0, 100)),
+		health: normalizedSentiment,
 		healthStatus,
 	};
 }
@@ -103,9 +143,14 @@ export async function getDashboardProjects(): Promise<Project[]> {
 	}
 
 	// Signal metrics.
-	let signals: { project_id: string | null; category: string }[] = [];
+	let signals: {
+		project_id: string | null;
+		category: string | null;
+		title?: string | null;
+		details?: string | null;
+	}[] = [];
 	try {
-		const { data } = await supabase.from("signals").select("project_id, category");
+		const { data } = await supabase.from("signals").select("project_id, category, title, details");
 		signals = data ?? [];
 	} catch {
 		// If signals table isn't present yet, still return projects.
@@ -114,7 +159,14 @@ export async function getDashboardProjects(): Promise<Project[]> {
 
 	const metricsByProjectId = new Map<
 		string,
-		{ concernsCount: number; achievementsCount: number; kudosCount: number }
+		{
+			concernsCount: number;
+			achievementsCount: number;
+			kudosCount: number;
+			sentimentTotal: number;
+			sentimentCount: number;
+			issueCounts: Record<SignalIssueCategory, number>;
+		}
 	>();
 
 	for (const s of signals) {
@@ -123,11 +175,28 @@ export async function getDashboardProjects(): Promise<Project[]> {
 			concernsCount: 0,
 			achievementsCount: 0,
 			kudosCount: 0,
+			sentimentTotal: 0,
+			sentimentCount: 0,
+			issueCounts: {
+				"Burnout Alert": 0,
+				"Scope Creep": 0,
+				"Process Bottleneck": 0,
+				"Communication Gap": 0,
+				"Technical Debt": 0,
+				"Micro-management": 0,
+				"Professional Growth": 0,
+				"Office Environment": 0,
+				others: 0,
+			},
 		};
 
 		if (s.category === "concern") current.concernsCount += 1;
 		if (s.category === "achievement") current.achievementsCount += 1;
 		if (s.category === "appreciation") current.kudosCount += 1;
+		const analyzed = analyzeSignalWithMockAI(s);
+		current.sentimentTotal += analyzed.sentiment;
+		current.sentimentCount += 1;
+		current.issueCounts[analyzed.issueCategory] += 1;
 
 		metricsByProjectId.set(s.project_id, current);
 	}
@@ -139,9 +208,24 @@ export async function getDashboardProjects(): Promise<Project[]> {
 			concernsCount: 0,
 			achievementsCount: 0,
 			kudosCount: 0,
+			sentimentTotal: 0,
+			sentimentCount: 0,
+			issueCounts: {
+				"Burnout Alert": 0,
+				"Scope Creep": 0,
+				"Process Bottleneck": 0,
+				"Communication Gap": 0,
+				"Technical Debt": 0,
+				"Micro-management": 0,
+				"Professional Growth": 0,
+				"Office Environment": 0,
+				others: 0,
+			},
 		};
 
-		const healthMetrics = computeHealth(metrics.concernsCount, metrics.achievementsCount);
+		const averageSentiment =
+			metrics.sentimentCount > 0 ? metrics.sentimentTotal / metrics.sentimentCount : null;
+		const healthMetrics = computeHealth(averageSentiment);
 		return {
 			id: p.id,
 			name: p.name,
@@ -203,14 +287,32 @@ export async function getProjectDetail(projectId: string): Promise<{
 	let concernsCount = 0;
 	let achievementsCount = 0;
 	let kudosCount = 0;
+	let sentimentTotal = 0;
+	let sentimentCount = 0;
+	const issueCounts: Record<SignalIssueCategory, number> = {
+		"Burnout Alert": 0,
+		"Scope Creep": 0,
+		"Process Bottleneck": 0,
+		"Communication Gap": 0,
+		"Technical Debt": 0,
+		"Micro-management": 0,
+		"Professional Growth": 0,
+		"Office Environment": 0,
+		others: 0,
+	};
 
 	for (const s of safeSignals) {
 		if (s.category === "concern") concernsCount += 1;
 		if (s.category === "achievement") achievementsCount += 1;
 		if (s.category === "appreciation") kudosCount += 1;
+		const analyzed = analyzeSignalWithMockAI(s);
+		sentimentTotal += analyzed.sentiment;
+		sentimentCount += 1;
+		issueCounts[analyzed.issueCategory] += 1;
 	}
 
-	const healthMetrics = computeHealth(concernsCount, achievementsCount);
+	const averageSentiment = sentimentCount > 0 ? sentimentTotal / sentimentCount : null;
+	const healthMetrics = computeHealth(averageSentiment);
 
 	const project: Project = {
 		id: projectRow.id,
