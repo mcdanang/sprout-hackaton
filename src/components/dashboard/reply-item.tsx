@@ -2,6 +2,7 @@ import Image from "next/image";
 import { User } from "lucide-react";
 import type { ReplyItem as ReplyItemType } from "@/lib/constants/activity";
 import { getRelativeTime } from "@/lib/utils/time";
+import { FormattedContent } from "@/components/shared/formatted-content";
 
 interface Props {
   reply: ReplyItemType;
@@ -38,9 +39,10 @@ export function ReplyItem({ reply }: Props) {
               {getRelativeTime(reply.timestamp)}
             </span>
           </div>
-          <p className="font-plus-jakarta text-[14px] text-slate-600 leading-snug">
-            {reply.content}
-          </p>
+          <FormattedContent
+            content={reply.content}
+            className="font-plus-jakarta text-[14px] text-slate-600 leading-snug"
+          />
         </div>
       </div>
     </div>

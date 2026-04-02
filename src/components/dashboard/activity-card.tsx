@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { type ActivityItem } from "@/lib/constants/activity";
 import { activityTypeStyles } from "@/lib/constants/project-ui";
 import { getRelativeTime } from "@/lib/utils/time";
+import { FormattedContent } from "@/components/shared/formatted-content";
 import { ReplyItem } from "./reply-item";
 import { ReplyInput } from "./reply-input";
 import { createSignalReply, toggleSignalLike } from "@/app/actions/signal-interactions";
@@ -105,24 +106,10 @@ export function ActivityCard({ activity, index, onReplyCreated }: Props) {
             </div>
           </div>
 
-          {/* Content */}
-          <div className="font-plus-jakarta text-[15px] text-slate-600 leading-relaxed whitespace-pre-wrap">
-            {activity.content.split(/(@\[[^\]]+\]\([^)]+\))/g).map((part, i) => {
-              const match = part.match(/@\[([^\]]+)\]\(([^)]+)\)/);
-              if (match) {
-                const name = match[1];
-                return (
-                  <span
-                    key={i}
-                    className="inline-flex items-center justify-center bg-brand-primary/10 text-brand-primary text-sm font-bold rounded-full px-2 pt-1 pb-0.5 mx-0.5 select-none align-middle translate-y-px"
-                  >
-                    @{name}
-                  </span>
-                );
-              }
-              return part;
-            })}
-          </div>
+          <FormattedContent 
+            content={activity.content}
+            className="font-plus-jakarta text-[15px] text-slate-600 leading-relaxed whitespace-pre-wrap"
+          />
 
           {/* Like & Reply actions */}
           <div className="flex items-center gap-3 pt-1">

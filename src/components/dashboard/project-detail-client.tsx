@@ -12,7 +12,7 @@ import type { Project } from "@/lib/types/project";
 import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
 import { healthStyles } from "@/lib/constants/project-ui";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
-import { SignalModal } from "@/components/dashboard/signal-modal";
+import { SignalModal } from "@/components/shared/signal-modal";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
