@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { ChatLines, Plus, Xmark } from "iconoir-react";
-import { AlertCircle, CheckCircle2, Clock, User } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCircle2, Clock, User } from "lucide-react";
 
 import { createConcern } from "@/app/actions/concerns";
 import { initialConcernActionState, type MyConcernItem } from "@/app/actions/concerns.types";
@@ -13,6 +13,7 @@ import { SIGNAL_ISSUE_CATEGORIES } from "@/lib/signal-ai";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { FormattedContent } from "@/components/shared/formatted-content";
 
 type Props = {
 	initialConcerns: MyConcernItem[];
@@ -38,23 +39,23 @@ function StatusBadge({ status }: { status: MyConcernItem["status"] }) {
 	const t = useTranslations("Dashboard.concerns");
 	if (status === "closed") {
 		return (
-			<span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800">
-				<CheckCircle2 className="mr-1 size-3.5" />
+			<span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-600 shadow-sm ring-1 ring-emerald-100">
+				<CheckCircle2 className="size-3.5" />
 				{t("statusClosed")}
 			</span>
 		);
 	}
 	if (status === "in_progress") {
 		return (
-			<span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900">
-				<Clock className="mr-1 size-3.5" />
+			<span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-600 shadow-sm ring-1 ring-amber-100">
+				<Clock className="size-3.5" />
 				{t("statusInProgress")}
 			</span>
 		);
 	}
 	return (
-		<span className="inline-flex items-center rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-800">
-			<AlertCircle className="mr-1 size-3.5" />
+		<span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-rose-600 shadow-sm ring-1 ring-rose-100">
+			<AlertCircle className="size-3.5" />
 			{t("statusOpen")}
 		</span>
 	);
@@ -66,67 +67,90 @@ function ConcernCard({ item }: { item: MyConcernItem }) {
 	const [open, setOpen] = useState(false);
 
 	return (
-		<article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-				<div className="flex flex-wrap items-center gap-2">
-					<span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-						{item.issueCategory}
-					</span>
-					<span className="text-sm text-slate-600">{item.targetLabel}</span>
+		<article className="group relative bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-1 overflow-hidden">
+			{/* Background Glow Effect on Hover */}
+			<div className="absolute -inset-1 bg-linear-to-r from-brand-primary/0 via-brand-primary/5 to-brand-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-2xl pointer-events-none" />
+
+			{/* Rotating Border on Hover */}
+			<div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+				<div className="absolute -inset-full [background:conic-gradient(from_0deg,transparent_0_80%,#FFD300_100%)] animate-[border-rotate_4s_linear_infinite]" />
+				<div className="absolute inset-px bg-white rounded-[31px]" />
+			</div>
+
+			<div className="relative z-10">
+				<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+					<div className="flex flex-wrap items-center gap-2">
+						<span className="rounded-full bg-slate-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-500 ring-1 ring-slate-100 group-hover:bg-brand-primary/5 group-hover:text-brand-primary transition-colors">
+							{item.issueCategory}
+						</span>
+						<span className="text-[12px] font-bold font-plus-jakarta text-slate-400 group-hover:text-slate-500 transition-colors">
+							{item.targetLabel}
+						</span>
+					</div>
+					<StatusBadge status={item.status} />
 				</div>
-				<StatusBadge status={item.status} />
-			</div>
 
-			<p className="mt-4 text-[15px] leading-relaxed text-slate-900">{item.details}</p>
+				<FormattedContent
+					content={item.details}
+					className="mt-6 font-plus-jakarta text-[16px] leading-relaxed text-slate-700 group-hover:text-slate-900 transition-colors"
+				/>
 
-			<div className="mt-3 flex items-center gap-1.5 text-sm text-slate-500">
-				<Clock className="size-4 shrink-0" />
-				<time dateTime={item.createdAt}>{formatDate(item.createdAt, locale)}</time>
-				{item.isAnonymous ? (
-					<span className="ml-2 rounded-md bg-amber-50 px-2 py-0.5 text-xs text-amber-900">
-						{t("submittedAnonymous")}
-					</span>
-				) : null}
-			</div>
+				<div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-50 pt-6 group-hover:border-slate-100 transition-colors">
+					<div className="flex items-center gap-2 text-sm text-slate-400 group-hover:text-slate-500 transition-colors font-medium">
+						<Clock className="size-4 shrink-0 transition-transform group-hover:scale-110" />
+						<time dateTime={item.createdAt}>{formatDate(item.createdAt, locale)}</time>
+					</div>
 
-			{item.replies.length > 0 ? (
-				<div className="mt-4 border-t border-slate-100 pt-4">
-					<button
-						type="button"
-						onClick={() => setOpen(o => !o)}
-						className="flex w-full items-center gap-2 text-left text-sm font-medium text-slate-800 hover:text-slate-950"
-					>
-						<User className="size-4 shrink-0 text-slate-500" />
-						{t("repliesCount", { count: item.replies.length })}
-					</button>
-					{open ? (
-						<ul className="mt-3 space-y-3">
-							{item.replies.map(r => (
-								<li
-									key={r.id}
-									className="rounded-xl border border-amber-100 bg-amber-50/60 p-4 text-sm leading-relaxed text-slate-800"
-								>
-									<div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-										<span className="font-semibold text-slate-900">
-											{r.authorName}
-											{r.roleName ? (
-												<span className="font-normal text-slate-600">
-													{" "}
-													({formatReplyRole(r.roleName)})
-												</span>
-											) : null}
-										</span>
-										<time className="text-xs text-slate-500" dateTime={r.createdAt}>
-											{formatDate(r.createdAt, locale)}
-										</time>
-									</div>
-									<p>{r.content}</p>
-								</li>
-							))}
-						</ul>
+					{item.isAnonymous ? (
+						<div className="flex items-center gap-1.5 rounded-full bg-amber-50/50 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-600 ring-1 ring-amber-100/50 transition-colors group-hover:bg-amber-50 group-hover:text-amber-700 group-hover:ring-amber-200">
+							<User className="size-3.5 fill-amber-600/10" />
+							{t("submittedAnonymous")}
+						</div>
 					) : null}
 				</div>
-			) : null}
+
+				{item.replies.length > 0 ? (
+					<div className="mt-6 rounded-2xl bg-slate-50/50 p-1 group-hover:bg-slate-50 transition-colors">
+						<button
+							type="button"
+							onClick={() => setOpen(o => !o)}
+							className="flex w-full items-center justify-between gap-2 rounded-xl px-4 py-3 text-left text-sm font-bold text-slate-700 transition-all hover:bg-white hover:shadow-sm"
+						>
+							<div className="flex items-center gap-2">
+								<ChatLines className="size-4 shrink-0 text-brand-primary" />
+								<span>{t("repliesCount", { count: item.replies.length })}</span>
+							</div>
+							<ArrowRight className={cn("size-4 transition-transform duration-300", open && "rotate-90")} />
+						</button>
+						{open ? (
+							<ul className="mt-1 space-y-2 p-1">
+								{item.replies.map(r => (
+									<li
+										key={r.id}
+										className="rounded-xl border border-slate-100 bg-white p-4 text-sm leading-relaxed text-slate-700 shadow-sm"
+									>
+										<div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+											<span className="font-bold text-brand-primary">
+												{r.authorName}
+												{r.roleName ? (
+													<span className="ml-1.5 font-plus-jakarta text-[11px] font-bold uppercase tracking-wider text-slate-400">
+														{formatReplyRole(r.roleName)}
+													</span>
+												) : null}
+											</span>
+											<div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
+												<Clock className="size-3" />
+												<time dateTime={r.createdAt}>{formatDate(r.createdAt, locale)}</time>
+											</div>
+										</div>
+										<FormattedContent content={r.content} className="text-slate-600" />
+									</li>
+								))}
+							</ul>
+						) : null}
+					</div>
+				) : null}
+			</div>
 		</article>
 	);
 }
