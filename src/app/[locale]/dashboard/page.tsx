@@ -34,11 +34,11 @@ export default function DashboardPage() {
         
         <div className="space-y-8">
           <p className="font-plus-jakarta text-[32px] md:text-[40px] font-medium leading-tight tracking-tight text-brand-primary">
-            &ldquo;{t("quote.text")}&rdquo;
+           {t("quote.text")}
           </p>
-          
+              <Quote className="h-10 w-10 text-text-primary mb-8" />
           <div className="flex items-center gap-3">
-            <div className="h-[2px] w-8 text-primary" />
+            <div className="h-[2px] w-8 bg-primary" />
             <span className="font-plus-jakarta text-[14px] font-bold tracking-[1.5px] uppercase text-[#3F484A]">
               {t("quote.author")}
             </span>
