@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { User } from "lucide-react";
 import type { ReplyItem as ReplyItemType } from "@/lib/constants/activity";
 import { getRelativeTime } from "@/lib/utils/time";
 
@@ -11,8 +12,12 @@ export function ReplyItem({ reply }: Props) {
     <div className="relative flex items-start gap-3 pl-10 animate-in fade-in slide-in-from-left-3 duration-500">
       {/* Avatar + horizontal branch connector */}
       <div className="shrink-0 relative z-10">
-        <div className="relative h-8 w-8 rounded-full overflow-hidden ring-2 ring-white shadow-sm aspect-square">
-          <Image src={reply.userAvatar} alt={reply.userName} fill className="object-cover" />
+        <div className="relative h-8 w-8 rounded-full overflow-hidden ring-2 ring-white shadow-sm aspect-square bg-slate-100 flex items-center justify-center">
+          {reply.userAvatar ? (
+            <Image src={reply.userAvatar} alt={reply.userName} fill className="object-cover" />
+          ) : (
+            <User className="h-4 w-4 text-slate-400" />
+          )}
         </div>
         <div className="absolute -left-6 top-4 w-6 h-px bg-slate-100" />
       </div>

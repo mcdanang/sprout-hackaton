@@ -14,6 +14,15 @@ import { healthStyles } from "@/lib/constants/project-ui";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { SignalModal } from "@/components/dashboard/signal-modal";
 
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  avatar: string;
+}
+
 interface Props {
 	project: Project;
 	activities: ActivityItem[];
@@ -24,14 +33,23 @@ export function ProjectDetailClient({ project, activities }: Props) {
 	const t = useTranslations("ProjectDetail");
 	const [scrolled, setScrolled] = useState(false);
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [isMounted, setIsMounted] = useState(false);
 	const sentinelRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		const observer = new IntersectionObserver(([entry]) => setScrolled(!entry.isIntersecting), {
-			threshold: 0,
-		});
+		// Use setTimeout to defer state update and avoid "cascading render" lint error
+		// while still fixing hydration mismatch for Tooltips
+		const timeout = setTimeout(() => setIsMounted(true), 0);
+		
+		const observer = new IntersectionObserver(
+			([entry]) => setScrolled(!entry.isIntersecting),
+			{ threshold: 0 },
+		);
 		if (sentinelRef.current) observer.observe(sentinelRef.current);
-		return () => observer.disconnect();
+		return () => {
+			clearTimeout(timeout);
+			observer.disconnect();
+		};
 	}, []);
 
 	return (
@@ -84,20 +102,26 @@ export function ProjectDetailClient({ project, activities }: Props) {
 								{project.team.length} Members Collaborating
 							</span>
 							<div className="flex -space-x-3">
-								{project.team.map((avatar: string, i: number) => (
-									<div
-										key={i}
-										className="relative h-12 w-12 rounded-full border-4 border-white shadow-sm overflow-hidden bg-slate-50 transition-transform hover:scale-110 hover:z-20 cursor-pointer"
-									>
-										<Image src={avatar} alt="Squad member" fill className="object-cover" />
-									</div>
+								{project.team.map((member) => (
+									isMounted ? (
+										<Tooltip key={member.id}>
+											<TooltipTrigger>
+												<div className="relative h-12 w-12 rounded-full border-4 border-white shadow-sm overflow-hidden bg-slate-100 flex items-center justify-center transition-transform hover:scale-110 hover:z-20 cursor-pointer">
+													<Image src={member.avatar} alt={member.name} fill className="object-cover" />
+												</div>
+											</TooltipTrigger>
+											<TooltipContent side="top" className="flex flex-col gap-0.5 px-3 py-2 bg-brand-primary text-white border-none rounded-xl shadow-lg">
+												<p className="text-[13px] font-bold font-plus-jakarta leading-tight">{member.name}</p>
+												<p className="text-[10px] font-medium text-white/70 uppercase tracking-wider">{member.role}</p>
+											</TooltipContent>
+										</Tooltip>
+									) : (
+										<div key={member.id} className="relative h-12 w-12 rounded-full border-4 border-white shadow-sm overflow-hidden bg-slate-100 flex items-center justify-center">
+											<Image src={member.avatar} alt={member.name} fill className="object-cover" />
+										</div>
+									)
 								))}
 							</div>
-						</div>
-						<div className="hidden md:block">
-							<button className="px-5 py-2.5 rounded-2xl bg-brand-primary/5 text-brand-primary font-plus-jakarta text-sm font-bold hover:bg-brand-primary hover:text-white transition-all">
-								Manage Squad
-							</button>
 						</div>
 					</div>
 				</div>

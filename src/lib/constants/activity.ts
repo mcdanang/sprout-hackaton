@@ -2,7 +2,7 @@ export interface ReplyItem {
 	id: string;
 	userId: string;
 	userName: string;
-	userAvatar: string;
+	userAvatar: string | null;
 	content: string;
 	timestamp: string; // ISO string
 }
@@ -12,7 +12,7 @@ export interface ActivityItem {
 	projectId: string;
 	userId: string;
 	userName: string;
-	userAvatar: string;
+	userAvatar: string | null;
 	type: "concern" | "achievement" | "kudos" | "status";
 	content: string;
 	timestamp: string; // ISO string

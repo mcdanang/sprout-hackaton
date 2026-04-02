@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Heart, Clock, Lock } from "lucide-react";
+import { Heart, Clock, Lock, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type ActivityItem } from "@/lib/constants/activity";
 import { activityTypeStyles } from "@/lib/constants/project-ui";
@@ -80,8 +80,12 @@ export function ActivityCard({ activity, index, onReplyCreated }: Props) {
           {/* Header: avatar + name + timestamp */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="relative h-6 w-6 rounded-full overflow-hidden border border-slate-100/50 shrink-0 aspect-square">
-                <Image src={activity.userAvatar} alt={activity.userName} fill className="object-cover rounded-full" />
+              <div className="relative h-6 w-6 rounded-full overflow-hidden border border-slate-100/50 shrink-0 aspect-square bg-slate-100 flex items-center justify-center">
+                {activity.userAvatar ? (
+                  <Image src={activity.userAvatar} alt={activity.userName} fill className="object-cover rounded-full" />
+                ) : (
+                  <User className="h-3.5 w-3.5 text-slate-400" />
+                )}
               </div>
               <span className="font-plus-jakarta text-sm font-bold text-brand-primary">{activity.userName}</span>
             </div>
