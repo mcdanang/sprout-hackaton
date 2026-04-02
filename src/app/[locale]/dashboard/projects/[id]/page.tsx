@@ -146,7 +146,7 @@ export default function ProjectDetailPage() {
             <p className="text-3xl font-bold font-plus-jakarta text-brand-primary group-hover:text-pink-600 transition-colors">{project.kudosCount}</p>
           </div>
           <div className="p-3 rounded-2xl bg-pink-50 text-pink-500 group-hover:bg-pink-500 group-hover:text-white transition-all">
-            <Heart className="h-6 w-6 fill-current" />
+            <Heart className="h-6 w-6 fill-pink-500/10" />
           </div>
         </div>
       </div>
