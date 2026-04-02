@@ -162,11 +162,35 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
+      {/* Squad Overview Section - MOVED UP */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <h2 className="font-plus-jakarta text-xl font-bold text-brand-primary">{t("squad")}</h2>
+          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-widest">{project.team.length} Members Collaborating</span>
+        </div>
+        
+        <div className="flex overflow-x-auto gap-4 pb-4 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+          {project.team.map((avatar, i) => (
+            <div key={i} className="flex flex-col items-center gap-3 bg-white rounded-[24px] p-6 border border-slate-100 min-w-[160px] text-center hover:shadow-md transition-all group">
+              <div className="relative h-16 w-16 rounded-full overflow-hidden border-2 border-white shadow-md">
+                <Image src={avatar} alt="Squad member" fill className="object-cover group-hover:scale-110 transition-transform" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-brand-primary truncate w-full">
+                  Member #{i + 1}
+                </p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Contributor</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Main Activity Hub: Dynamic List */}
       <div className="space-y-6">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <h2 className="font-plus-jakarta text-xl font-bold text-brand-primary">{t("activity")}</h2>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Historical Signal Timeline</span>
+          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-widest">Historical Signal Timeline</span>
         </div>
         
         {projectActivities.length > 0 ? (
@@ -222,30 +246,6 @@ export default function ProjectDetailPage() {
             </div>
           </div>
         )}
-      </div>
-
-      {/* Squad Overview Section */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-          <h2 className="font-plus-jakarta text-xl font-bold text-brand-primary">{t("squad")}</h2>
-          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-widest">{project.team.length} Members Collaborating</span>
-        </div>
-        
-        <div className="flex overflow-x-auto gap-4 pb-4 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
-          {project.team.map((avatar, i) => (
-            <div key={i} className="flex flex-col items-center gap-3 bg-white rounded-[24px] p-6 border border-slate-100 min-w-[160px] text-center hover:shadow-md transition-all group">
-              <div className="relative h-16 w-16 rounded-full overflow-hidden border-2 border-white shadow-md">
-                <Image src={avatar} alt="Squad member" fill className="object-cover group-hover:scale-110 transition-transform" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-bold text-brand-primary truncate w-full">
-                  Member #{i + 1}
-                </p>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Contributor</p>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
