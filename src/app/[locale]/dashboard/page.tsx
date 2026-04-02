@@ -34,7 +34,7 @@ export default function DashboardPage() {
         
         <div className="space-y-8">
           <p className="font-plus-jakarta text-[32px] md:text-[40px] font-medium leading-tight tracking-tight text-[#191C1D]">
-            "{t("quote.text")}"
+            &ldquo;{t("quote.text")}&rdquo;
           </p>
           
           <div className="flex items-center gap-3">
