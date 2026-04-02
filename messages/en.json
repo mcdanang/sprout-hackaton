@@ -75,5 +75,15 @@
     "label": "Team Projects",
     "title": "Ongoing Projects",
     "subtitle": "Track and manage your team's tactical and strategic ownership initiatives."
+  },
+  "ProjectDetail": {
+    "back": "Back to Projects",
+    "overview": "Project Overview",
+    "squad": "Squad Hub",
+    "activity": "Activity Feed",
+    "noActivity": "No recent activity recorded.",
+    "healthLabel": "Team Pulse",
+    "concernsLabel": "Active Concerns",
+    "achievementsLabel": "Key Achievements"
   }
 }

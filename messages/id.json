@@ -75,5 +75,15 @@
     "label": "Proyek Tim",
     "title": "Proyek Berjalan",
     "subtitle": "Pantau dan kelola inisiatif kepemilikan taktis dan strategis tim Anda."
+  },
+  "ProjectDetail": {
+    "back": "Kembali ke Proyek",
+    "overview": "Ikhtisar Proyek",
+    "squad": "Pusat Squad",
+    "activity": "Aktivitas Terbaru",
+    "noActivity": "Belum ada aktivitas terbaru yang tercatat.",
+    "healthLabel": "Denyut Tim",
+    "concernsLabel": "Masalah Aktif",
+    "achievementsLabel": "Pencapaian Utama"
   }
 }
