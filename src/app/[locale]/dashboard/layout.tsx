@@ -20,11 +20,13 @@ export default async function DashboardLayout({
   return (
     <div className="flex min-h-screen flex-col bg-muted/20">
       {/* Dashboard Header */}
-      <header className="sticky top-0 z-30 flex h-16 items-center border-b bg-background px-6 shadow-xs">
+      <header className="sticky top-0 z-30 flex h-16 items-center border-b bg-background/80 backdrop-blur-md px-6 shadow-sm">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-2 font-bold text-primary">
-            <Signal className="h-5 w-5" />
-            <span>Sprout</span>
+          <Link href="/dashboard" className="flex items-center gap-2 font-bold text-black dark:text-white">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FFD300] text-black shadow-sm">
+              <Signal className="h-5 w-5" />
+            </div>
+            <span className="tracking-tight">Signal</span>
           </Link>
           <div className="flex items-center gap-4">
             <LanguageSwitcher />

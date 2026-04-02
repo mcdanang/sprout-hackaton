@@ -6,8 +6,8 @@ import { useTransition } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
- * Premium Language Switcher
- * Redesigned to match the pill-style toggle reference with brand yellow (#FFD300).
+ * Premium Language Switcher (Alignment Fixed)
+ * Perfectly centered slots for ID and EN with a sliding brand-yellow indicator.
  */
 export function LanguageSwitcher() {
   const [isPending, startTransition] = useTransition();
@@ -28,25 +28,33 @@ export function LanguageSwitcher() {
         onClick={handleToggle}
         disabled={isPending}
         className={cn(
-          "relative flex h-10 w-22 items-center rounded-full bg-[#FFD300] p-1 shadow-[inset_0_1px_4px_rgba(0,0,0,0.1)] transition-all hover:brightness-105 active:scale-95 disabled:opacity-50 cursor-pointer overflow-hidden",
+          "relative flex h-8 w-24 items-center rounded-full bg-muted/30 p-1 transition-all hover:bg-muted/50 active:scale-95 disabled:opacity-50 cursor-pointer overflow-hidden border border-border/40 shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)]",
         )}
         aria-label="Toggle language"
       >
-        {/* Background Labels (Static) */}
-        {/* We use a dark mustard/gold color for the label on the yellow background as seen in the reference */}
-        <div className="absolute inset-0 flex items-center justify-between px-4 text-[13px] font-extrabold tracking-tighter text-[#A67C00]">
-          <span className="w-6 text-center">ID</span>
-          <span className="w-6 text-center">EN</span>
-        </div>
-
-        {/* Sliding White Thumb with Active Label */}
+        {/* Sliding Indicator */}
+        {/* Width is 50% of parent minus padding */}
         <div
           className={cn(
-            "z-10 flex h-8 w-11 items-center justify-center rounded-full bg-white text-[13px] font-extrabold text-[#111] shadow-[0_2px_8px_rgba(0,0,0,0.15)] transition-all duration-300 ease-in-out",
-            locale === 'en' ? "translate-x-9" : "translate-x-0"
+            "absolute h-6 w-[calc(50%-4px)] rounded-full bg-[#FFD300] shadow-sm transition-all duration-300 ease-in-out",
+            locale === 'en' ? "translate-x-full" : "translate-x-0"
           )}
-        >
-          {locale.toUpperCase()}
+        />
+
+        {/* Labels Layer */}
+        <div className="relative z-10 flex w-full items-center text-[10px] font-black uppercase tracking-widest">
+          <span className={cn(
+            "flex-1 text-center transition-colors duration-300", 
+            locale === 'id' ? "text-black" : "text-muted-foreground/60"
+          )}>
+            ID
+          </span>
+          <span className={cn(
+            "flex-1 text-center transition-colors duration-300",
+            locale === 'en' ? "text-black" : "text-muted-foreground/60"
+          )}>
+            EN
+          </span>
         </div>
       </button>
     </div>

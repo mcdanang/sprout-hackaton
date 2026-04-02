@@ -14,9 +14,11 @@ export default function PublicLayout({
   return (
     <div className="flex min-h-screen flex-col">
       <header className="flex justify-between items-center p-4 h-16 border-b bg-background/80 backdrop-blur-md sticky top-0 z-50">
-        <Link href="/" className="flex items-center gap-2 font-bold text-primary">
-          <Signal className="h-5 w-5" />
-          <span>Sprout</span>
+        <Link href="/" className="flex items-center gap-2 font-bold text-black dark:text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FFD300] text-black shadow-sm">
+            <Signal className="h-5 w-5" />
+          </div>
+          <span className="tracking-tight">Signal</span>
         </Link>
         <div className="flex items-center gap-4">
           <LanguageSwitcher />

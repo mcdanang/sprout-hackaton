@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sprout Ownership Platform",
+  title: "Signal Ownership Platform",
   description:
     "A safe internal platform for speaking up and recognizing positive ownership.",
 };
