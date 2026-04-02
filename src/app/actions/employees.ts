@@ -30,8 +30,8 @@ async function resolveIdByName(params: {
 export async function getEmployees(filters?: EmployeesListFilters) {
 	const supabase = await createClient();
 
-	let organizationId = filters?.organizationId;
-	let roleId = filters?.roleId;
+	let organizationId: string | null | undefined = filters?.organizationId;
+	let roleId: string | null | undefined = filters?.roleId;
 
 	if (!organizationId && filters?.organizationName) {
 		organizationId = await resolveIdByName({

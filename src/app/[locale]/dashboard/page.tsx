@@ -36,7 +36,7 @@ export default function DashboardPage() {
           <p className="font-plus-jakarta text-[32px] md:text-[40px] font-medium leading-tight tracking-tight text-brand-primary">
            {t("quote.text")}
           </p>
-              <Quote className="h-10 w-10 text-text-primary mb-8" />
+          <Quote className="h-10 w-10 text-text-primary mb-8" />
           <div className="flex items-center gap-3">
             <div className="h-[2px] w-8 bg-primary" />
             <span className="font-plus-jakarta text-[14px] font-bold tracking-[1.5px] uppercase text-[#3F484A]">
