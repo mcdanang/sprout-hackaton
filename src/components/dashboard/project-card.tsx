@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { User } from "iconoir-react";
-import { AlertCircle, TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { User, AlertCircle, TrendingUp, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
 
@@ -40,15 +40,21 @@ const healthStyles: Record<ProjectHealthStatus, string> = {
 
 export function ProjectCard({ project }: ProjectCardProps) {
   return (
-    <div className="group relative bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col gap-6">
+    <Link 
+      href={`/dashboard/projects/${project.id}`}
+      className="group relative bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand-primary/20 transition-all duration-300 flex flex-col gap-6 cursor-pointer"
+    >
       {/* Top Section: Status & Team */}
       <div className="flex items-center justify-between">
-        <span className={cn(
-          "px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border",
-          statusStyles[project.status]
-        )}>
-          {project.status.replace("-", " ")}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className={cn(
+            "px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border",
+            statusStyles[project.status]
+          )}>
+            {project.status.replace("-", " ")}
+          </span>
+          <ArrowRight className="h-4 w-4 text-slate-300 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+        </div>
         
         <div className="flex -space-x-2">
           {project.team.length > 0 ? (
@@ -123,13 +129,6 @@ export function ProjectCard({ project }: ProjectCardProps) {
           </div>
         </div>
       </div>
-
-      {/* Footer / Action */}
-      <div className="mt-auto pt-4 border-t border-slate-50">
-        <button className="text-[13px] font-bold text-brand-primary hover:underline underline-offset-4">
-          View Details →
-        </button>
-      </div>
-    </div>
+    </Link>
   );
 }
