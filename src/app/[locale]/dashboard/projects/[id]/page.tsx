@@ -3,10 +3,11 @@
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { ArrowLeft, AlertCircle, Trophy, User, Share2, Heart } from "lucide-react";
+import { ArrowLeft, AlertCircle, Trophy, User, Share2, Heart, Clock, MessageSquare, Star, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
 import { DUMMY_PROJECTS } from "@/lib/constants/projects";
+import { DUMMY_ACTIVITIES, type ActivityItem } from "@/lib/constants/activity";
 
 const statusStyles: Record<string, string> = {
   Planning: "bg-slate-50 text-slate-700 border-slate-100",
@@ -22,12 +23,22 @@ const healthStyles: Record<string, string> = {
   "At Risk": "bg-red-500",
 };
 
+const activityTypeStyles: Record<ActivityItem["type"], { icon: any, color: string, bgColor: string }> = {
+  achievement: { icon: Trophy, color: "text-emerald-500", bgColor: "bg-emerald-50" },
+  concern: { icon: AlertCircle, color: "text-red-500", bgColor: "bg-red-50" },
+  kudos: { icon: Heart, color: "text-pink-500", bgColor: "bg-pink-50" },
+  status: { icon: Zap, color: "text-blue-500", bgColor: "bg-blue-50" },
+};
+
 export default function ProjectDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const t = useTranslations("ProjectDetail");
   
   const project = DUMMY_PROJECTS.find(p => p.id === id);
+  const projectActivities = DUMMY_ACTIVITIES.filter(a => a.projectId === id).sort((a, b) => 
+    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
 
   if (!project) {
     return (
@@ -151,6 +162,68 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
+      {/* Main Activity Hub: Dynamic List */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <h2 className="font-plus-jakarta text-xl font-bold text-brand-primary">{t("activity")}</h2>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Historical Signal Timeline</span>
+        </div>
+        
+        {projectActivities.length > 0 ? (
+          <div className="space-y-4">
+            {projectActivities.map((activity) => {
+              const Style = activityTypeStyles[activity.type];
+              const Icon = Style.icon;
+              return (
+                <div key={activity.id} className="group relative bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-brand-primary/10">
+                  <div className="flex gap-5">
+                    <div className="shrink-0">
+                      <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", Style.bgColor, Style.color)}>
+                        <Icon className="h-6 w-6" />
+                      </div>
+                    </div>
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="relative h-6 w-6 rounded-full overflow-hidden border border-slate-100">
+                            <Image src={activity.userAvatar} alt={activity.userName} fill className="object-cover" />
+                          </div>
+                          <span className="font-plus-jakarta text-sm font-bold text-brand-primary">{activity.userName}</span>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 py-0.5 bg-slate-50 rounded-full border border-slate-100">
+                            {activity.type}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-slate-400">
+                          <Clock className="h-3 w-3" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider">
+                            {new Date(activity.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="font-plus-jakarta text-[15px] text-slate-600 leading-relaxed">
+                        {activity.content}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="bg-white rounded-[32px] p-20 border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center space-y-6 w-full">
+            <div className="p-6 rounded-full bg-slate-50 text-slate-300">
+              <Zap className="h-12 w-12" />
+            </div>
+            <div className="space-y-2 max-w-sm">
+              <p className="font-plus-jakarta text-xl text-slate-600 font-bold">{t("noActivity")}</p>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Looking for new signals! Ownership updates and tactical insights for <span className="font-bold text-brand-primary font-plus-jakarta">{project.name}</span> will appear in this timeline.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Squad Overview Section */}
       <div className="space-y-6">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -172,23 +245,6 @@ export default function ProjectDetailPage() {
               </div>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* Main Activity Hub: Full Width */}
-      <div className="space-y-6">
-        <h2 className="font-plus-jakarta text-xl font-bold text-brand-primary">{t("activity")}</h2>
-        
-        <div className="bg-white rounded-[32px] p-12 border border-slate-100 shadow-sm min-h-[400px] flex flex-col items-center justify-center text-center space-y-6 w-full">
-          <div className="p-6 rounded-full bg-slate-50 text-slate-300">
-            <User className="h-12 w-12" />
-          </div>
-          <div className="space-y-2 max-w-md">
-            <p className="font-plus-jakarta text-xl text-slate-600 font-bold">{t("noActivity")}</p>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              Monitoring all ownership signals and tactical updates for <span className="font-bold text-brand-primary font-plus-jakarta">{project.name}</span>. Activity will appear automatically here as signals are submitted.
-            </p>
-          </div>
         </div>
       </div>
     </div>
