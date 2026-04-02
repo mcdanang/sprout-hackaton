@@ -22,8 +22,13 @@
     }
   },
   "Dashboard": {
-    "title": "Ownership Center",
-    "description": "Foster a culture of responsibility and recognition by sharing ownership signals with your team.",
+    "title": "Team Dashboard",
+    "welcome": "Welcome back, {name}",
+    "subtitle": "Your personal sanctuary for team clarity, focus, and connection.",
+    "quote": {
+      "text": "Psychological safety is the bridge between individual talent and collective genius.",
+      "author": "SIGNAL SANCTUARY AI"
+    },
     "overview": "Overview",
     "nav": {
       "dashboard": "Dashboard",
