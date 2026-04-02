@@ -93,9 +93,30 @@ export async function getDashboardProjects(): Promise<Project[]> {
 		.order("email");
  
 	const teamByProjectId = new Map<string, TeamMember[]>();
+	const allTeamEmails = (employees ?? []).map(e => e.email).filter(Boolean) as string[];
+	const teamEmailToAvatar = new Map<string, string | null>();
+
+	if (allTeamEmails.length > 0) {
+		try {
+			const clerk = await clerkClient();
+			const { data: clerkUsers } = await clerk.users.getUserList({
+				emailAddress: allTeamEmails,
+				limit: 100,
+			});
+			for (const u of clerkUsers) {
+				for (const em of u.emailAddresses) {
+					teamEmailToAvatar.set(em.emailAddress, u.imageUrl ?? null);
+				}
+			}
+		} catch (err) {
+			console.error("[dashboard] clerk error:", err);
+		}
+	}
+
 	for (const e of employees ?? []) {
 		if (!e.project_id || !e.email) continue;
-		const avatar = `https://i.pravatar.cc/150?u=${encodeURIComponent(e.email)}`;
+		const avatar =
+			teamEmailToAvatar.get(e.email) || null;
 		const list = teamByProjectId.get(e.project_id) ?? [];
 		list.push({
 			id: e.id,
@@ -246,8 +267,9 @@ export async function getProjectDetail(projectId: string): Promise<{
 			console.log("[team] emails queried:", teamEmails);
 			console.log("[team] clerk users:", clerkUsers.map(u => ({ imageUrl: u.imageUrl, emails: u.emailAddresses.map(e => e.emailAddress) })));
 			for (const u of clerkUsers) {
-				const primary = u.emailAddresses.find(e => e.id === u.primaryEmailAddressId)?.emailAddress;
-				if (primary) teamEmailToAvatar.set(primary, u.imageUrl ?? null);
+				for (const em of u.emailAddresses) {
+					teamEmailToAvatar.set(em.emailAddress, u.imageUrl ?? null);
+				}
 			}
 		} catch (err) {
 			console.error("[team] clerk error:", err);
@@ -258,7 +280,7 @@ export async function getProjectDetail(projectId: string): Promise<{
 		id: e.id,
 		name: e.full_name,
 		role: e.job_position,
-		avatar: teamEmailToAvatar.get(e.email) || `https://i.pravatar.cc/150?u=${encodeURIComponent(e.email)}`,
+		avatar: teamEmailToAvatar.get(e.email) || null,
 	}));
  
 	const { data: signals } = await supabase
@@ -316,12 +338,27 @@ export async function getProjectDetail(projectId: string): Promise<{
  
 	// 4) Resolve author names + Clerk profile pictures for timeline activity cards
 	const authorIds = Array.from(new Set(safeSignals.map(s => s.author_employee_id).filter(Boolean)));
+	const signalIds = safeSignals.map(s => s.id);
+	
+	// Collect ALL unique employee IDs that might need avatars (signal authors + reply authors)
+	let allAvatarEmployeeIds = [...authorIds];
+	let repliesData: { author_employee_id: string | null }[] = [];
+	if (signalIds.length > 0) {
+		const { data: replies } = await supabase
+			.from("signal_replies")
+			.select("author_employee_id")
+			.in("signal_id", signalIds);
+		repliesData = replies ?? [];
+		const replyAuthorIds = repliesData.map(r => r.author_employee_id).filter(Boolean);
+		allAvatarEmployeeIds = Array.from(new Set([...allAvatarEmployeeIds, ...replyAuthorIds]));
+	}
+
 	const { data: authors } = await supabase
 		.from("employees")
 		.select("id, full_name, email, auth_id")
-		.in("id", authorIds);
- 
-	// Build email → imageUrl map via Clerk
+		.in("id", allAvatarEmployeeIds);
+
+	// Build email → imageUrl map via Clerk for ALL identified authors
 	const emailToAvatar = new Map<string, string | null>();
 	const emails = (authors ?? []).map(a => a.email).filter(Boolean) as string[];
 	if (emails.length > 0) {
@@ -329,20 +366,21 @@ export async function getProjectDetail(projectId: string): Promise<{
 			const clerk = await clerkClient();
 			const { data: clerkUsers } = await clerk.users.getUserList({ emailAddress: emails, limit: 100 });
 			for (const u of clerkUsers) {
-				const primaryEmail = u.emailAddresses.find(e => e.id === u.primaryEmailAddressId)?.emailAddress;
-				if (primaryEmail) emailToAvatar.set(primaryEmail, u.imageUrl ?? null);
+				for (const em of u.emailAddresses) {
+					emailToAvatar.set(em.emailAddress, u.imageUrl ?? null);
+				}
 			}
 		} catch {
 			// Non-fatal
 		}
 	}
- 
+
 	const authorById = new Map<string, { full_name: string; email: string }>();
 	for (const a of authors ?? []) {
 		if (!a?.id) continue;
 		authorById.set(a.id, { full_name: a.full_name, email: a.email });
 	}
-	const signalIds = safeSignals.map(s => s.id);
+
 	const currentEmployeeId = await getCurrentEmployeeId(supabase);
 
 	let likesBySignal = new Map<string, number>();
@@ -394,8 +432,8 @@ export async function getProjectDetail(projectId: string): Promise<{
 
 			const replyAuthor = replyAuthorById.get(reply.author_employee_id);
 			const replyUserName = replyAuthor?.full_name ?? "Unknown";
-			const replyAvatarSeed = replyAuthor?.email ?? reply.author_employee_id;
-			const replyUserAvatar = `https://i.pravatar.cc/150?u=${encodeURIComponent(replyAvatarSeed)}`;
+			const replyUserAvatar =
+				(replyAuthor?.email ? emailToAvatar.get(replyAuthor.email) : null) || null;
 
 			const list = groupedReplies.get(reply.signal_id) ?? [];
 			list.push({
@@ -417,8 +455,8 @@ export async function getProjectDetail(projectId: string): Promise<{
 		const author = authorById.get(s.author_employee_id);
 		const userName = s.is_anonymous ? "Anonymous" : (author?.full_name ?? "Unknown");
 		const userAvatar = s.is_anonymous
-			? `https://i.pravatar.cc/150?u=anon-${s.id}`
-			: (author?.email ? (emailToAvatar.get(author.email) || `https://i.pravatar.cc/150?u=${encodeURIComponent(author.email)}`) : `https://i.pravatar.cc/150?u=${encodeURIComponent(s.author_employee_id)}`);
+			? null
+			: (author?.email ? (emailToAvatar.get(author.email) || null) : null);
  
 		return {
 			id: s.id,

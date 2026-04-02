@@ -114,7 +114,7 @@ export function ActivityCard({ activity, index, onReplyCreated }: Props) {
                 return (
                   <span
                     key={i}
-                    className="inline-flex items-center bg-brand-primary/5 text-brand-primary px-1.5 py-0.5 rounded-lg font-bold text-[14px] leading-none mx-0.5 align-baseline -translate-y-px"
+                    className="inline-flex items-center justify-center bg-brand-primary/10 text-brand-primary text-sm font-bold rounded-full px-2 pt-1 pb-0.5 mx-0.5 select-none align-middle translate-y-px"
                   >
                     @{name}
                   </span>

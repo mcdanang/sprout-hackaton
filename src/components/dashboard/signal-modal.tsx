@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
-import Image from "next/image";
-import { AlertCircle, Trophy, Heart, Send, Loader2, X, Lock } from "lucide-react";
+import { AlertCircle, Trophy, Heart, Send, Loader2, X, Lock, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useActionState } from "react";
 import { createSignal } from "@/app/actions/signals";
@@ -115,7 +114,7 @@ function SignalModalContent({ projectName, projectId, onClose }: Omit<Props, "is
     getEmployees({ projectId, onlyActive: true }).then((res) => {
       if (res.status === "success") setProjectEmployees(res.employees);
     });
-  }, []);
+  }, [projectId]);
 
   // Handle action result
   useEffect(() => {
@@ -207,8 +206,8 @@ function SignalModalContent({ projectName, projectId, onClose }: Omit<Props, "is
     chip.dataset.name = emp.fullName;
     chip.contentEditable = "false";
     chip.className =
-      "inline-flex items-center bg-brand-primary/10 text-brand-primary text-sm font-bold rounded-full px-2 py-0.5 mx-0.5 select-none";
-    chip.textContent = `@${emp.fullName}`;
+      "inline-flex items-center justify-center bg-brand-primary/10 text-brand-primary text-sm font-bold rounded-full px-2 pt-1 pb-0.5 mx-0.5 select-none align-middle translate-y-px";
+    chip.textContent = `${emp.fullName}`;
     range.insertNode(chip);
 
     // Place cursor right after the chip with a non-breaking space
@@ -372,13 +371,8 @@ function SignalModalContent({ projectName, projectId, onClose }: Omit<Props, "is
                       }}
                       className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-left"
                     >
-                      <div className="relative h-7 w-7 shrink-0">
-                        <Image
-                          src={`https://i.pravatar.cc/150?u=${encodeURIComponent(emp.email)}`}
-                          fill
-                          className="rounded-full object-cover shadow-sm"
-                          alt={emp.fullName}
-                        />
+                      <div className="relative h-7 w-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0 border border-slate-100/50 text-slate-400">
+                        <User className="h-4 w-4" />
                       </div>
                       <div>
                         <p className="font-plus-jakarta text-[13px] font-bold text-brand-primary">

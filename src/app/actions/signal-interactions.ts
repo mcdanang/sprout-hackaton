@@ -138,7 +138,7 @@ export async function createSignalReply(params: { signalId: string; content: str
 	replyId: string;
 	userId: string;
 	userName: string;
-	userAvatar: string;
+	userAvatar: string | null;
 	content: string;
 	timestamp: string;
 }> {
@@ -195,8 +195,8 @@ export async function createSignalReply(params: { signalId: string; content: str
 		.maybeSingle();
 
 	const userName = author?.full_name ?? "Unknown";
-	const avatarSeed = author?.email ?? createdReply.author_employee_id;
-	const userAvatar = `https://i.pravatar.cc/150?u=${encodeURIComponent(avatarSeed)}`;
+	const user = await currentUser();
+	const userAvatar = user?.imageUrl ?? null;
 
 	return {
 		replyId: createdReply.id,

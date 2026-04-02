@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { ArrowLeft, AlertCircle, Trophy, Heart, Plus } from "lucide-react";
+import { ArrowLeft, AlertCircle, Trophy, Heart, Plus, User } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { ActivityItem } from "@/lib/constants/activity";
@@ -106,8 +106,12 @@ export function ProjectDetailClient({ project, activities }: Props) {
 									isMounted ? (
 										<Tooltip key={member.id}>
 											<TooltipTrigger>
-												<div className="relative h-12 w-12 rounded-full border-4 border-white shadow-sm overflow-hidden bg-slate-100 flex items-center justify-center transition-transform hover:scale-110 hover:z-20 cursor-pointer">
-													<Image src={member.avatar} alt={member.name} fill className="object-cover" />
+												<div className="relative h-12 w-12 rounded-full border-4 border-white shadow-sm overflow-hidden bg-slate-100 flex items-center justify-center transition-transform hover:scale-110 hover:z-20 cursor-pointer text-slate-400">
+													{member.avatar ? (
+														<Image src={member.avatar} alt={member.name} fill className="object-cover" />
+													) : (
+														<User className="h-6 w-6" />
+													)}
 												</div>
 											</TooltipTrigger>
 											<TooltipContent side="top" className="flex flex-col gap-0.5 px-3 py-2 bg-brand-primary text-white border-none rounded-xl shadow-lg">
@@ -116,8 +120,12 @@ export function ProjectDetailClient({ project, activities }: Props) {
 											</TooltipContent>
 										</Tooltip>
 									) : (
-										<div key={member.id} className="relative h-12 w-12 rounded-full border-4 border-white shadow-sm overflow-hidden bg-slate-100 flex items-center justify-center">
-											<Image src={member.avatar} alt={member.name} fill className="object-cover" />
+										<div key={member.id} className="relative h-12 w-12 rounded-full border-4 border-white shadow-sm overflow-hidden bg-slate-100 flex items-center justify-center text-slate-400">
+											{member.avatar ? (
+												<Image src={member.avatar} alt={member.name} fill className="object-cover" />
+											) : (
+												<User className="h-6 w-6" />
+											)}
 										</div>
 									)
 								))}
