@@ -1,31 +1,60 @@
 import { Flash } from "iconoir-react";
-import { useTranslations } from "next-intl";
+import { getAiInsights } from "@/app/actions/ai-insights";
+import { AiInsightCards } from "@/components/dashboard/ai-insight-cards";
+import { AiChat } from "@/components/dashboard/ai-chat";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentEmployee } from "@/lib/get-current-employee";
 
-export default function AiAssistantPage() {
-  const t = useTranslations("Dashboard.nav");
+async function buildChatContext(): Promise<string> {
+  const employee = await getCurrentEmployee();
+  if (!employee) return "No data available.";
+
+  const supabase = await createClient();
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: signals } = await supabase
+    .from("signals")
+    .select("category, ai_issue_category, sentiment_score, concern_status, project:projects(name)")
+    .gte("created_at", since)
+    .limit(100);
+
+  if (!signals?.length) return "No signals in the last 30 days.";
+
+  const lines = [
+    `Role: ${employee.isTopManagement ? "Top Management" : "Employee"}`,
+    `Signals last 30 days: ${signals.length}`,
+    `Concerns: ${signals.filter(s => s.category === "concern").length}`,
+    `Avg sentiment: ${Math.round(signals.reduce((a, s) => a + ((s.sentiment_score as number) ?? 50), 0) / signals.length)}/100`,
+  ];
+
+  return lines.join("\n");
+}
+
+export default async function AiAssistantPage() {
+  const [insightsResult, chatContext] = await Promise.all([
+    getAiInsights(),
+    buildChatContext(),
+  ]);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="max-w-5xl mx-auto flex flex-col gap-8">
       <section className="flex flex-col gap-2">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Flash className="h-4 w-4" />
-          <span className="text-sm font-medium uppercase tracking-wider">{t("aiAssistant")}</span>
+          <span className="text-sm font-medium uppercase tracking-wider">AI Assistant</span>
         </div>
-        <h1 className="text-4xl font-extrabold tracking-tight">
-          {t("aiAssistant")}
-        </h1>
+        <h1 className="text-4xl font-extrabold tracking-tight">AI Assistant</h1>
         <p className="max-w-2xl text-lg text-muted-foreground">
-          Get smart insights and assistance for managing ownership signals.
+          Smart insights and predictions based on your team&apos;s signals.
         </p>
       </section>
-      
-      <div className="rounded-xl border border-dashed p-20 flex flex-col items-center justify-center text-center bg-background/50">
-        <Flash className="h-12 w-12 text-muted-foreground/30 mb-4" />
-        <h3 className="text-lg font-semibold text-muted-foreground">AI is sleeping</h3>
-        <p className="text-sm text-muted-foreground/60 max-w-xs">
-          This AI assistant is currently a placeholder and will be online soon.
-        </p>
-      </div>
+
+      <AiInsightCards insights={insightsResult.insights} generatedAt={insightsResult.generatedAt} />
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">Ask Sprout AI</h2>
+        <AiChat context={chatContext} />
+      </section>
     </div>
   );
 }
