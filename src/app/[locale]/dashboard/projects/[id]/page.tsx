@@ -247,7 +247,7 @@ export default function ProjectDetailPage() {
                     <div className="flex-1 space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="relative h-6 w-6 rounded-full overflow-hidden border border-slate-100">
+                          <div className="relative h-6 w-6 rounded-full overflow-hidden border border-slate-100/50 shrink-0 aspect-square">
                             <Image src={activity.userAvatar} alt={activity.userName} fill className="object-cover rounded-full" />
                           </div>
                           <span className="font-plus-jakarta text-sm font-bold text-brand-primary">{activity.userName}</span>
@@ -307,25 +307,25 @@ export default function ProjectDetailPage() {
 
                       {/* Threaded Replies Visualization */}
                       {activity.replies && activity.replies.length > 0 && (
-                        <div className="mt-6 space-y-4 relative">
-                          {/* Thread Connector Line */}
-                          <div className="absolute left-[23px] top-0 bottom-4 w-0.5 bg-slate-50" />
+                        <div className="mt-8 space-y-5 relative">
+                          {/* Thread Connector Line - Made more visible & elegant */}
+                          <div className="absolute left-[23px] top-0 bottom-6 w-px bg-slate-100" />
                           
                           {activity.replies.map((reply) => (
-                            <div key={reply.id} className="relative flex gap-4 pl-10 animate-in fade-in slide-in-from-left-2 duration-300">
+                            <div key={reply.id} className="relative flex gap-4 pl-10 animate-in fade-in slide-in-from-left-3 duration-500">
                               <div className="shrink-0 relative">
-                                <div className="h-8 w-8 rounded-full overflow-hidden border-2 border-white shadow-sm">
+                                <div className="h-9 w-9 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0 aspect-square">
                                   <Image src={reply.userAvatar} alt={reply.userName} fill className="object-cover rounded-full" />
                                 </div>
-                                {/* Small connector branch */}
-                                <div className="absolute -left-6 top-4 w-6 h-px bg-slate-50" />
+                                {/* Small connector branch - Integrated curve logic */}
+                                <div className="absolute -left-6 top-1/2 w-6 h-px bg-slate-100" />
                               </div>
-                              <div className="flex-1 bg-slate-50/40 rounded-2xl p-4 border border-slate-100/50">
-                                <div className="flex items-center justify-between mb-1">
+                              <div className="flex-1 bg-slate-50/50 rounded-2xl p-4 border border-slate-100/30 hover:bg-slate-50 transition-colors shadow-sm/5">
+                                <div className="flex items-center justify-between mb-1.5 align-top">
                                   <span className="font-plus-jakarta text-[13px] font-bold text-brand-primary">{reply.userName}</span>
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{getRelativeTime(reply.timestamp)}</span>
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{getRelativeTime(reply.timestamp)}</span>
                                 </div>
-                                <p className="font-plus-jakarta text-sm text-slate-600 leading-relaxed">
+                                <p className="font-plus-jakarta text-[14px] text-slate-600 leading-snug">
                                   {reply.content}
                                 </p>
                               </div>
