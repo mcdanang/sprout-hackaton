@@ -28,7 +28,7 @@ const navItems = [
 ];
 
 export function DashboardSidebar() {
-  const t = useTranslations("Dashboard.nav");
+  const t = useTranslations("Dashboard");
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -69,7 +69,7 @@ export function DashboardSidebar() {
               )}
             >
               <Icon className={cn("h-5 w-5", isActive ? "stroke-[2.5px]" : "stroke-[1.5px]")} />
-              {t(item.label)}
+              {t(`nav.${item.label}`)}
             </Link>
           );
         })}
