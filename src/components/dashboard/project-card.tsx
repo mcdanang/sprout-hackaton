@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { User } from "iconoir-react";
-import { AlertCircle, TrendingUp, ArrowRight, Heart } from "lucide-react";
+import { AlertCircle, Trophy, ArrowRight, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
 
@@ -117,42 +117,27 @@ export function ProjectCard({ project }: ProjectCardProps) {
             </Progress>
           </div>
 
-          {/* Metrics Grid: Concerns, Achievements, Kudos - Revamped for Better Spacing */}
+          {/* Metrics Grid: Icon-only Layout */}
           <div className="grid grid-cols-3 gap-2.5 pt-2">
-            <div className="bg-slate-50/50 rounded-2xl p-2.5 border border-slate-100 flex items-center gap-2 min-w-0 hover:bg-white hover:shadow-sm transition-all">
-              <div className="h-7 w-7 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-                <AlertCircle className="h-4 w-4 text-red-500" />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="font-plus-jakarta text-[8px] font-bold text-slate-400 uppercase tracking-wider truncate">Rip</span>
-                <span className="font-plus-jakarta text-sm font-bold text-brand-primary leading-none">
-                  {project.concernsCount}
-                </span>
-              </div>
+            <div className="bg-slate-50/50 rounded-2xl p-2.5 border border-slate-100 flex items-center justify-center gap-3 hover:bg-white hover:shadow-sm transition-all group/chip">
+              <AlertCircle className="h-4 w-4 text-red-500 shrink-0 group-hover/chip:scale-110 transition-transform" />
+              <span className="font-plus-jakarta text-sm font-bold text-brand-primary leading-none">
+                {project.concernsCount}
+              </span>
             </div>
 
-            <div className="bg-slate-50/50 rounded-2xl p-2.5 border border-slate-100 flex items-center gap-2 min-w-0 hover:bg-white hover:shadow-sm transition-all">
-              <div className="h-7 w-7 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
-                <TrendingUp className="h-4 w-4 text-emerald-500" />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="font-plus-jakarta text-[8px] font-bold text-slate-400 uppercase tracking-wider truncate">Win</span>
-                <span className="font-plus-jakarta text-sm font-bold text-brand-primary leading-none">
-                  {project.achievementsCount}
-                </span>
-              </div>
+            <div className="bg-slate-50/50 rounded-2xl p-2.5 border border-slate-100 flex items-center justify-center gap-3 hover:bg-white hover:shadow-sm transition-all group/chip">
+              <Trophy className="h-4 w-4 text-emerald-500 shrink-0 group-hover/chip:scale-110 transition-transform" />
+              <span className="font-plus-jakarta text-sm font-bold text-brand-primary leading-none">
+                {project.achievementsCount}
+              </span>
             </div>
 
-            <div className="bg-slate-50/50 rounded-2xl p-2.5 border border-slate-100 flex items-center gap-2 min-w-0 hover:bg-white hover:shadow-sm transition-all">
-              <div className="h-7 w-7 rounded-lg bg-pink-50 flex items-center justify-center shrink-0">
-                <Heart className="h-4 w-4 text-pink-500 fill-pink-500/10" />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="font-plus-jakarta text-[8px] font-bold text-slate-400 uppercase tracking-wider truncate">Kudos</span>
-                <span className="font-plus-jakarta text-sm font-bold text-brand-primary leading-none">
-                  {project.kudosCount}
-                </span>
-              </div>
+            <div className="bg-slate-50/50 rounded-2xl p-2.5 border border-slate-100 flex items-center justify-center gap-3 hover:bg-white hover:shadow-sm transition-all group/chip">
+              <Heart className="h-4 w-4 text-pink-500 fill-pink-500/10 shrink-0 group-hover/chip:scale-110 transition-transform" />
+              <span className="font-plus-jakarta text-sm font-bold text-brand-primary leading-none">
+                {project.kudosCount}
+              </span>
             </div>
           </div>
         </div>

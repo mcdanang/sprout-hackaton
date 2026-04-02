@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { ArrowLeft, AlertCircle, TrendingUp, User, Share2, Heart } from "lucide-react";
+import { ArrowLeft, AlertCircle, Trophy, User, Share2, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
 import { DUMMY_PROJECTS } from "@/lib/constants/projects";
@@ -66,10 +66,10 @@ export default function ProjectDetailPage() {
         <div className="relative z-10 bg-white rounded-[30.5px] p-8 md:p-12 space-y-6">
           <div className="flex flex-wrap items-center gap-4">
             <span className={cn(
-              "px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border",
+              "rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wider",
               statusStyles[project.status]
             )}>
-              {project.status.replace("-", " ")}
+              {project.status}
             </span>
           </div>
           
@@ -133,7 +133,7 @@ export default function ProjectDetailPage() {
             <p className="text-3xl font-bold font-plus-jakarta text-brand-primary group-hover:text-emerald-600 transition-colors">{project.achievementsCount}</p>
           </div>
           <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-all">
-            <TrendingUp className="h-6 w-6" />
+            <Trophy className="h-6 w-6" />
           </div>
         </div>
 
