@@ -274,7 +274,10 @@ insert into public.signals (
   title,
   details,
   project_id,
-  is_public
+  is_public,
+  ai_issue_category,
+  sentiment_score,
+  concern_status
 ) values
   -- SPROUT
   (
@@ -285,6 +288,9 @@ insert into public.signals (
   , 'Deploy pipeline is taking longer than expected during peak hours. Suggest checking caching and queue configuration.'
   , (select id from public.projects where name = 'SPROUT' limit 1)
   , true
+  , 'Process Bottleneck'
+  , 35
+  , 'open'
   ),
   (
     (select id from public.employees where full_name = 'Marlon P V M Keintjem' limit 1)
@@ -294,6 +300,9 @@ insert into public.signals (
   , 'Delivered the release on schedule and coordinated cross-team handoff successfully. Great ownership.'
   , (select id from public.projects where name = 'SPROUT' limit 1)
   , true
+  , null
+  , 95
+  , null
   ),
   (
     (select id from public.employees where full_name = 'Egg Arnold Sebastian' limit 1)
@@ -303,6 +312,9 @@ insert into public.signals (
   , 'Supported team members with clear guidance and encouraged early risk surfacing. Positive impact observed.'
   , (select id from public.projects where name = 'SPROUT' limit 1)
   , true
+  , 'Professional Growth'
+  , 88
+  , null
   ),
   (
     (select id from public.employees where full_name = 'Patricia Timothy' limit 1)
@@ -312,6 +324,9 @@ insert into public.signals (
   , 'Appreciate the collaboration and quick response during the last sprint. Felt safe and aligned throughout.'
   , (select id from public.projects where name = 'SPROUT' limit 1)
   , false
+  , null
+  , 92
+  , null
   ),
   (
     (select id from public.employees where full_name = 'Sukardi' limit 1)
@@ -321,6 +336,9 @@ insert into public.signals (
   , 'Improved reporting quality and transparency by consolidating updates into a single weekly view.'
   , (select id from public.projects where name = 'SPROUT' limit 1)
   , true
+  , 'Process Bottleneck'
+  , 85
+  , null
   ),
 
   -- HI-FELLA
@@ -332,6 +350,9 @@ insert into public.signals (
   , 'Noticed frequent changes to requirements late in the cycle. Consider locking scope earlier or using change checkpoints.'
   , (select id from public.projects where name = 'HI-FELLA' limit 1)
   , true
+  , 'Scope Creep'
+  , 28
+  , 'in_progress'
   ),
   (
     (select id from public.employees where full_name = 'Briyan Benget Alfonsius' limit 1)
@@ -341,6 +362,9 @@ insert into public.signals (
   , 'Some payment edge cases are not covered in current tests. Recommend adding regression scenarios for uncommon flows.'
   , (select id from public.projects where name = 'HI-FELLA' limit 1)
   , false
+  , 'Technical Debt'
+  , 42
+  , 'open'
   ),
   (
     (select id from public.employees where full_name = 'Alistair Tody' limit 1)
@@ -350,6 +374,9 @@ insert into public.signals (
   , 'Turned customer feedback into prioritized backlog items and aligned stakeholders within 48 hours.'
   , (select id from public.projects where name = 'HI-FELLA' limit 1)
   , true
+  , 'Professional Growth'
+  , 94
+  , null
   ),
   (
     (select id from public.employees where full_name = 'Vania Aribowo' limit 1)
@@ -359,6 +386,9 @@ insert into public.signals (
   , 'Thank you for keeping stakeholders updated with clear progress notes. It improved trust and reduced last-minute surprises.'
   , (select id from public.projects where name = 'HI-FELLA' limit 1)
   , true
+  , 'Communication Gap'
+  , 89
+  , null
   ),
 
   -- KHONIC
@@ -370,6 +400,9 @@ insert into public.signals (
   , 'Held effective backlog grooming and removed ambiguity early. Team velocity improved next sprint.'
   , (select id from public.projects where name = 'KHONIC' limit 1)
   , true
+  , 'Process Bottleneck'
+  , 91
+  , null
   ),
   (
     (select id from public.employees where full_name = 'Lamhot Pardamean Siahaan' limit 1)
@@ -379,6 +412,9 @@ insert into public.signals (
   , 'Potential regression risk due to rushed merges. Recommend tighter PR checks and smoke test automation.'
   , (select id from public.projects where name = 'KHONIC' limit 1)
   , false
+  , 'Technical Debt'
+  , 32
+  , 'open'
   ),
   (
     (select id from public.employees where full_name = 'Sanny Martin' limit 1)
@@ -388,6 +424,9 @@ insert into public.signals (
   , 'Appreciate the support from Sales to clarify requirements and unblock delivery. Great ownership.'
   , (select id from public.projects where name = 'KHONIC' limit 1)
   , true
+  , 'Communication Gap'
+  , 87
+  , null
   ),
 
   -- SMARCO
@@ -399,6 +438,9 @@ insert into public.signals (
   , 'Scope is expanding during sprint execution. Consider a strict mid-sprint review to prevent late churn.'
   , (select id from public.projects where name = 'SMARCO' limit 1)
   , true
+  , 'Scope Creep'
+  , 22
+  , 'in_progress'
   ),
   (
     (select id from public.employees where full_name = 'Lamhot Pardamean Siahaan' limit 1)
@@ -408,6 +450,9 @@ insert into public.signals (
   , 'Unit test coverage is currently uneven. Requesting a quick coverage audit and prioritized test additions.'
   , (select id from public.projects where name = 'SMARCO' limit 1)
   , false
+  , 'Technical Debt'
+  , 38
+  , 'open'
   ),
   (
     (select id from public.employees where full_name = 'Teddy Adji Pangestu' limit 1)
@@ -417,6 +462,9 @@ insert into public.signals (
   , 'Thanks for responding quickly to production issues and communicating the mitigation plan clearly.'
   , (select id from public.projects where name = 'SMARCO' limit 1)
   , true
+  , 'Communication Gap'
+  , 96
+  , null
   ),
 
   -- LABAMU SINGAPORE
@@ -428,6 +476,9 @@ insert into public.signals (
   , 'Provided clear product strategy and aligned stakeholders early. Reduced ambiguity and improved follow-through.'
   , (select id from public.projects where name = 'LABAMU SINGAPORE' limit 1)
   , true
+  , 'Communication Gap'
+  , 88
+  , null
   ),
   (
     (select id from public.employees where full_name = 'Bimo Prayogo Muhammad' limit 1)
@@ -437,6 +488,9 @@ insert into public.signals (
   , 'Improved UX flows based on feedback and ensured accessibility considerations were included.'
   , (select id from public.projects where name = 'LABAMU SINGAPORE' limit 1)
   , true
+  , 'Office Environment'
+  , 92
+  , null
   ),
   (
     (select id from public.employees where full_name = 'Gaizka Valencia' limit 1)
@@ -446,6 +500,9 @@ insert into public.signals (
   , 'Delivered requested improvements with strong documentation and safe incremental rollouts.'
   , (select id from public.projects where name = 'LABAMU SINGAPORE' limit 1)
   , true
+  , 'Technical Debt'
+  , 90
+  , null
   ),
   (
     (select id from public.employees where full_name = 'Devi Rahmawati' limit 1)
@@ -455,6 +512,9 @@ insert into public.signals (
   , 'QA throughput is limited due to review queues. Suggest scheduling earlier test planning to reduce bottlenecks.'
   , (select id from public.projects where name = 'LABAMU SINGAPORE' limit 1)
   , false
+  , 'Process Bottleneck'
+  , 41
+  , 'open'
   ),
   (
     (select id from public.employees where full_name = 'Marcellus Denta Widyapramana' limit 1)
@@ -464,6 +524,9 @@ insert into public.signals (
   , 'Appreciate the reliable support during integration. It felt safe to speak up when issues appeared.'
   , (select id from public.projects where name = 'LABAMU SINGAPORE' limit 1)
   , true
+  , null
+  , 93
+  , null
   ),
 
   -- BOUCHON
@@ -475,6 +538,21 @@ insert into public.signals (
     , 'Aligned feature scope with stakeholders and removed blockers early through clear communication.'
     , (select id from public.projects where name = 'BOUCHON' limit 1)
     , true
+    , 'Communication Gap'
+    , 89
+    , null
+  ),
+  (
+    (select id from public.employees where full_name = 'Fian Febry Ispianto' limit 1)
+    , false
+    , 'concern'
+    , 'BOUCHON - UI Logic Complexity'
+    , 'The frontend state logic is becoming hard to maintain. Propose a refactor to use a cleaner state machine.'
+    , (select id from public.projects where name = 'BOUCHON' limit 1)
+    , true
+    , 'Technical Debt'
+    , 45
+    , 'open'
   ),
 
   -- JAPFA
@@ -486,6 +564,21 @@ insert into public.signals (
     , 'Received late UI feedback which impacted sprint planning. Recommend earlier review checkpoints and tighter design sign-offs.'
     , (select id from public.projects where name = 'JAPFA' limit 1)
     , false
+    , 'Communication Gap'
+    , 32
+    , 'closed'
+  ),
+  (
+    (select id from public.employees where full_name = 'Darren Ekaseptian' limit 1)
+    , false
+    , 'achievement'
+    , 'JAPFA - Design System Integration'
+    , 'Successfully integrated the Sprout design system into JAPFA components, ensuring UI consistency.'
+    , (select id from public.projects where name = 'JAPFA' limit 1)
+    , true
+    , 'Office Environment'
+    , 91
+    , null
   ),
 
   -- TOCO
@@ -497,6 +590,9 @@ insert into public.signals (
     , 'Thank you for responding quickly to design questions and keeping delivery on track. It improved team confidence.'
     , (select id from public.projects where name = 'TOCO' limit 1)
     , true
+    , 'Communication Gap'
+    , 86
+    , null
   ),
 
   -- SPECTRA
@@ -508,6 +604,9 @@ insert into public.signals (
     , 'Maintained stable release cadence and ensured quality gates were met before production rollout.'
     , (select id from public.projects where name = 'SPECTRA' limit 1)
     , true
+    , 'Process Bottleneck'
+    , 94
+    , null
   ),
 
   -- QINERJA
@@ -519,6 +618,9 @@ insert into public.signals (
     , 'Test execution is delayed due to environment availability. Propose scheduling environments earlier and assigning backup test windows.'
     , (select id from public.projects where name = 'QINERJA' limit 1)
     , true
+    , 'Process Bottleneck'
+    , 38
+    , 'in_progress'
   ),
 
   -- LABAMU
@@ -530,6 +632,21 @@ insert into public.signals (
     , 'Provided coaching that improved team estimates and reduced scope changes during sprint execution.'
     , (select id from public.projects where name = 'LABAMU' limit 1)
     , true
+    , 'Professional Growth'
+    , 92
+    , null
+  ),
+  (
+    (select id from public.employees where full_name = 'David Santoso' limit 1)
+    , false
+    , 'concern'
+    , 'LABAMU - API Rate Limiting'
+    , 'Encountering occasional 429 errors from internal APIs. Need to implement better retry logic or optimize calls.'
+    , (select id from public.projects where name = 'LABAMU' limit 1)
+    , false
+    , 'Technical Debt'
+    , 40
+    , 'open'
   ),
 
   -- EDOTCO
@@ -541,6 +658,9 @@ insert into public.signals (
     , 'Improved data pipeline validation, resulting in fewer downstream issues and clearer reporting. Great ownership.'
     , (select id from public.projects where name = 'EDOTCO' limit 1)
     , true
+    , 'others'
+    , 95
+    , null
   ),
 
   -- ALODOKTER
@@ -552,6 +672,9 @@ insert into public.signals (
     , 'Resource constraints are impacting delivery timelines. Consider reallocating tasks or adjusting milestones to keep commitments realistic.'
     , (select id from public.projects where name = 'ALODOKTER' limit 1)
     , false
+    , 'Burnout Alert'
+    , 15
+    , 'open'
   )
 ;
 
@@ -628,3 +751,36 @@ select s.id, 'employee',
   null,
   (select e.id from public.employees e where e.full_name = 'Marcellus Denta Widyapramana' limit 1)
 from public.signals s where s.title = 'LABAMU SG - Reliable Support';
+
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'BOUCHON - Feature Alignment';
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'BOUCHON - UI Logic Complexity';
+
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'JAPFA - Late UI Feedback';
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'JAPFA - Design System Integration';
+
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'TOCO - Great Responsiveness';
+
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'SPECTRA - Stable Release';
+
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'QINERJA - Test Delays';
+
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'LABAMU - Sprint Coaching';
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'role',
+  (select r.id from public.roles r where r.name = 'SQUAD LEAD' limit 1),
+  null
+from public.signals s where s.title = 'LABAMU - API Rate Limiting';
+
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'EDOTCO - Data Quality Improvement';
+
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'ALODOKTER - Resource Constraints';

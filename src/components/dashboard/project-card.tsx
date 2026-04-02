@@ -75,10 +75,18 @@ export function ProjectCard({ project }: ProjectCardProps) {
 							<span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400 transition-colors group-hover:text-slate-500">
 								Team Pulse
 							</span>
-							<span className="text-sm font-bold font-plus-jakarta text-slate-900">
+							<span className="text-sm font-bold font-plus-jakarta text-slate-900 flex items-center gap-2">
 								{project.healthStatus}
+								<span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 font-mono">
+									{project.health}%
+								</span>
 							</span>
 						</div>
+						<div className={cn(
+							"h-2 w-2 rounded-full animate-pulse-soft",
+							project.healthStatus === "Healthy" ? "bg-emerald-500" : 
+							project.healthStatus === "At Risk" ? "bg-red-500" : "bg-amber-500"
+						)} />
 					</div>
 					<Progress value={project.health} className="h-2 w-full overflow-hidden rounded-full">
 						<ProgressTrack className="h-full w-full bg-slate-50">

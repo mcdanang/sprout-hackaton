@@ -101,8 +101,8 @@ export function ProjectDetailClient({ project, activities }: Props) {
 							<span className="text-[11px] font-bold text-slate-600 uppercase tracking-widest block">
 								{project.team.length} Members Collaborating
 							</span>
-							<div className="flex -space-x-3">
-								{project.team.map((member) => (
+							<div className="flex -space-x-3 flex-wrap gap-y-2">
+								{project.team.slice(0, 12).map((member) => (
 									isMounted ? (
 										<Tooltip key={member.id}>
 											<TooltipTrigger>
@@ -129,6 +129,11 @@ export function ProjectDetailClient({ project, activities }: Props) {
 										</div>
 									)
 								))}
+								{project.team.length > 12 && (
+									<div className="relative h-12 w-12 rounded-full border-4 border-white shadow-sm bg-slate-50 flex items-center justify-center text-xs font-bold text-slate-500 z-10">
+										+{project.team.length - 12}
+									</div>
+								)}
 							</div>
 						</div>
 					</div>
@@ -147,21 +152,47 @@ export function ProjectDetailClient({ project, activities }: Props) {
 						</p>
 					</div>
 					<div className="flex flex-col items-end gap-1 text-right">
-						<span className="text-2xl font-bold font-plus-jakarta text-slate-900">
+						<span className="text-sm font-bold font-plus-jakarta text-slate-900 flex items-center gap-2">
 							{project.healthStatus}
+							<span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 font-mono">
+								{project.health}%
+							</span>
 						</span>
+						<div className={cn(
+							"h-2 w-2 rounded-full animate-pulse-soft",
+							project.healthStatus === "Healthy" ? "bg-emerald-500" : 
+							project.healthStatus === "At Risk" ? "bg-red-500" : "bg-amber-500"
+						)} />
 					</div>
 				</div>
-				<Progress value={project.health} className="h-3 w-full">
-					<ProgressTrack className="h-full w-full bg-slate-50">
-						<ProgressIndicator
-							className={cn(
-								"h-full transition-all duration-1000",
-								healthStyles[project.healthStatus],
-							)}
-						/>
-					</ProgressTrack>
-				</Progress>
+				
+				<div className="relative">
+					<Progress value={project.health} className="h-4 w-full rounded-full bg-slate-50 border border-slate-100 overflow-hidden">
+						<ProgressTrack className="h-full w-full">
+							<ProgressIndicator
+								className={cn(
+									"h-full transition-all duration-1000 relative",
+									healthStyles[project.healthStatus],
+								)}
+							>
+								{/* Shine effect */}
+								<div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent animate-shine" />
+							</ProgressIndicator>
+						</ProgressTrack>
+					</Progress>
+				</div>
+
+				<div className="flex items-start gap-3 p-4 rounded-2xl bg-slate-50/50 border border-slate-100/50">
+					<div className={cn(
+						"mt-1 h-2 w-2 rounded-full shrink-0 animate-pulse-soft",
+						project.healthStatus === "Healthy" ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" : 
+						project.healthStatus === "At Risk" ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" : 
+						"bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]"
+					)} />
+					<p className="text-sm text-slate-600 font-medium leading-relaxed">
+						{project.pulseDescription}
+					</p>
+				</div>
 			</div>
 
 			{/* Tri-Metric Summary */}

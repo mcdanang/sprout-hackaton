@@ -10,18 +10,32 @@ import { Project, TeamMember } from "@/lib/types/project";
 type ProjectMetrics = {
 	health: number;
 	healthStatus: Project["healthStatus"];
+	pulseDescription: string;
 };
 
 function computeHealth(averageSentiment: number | null): ProjectMetrics {
 	const normalizedSentiment = Math.round(clamp(averageSentiment ?? 50, 0, 100));
 	let healthStatus: Project["healthStatus"];
-	if (normalizedSentiment >= 70) healthStatus = "Healthy";
-	else if (normalizedSentiment <= 40) healthStatus = "At Risk";
-	else healthStatus = "Stable";
+	let pulseDescription: string;
+
+	if (normalizedSentiment >= 75) {
+		healthStatus = "Healthy";
+		pulseDescription = "High psychological safety. Team is thriving and showing strong ownership.";
+	} else if (normalizedSentiment >= 50) {
+		healthStatus = "Stable";
+		pulseDescription = "Balanced team dynamics. Communication is steady but room for more proactive engagement.";
+	} else if (normalizedSentiment >= 35) {
+		healthStatus = "Stable"; // Still stable but on the edge
+		pulseDescription = "Sentiment is softening. Monitor for potential blockers or team fatigue.";
+	} else {
+		healthStatus = "At Risk";
+		pulseDescription = "Low psychological safety detected. Immediate attention to team concerns recommended.";
+	}
 
 	return {
 		health: normalizedSentiment,
 		healthStatus,
+		pulseDescription,
 	};
 }
 
@@ -270,6 +284,7 @@ export async function getDashboardProjects(): Promise<Project[]> {
 			team: teamByProjectId.get(p.id) ?? [],
 			health: healthMetrics.health,
 			healthStatus: healthMetrics.healthStatus,
+			pulseDescription: healthMetrics.pulseDescription,
 			concernsCount: metrics.concernsCount,
 			achievementsCount: metrics.achievementsCount,
 			kudosCount: metrics.kudosCount,
@@ -409,6 +424,7 @@ export async function getProjectDetail(projectId: string): Promise<{
 		team,
 		health: healthMetrics.health,
 		healthStatus: healthMetrics.healthStatus,
+		pulseDescription: healthMetrics.pulseDescription,
 		concernsCount,
 		achievementsCount,
 		kudosCount,

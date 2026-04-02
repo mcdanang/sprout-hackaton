@@ -14,6 +14,7 @@ export interface Project {
   team: TeamMember[];
   health: number; // 0-100
   healthStatus: ProjectHealthStatus;
+  pulseDescription: string;
   concernsCount: number;
   achievementsCount: number;
   kudosCount: number;
