@@ -3,49 +3,52 @@
 import { useLocale } from 'next-intl';
 import { useRouter, usePathname } from '@/i18n/routing';
 import { useTransition } from 'react';
-import { Languages } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
+/**
+ * Premium Language Switcher
+ * Redesigned to match the pill-style toggle reference with brand yellow (#FFD300).
+ */
 export function LanguageSwitcher() {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const pathname = usePathname();
   const locale = useLocale();
 
-  function onSelectChange(nextLocale: string) {
+  function handleToggle() {
+    const nextLocale = locale === 'en' ? 'id' : 'en';
     startTransition(() => {
       router.replace(pathname, { locale: nextLocale });
     });
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="relative flex items-center gap-2 rounded-full border bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-all hover:bg-muted">
-        <Languages className="h-4 w-4 text-muted-foreground" />
-        <select
-          defaultValue={locale}
-          disabled={isPending}
-          onChange={(e) => onSelectChange(e.target.value)}
-          className="appearance-none bg-transparent pr-4 outline-none cursor-pointer disabled:opacity-50"
-        >
-          <option value="en">EN</option>
-          <option value="id">ID</option>
-        </select>
-        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-          <svg
-            className="h-3 w-3 text-muted-foreground"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
+    <div className="flex items-center">
+      <button
+        onClick={handleToggle}
+        disabled={isPending}
+        className={cn(
+          "relative flex h-10 w-22 items-center rounded-full bg-[#FFD300] p-1 shadow-[inset_0_1px_4px_rgba(0,0,0,0.1)] transition-all hover:brightness-105 active:scale-95 disabled:opacity-50 cursor-pointer overflow-hidden",
+        )}
+        aria-label="Toggle language"
+      >
+        {/* Background Labels (Static) */}
+        {/* We use a dark mustard/gold color for the label on the yellow background as seen in the reference */}
+        <div className="absolute inset-0 flex items-center justify-between px-4 text-[13px] font-extrabold tracking-tighter text-[#A67C00]">
+          <span className="w-6 text-center">ID</span>
+          <span className="w-6 text-center">EN</span>
         </div>
-      </div>
+
+        {/* Sliding White Thumb with Active Label */}
+        <div
+          className={cn(
+            "z-10 flex h-8 w-11 items-center justify-center rounded-full bg-white text-[13px] font-extrabold text-[#111] shadow-[0_2px_8px_rgba(0,0,0,0.15)] transition-all duration-300 ease-in-out",
+            locale === 'en' ? "translate-x-9" : "translate-x-0"
+          )}
+        >
+          {locale.toUpperCase()}
+        </div>
+      </button>
     </div>
   );
 }
