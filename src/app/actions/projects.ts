@@ -39,6 +39,13 @@ function isSignalIssueCategory(value: unknown): value is SignalIssueCategory {
 	);
 }
 
+/** Supabase may return an embedded relation as an object or a single-element array. */
+function embedOne<T>(row: unknown): T | null {
+	if (row == null) return null;
+	if (Array.isArray(row)) return (row[0] as T | undefined) ?? null;
+	return row as T;
+}
+
 async function getCurrentEmployeeId(
 	supabase: Awaited<ReturnType<typeof createClient>>,
 ): Promise<string | null> {
@@ -86,21 +93,42 @@ export async function getDashboardProjects(): Promise<Project[]> {
  
 	if (projectsError || !projects) return [];
  
-	// Build "team" from employees assigned to each project.
-	const { data: employees } = await supabase
-		.from("employees")
-		.select("id, project_id, email, full_name, job_position")
-		.order("email");
- 
+	// Build "team" from employees assigned to each project (many-to-many).
+	const { data: projectLinks } = await supabase
+		.from("employee_projects")
+		.select(
+			`
+			project_id,
+			employees (
+				id,
+				email,
+				full_name,
+				job_position
+			)
+		`,
+		);
+
+	type Emb = {
+		id: string;
+		email: string | null;
+		full_name: string;
+		job_position: string;
+	};
+
 	const teamByProjectId = new Map<string, TeamMember[]>();
-	const allTeamEmails = (employees ?? []).map(e => e.email).filter(Boolean) as string[];
+	const allTeamEmails: string[] = [];
+	for (const row of projectLinks ?? []) {
+		const e = embedOne<Emb>(row.employees);
+		if (e?.email) allTeamEmails.push(e.email);
+	}
 	const teamEmailToAvatar = new Map<string, string | null>();
 
-	if (allTeamEmails.length > 0) {
+	const uniqueTeamEmails = Array.from(new Set(allTeamEmails));
+	if (uniqueTeamEmails.length > 0) {
 		try {
 			const clerk = await clerkClient();
 			const { data: clerkUsers } = await clerk.users.getUserList({
-				emailAddress: allTeamEmails,
+				emailAddress: uniqueTeamEmails,
 				limit: 100,
 			});
 			for (const u of clerkUsers) {
@@ -113,18 +141,18 @@ export async function getDashboardProjects(): Promise<Project[]> {
 		}
 	}
 
-	for (const e of employees ?? []) {
-		if (!e.project_id || !e.email) continue;
-		const avatar =
-			teamEmailToAvatar.get(e.email) || null;
-		const list = teamByProjectId.get(e.project_id) ?? [];
+	for (const row of projectLinks ?? []) {
+		const e = embedOne<Emb>(row.employees);
+		if (!row.project_id || !e?.email) continue;
+		const avatar = teamEmailToAvatar.get(e.email) || null;
+		const list = teamByProjectId.get(row.project_id) ?? [];
 		list.push({
 			id: e.id,
 			name: e.full_name,
 			role: e.job_position,
 			avatar,
 		});
-		teamByProjectId.set(e.project_id, list);
+		teamByProjectId.set(row.project_id, list);
 	}
  
 	// Signal metrics.
@@ -251,13 +279,35 @@ export async function getProjectDetail(projectId: string): Promise<{
 	}
  
 	// 2) Team members from employees assigned to the project
-	const { data: employeeRows } = await supabase
-		.from("employees")
-		.select("id, full_name, email, job_position, auth_id")
-		.eq("project_id", projectId)
-		.order("full_name");
- 
-	const teamEmails = (employeeRows ?? []).map(e => e.email).filter(Boolean) as string[];
+	const { data: teamLinks } = await supabase
+		.from("employee_projects")
+		.select(
+			`
+			employees (
+				id,
+				full_name,
+				email,
+				job_position,
+				auth_id
+			)
+		`,
+		)
+		.eq("project_id", projectId);
+
+	type EmbAuth = {
+		id: string;
+		full_name: string;
+		email: string | null;
+		job_position: string;
+		auth_id: string | null;
+	};
+
+	const employeeRows = (teamLinks ?? [])
+		.map(r => embedOne<EmbAuth>(r.employees))
+		.filter((e): e is EmbAuth => e != null)
+		.sort((a, b) => a.full_name.localeCompare(b.full_name));
+
+	const teamEmails = employeeRows.map(e => e.email).filter(Boolean) as string[];
 	const teamEmailToAvatar = new Map<string, string | null>();
 	
 	if (teamEmails.length > 0) {
@@ -276,11 +326,11 @@ export async function getProjectDetail(projectId: string): Promise<{
 		}
 	}
  
-	const team = (employeeRows ?? []).map(e => ({
+	const team = employeeRows.map(e => ({
 		id: e.id,
 		name: e.full_name,
 		role: e.job_position,
-		avatar: teamEmailToAvatar.get(e.email) || null,
+		avatar: (e.email ? teamEmailToAvatar.get(e.email) : null) || null,
 	}));
  
 	const { data: signals } = await supabase

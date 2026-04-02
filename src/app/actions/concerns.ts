@@ -14,14 +14,14 @@ import { type ConcernActionState, type MyConcernItem, type MyConcernReply } from
 
 async function resolveEmployeeId(supabase: Awaited<ReturnType<typeof createClient>>): Promise<{
 	id: string;
-	project_id: string | null;
+	project_ids: string[];
 } | null> {
 	const { userId } = await auth();
 	if (!userId) return null;
 
 	let { data: employee, error: empError } = await supabase
 		.from("employees")
-		.select("id, project_id")
+		.select("id")
 		.eq("auth_id", userId)
 		.maybeSingle();
 
@@ -31,7 +31,7 @@ async function resolveEmployeeId(supabase: Awaited<ReturnType<typeof createClien
 		if (email) {
 			const { data: byEmail } = await supabase
 				.from("employees")
-				.select("id, project_id")
+				.select("id")
 				.eq("email", email)
 				.maybeSingle();
 			if (byEmail) employee = byEmail;
@@ -39,7 +39,14 @@ async function resolveEmployeeId(supabase: Awaited<ReturnType<typeof createClien
 	}
 
 	if (!employee) return null;
-	return { id: employee.id, project_id: employee.project_id ?? null };
+
+	const { data: links } = await supabase
+		.from("employee_projects")
+		.select("project_id")
+		.eq("employee_id", employee.id);
+
+	const project_ids = (links ?? []).map(l => l.project_id);
+	return { id: employee.id, project_ids };
 }
 
 function deriveTitleFromDetails(details: string): string {
@@ -285,7 +292,7 @@ export async function createConcern(
 				category: "concern",
 				title,
 				details,
-				project_id: employee.project_id,
+				project_id: employee.project_ids[0] ?? null,
 				is_public: true,
 				sentiment_score: sentiment,
 				ai_issue_category: issueCategory,

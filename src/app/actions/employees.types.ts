@@ -13,7 +13,8 @@ export type EmployeeRecord = {
 	email: string;
 	jobPosition: string;
 	organization: string;
-	project: string;
+	/** Comma-separated project names (employee may belong to multiple). */
+	projects: string;
 	role: string;
 	isActive: boolean;
 };

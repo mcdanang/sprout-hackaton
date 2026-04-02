@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/server";
 
 async function getCurrentEmployee(supabase: Awaited<ReturnType<typeof createClient>>): Promise<{
 	id: string;
-	project_id: string;
 	role_id: string;
 } | null> {
 	const { userId } = await auth();
@@ -33,7 +32,7 @@ async function getCurrentEmployee(supabase: Awaited<ReturnType<typeof createClie
 
 		const { data: byEmail } = await supabase
 			.from("employees")
-			.select("id, project_id, role_id")
+			.select("id, role_id")
 			.ilike("email", normalizedEmail)
 			.maybeSingle();
 

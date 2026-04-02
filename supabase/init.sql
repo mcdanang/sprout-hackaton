@@ -9,6 +9,7 @@
 -- Safe to run multiple times; drops tables with dependencies.
 drop table if exists public.signal_targets cascade;
 drop table if exists public.signals cascade;
+drop table if exists public.employee_projects cascade;
 drop table if exists public.employees cascade;
 drop table if exists public.projects cascade;
 drop table if exists public.organizations cascade;
@@ -64,7 +65,6 @@ create table if not exists public.employees (
   email text not null unique,
   job_position text not null,
   organization_id uuid not null references public.organizations(id),
-  project_id uuid not null references public.projects(id),
   role_id uuid not null references public.roles(id),
   is_active boolean not null default true,
   created_at timestamptz not null default now()
@@ -76,6 +76,20 @@ create policy "employees readable by authenticated" on public.employees
 create policy "employees can update own profile" on public.employees
   for update to authenticated using (auth.uid() = auth_id);
 alter table public.employees disable row level security;
+
+-- 4.0. EMPLOYEE ↔ PROJECT (many-to-many)
+create table if not exists public.employee_projects (
+  employee_id uuid not null references public.employees(id) on delete cascade,
+  project_id uuid not null references public.projects(id) on delete cascade,
+  primary key (employee_id, project_id)
+);
+
+create index if not exists employee_projects_project_id_idx on public.employee_projects(project_id);
+
+alter table public.employee_projects enable row level security;
+create policy "employee_projects readable by authenticated" on public.employee_projects
+  for select to authenticated using (true);
+alter table public.employee_projects disable row level security;
 
 -- 4.1. PROJECT SQUAD LEAD (FK to employees)
 alter table public.projects
@@ -297,86 +311,160 @@ insert into public.roles (name) values
   ('STAFF')
 on conflict (name) do nothing;
 
--- Employees (full_name, email, job_position, organization, project, role)
+-- Employees (full_name, email, job_position, organization, role)
+-- Project assignments are seeded in employee_projects (many-to-many).
 -- Omitted from seed (no email provided): Muh Syaipullah, Ibnu Triyardi Muda, Farid Nugroho, Pradytia Herlyansah
-insert into public.employees (full_name, email, job_position, organization_id, project_id, role_id) values
+insert into public.employees (full_name, email, job_position, organization_id, role_id) values
   -- CEO
-  ('Egg Arnold Sebastian',                        'arnold.sebastian@sprout.co.id',        'CEO',                                  (select id from public.organizations where name = 'CEO'),               (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
+  ('Egg Arnold Sebastian',                        'arnold.sebastian@sprout.co.id',        'CEO',                                  (select id from public.organizations where name = 'CEO'), (select id from public.roles where name = 'TOP MANAGEMENT')),
 
   -- HR/GA
-  ('Angelina Kesya Christinatalia',               'angelina.kesya@sprout.co.id',          'HR Officer',                           (select id from public.organizations where name = 'HR/GA'),             (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-  ('Christina Devi Ariyani',                      'christina.devi@sprout.co.id',          'Office Manager',                       (select id from public.organizations where name = 'HR/GA'),             (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-  ('Rebecca Deborah Aritonang',                   'rebecca.deborah@sprout.co.id',         'Legal Officer',                        (select id from public.organizations where name = 'HR/GA'),             (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-  ('Sukardi',                                     'sukardi@sprout.co.id',                 'Finance & Accounting',                 (select id from public.organizations where name = 'HR/GA'),             (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-  ('Patricia Timothy',                            'patricia.timothy@sprout.co.id',        'HR Officer',                           (select id from public.organizations where name = 'HR/GA'),             (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
+  ('Angelina Kesya Christinatalia',               'angelina.kesya@sprout.co.id',          'HR Officer',                           (select id from public.organizations where name = 'HR/GA'), (select id from public.roles where name = 'TOP MANAGEMENT')),
+  ('Christina Devi Ariyani',                      'christina.devi@sprout.co.id',          'Office Manager',                       (select id from public.organizations where name = 'HR/GA'), (select id from public.roles where name = 'TOP MANAGEMENT')),
+  ('Rebecca Deborah Aritonang',                   'rebecca.deborah@sprout.co.id',         'Legal Officer',                        (select id from public.organizations where name = 'HR/GA'), (select id from public.roles where name = 'TOP MANAGEMENT')),
+  ('Sukardi',                                     'sukardi@sprout.co.id',                 'Finance & Accounting',                 (select id from public.organizations where name = 'HR/GA'), (select id from public.roles where name = 'TOP MANAGEMENT')),
+  ('Patricia Timothy',                            'patricia.timothy@sprout.co.id',        'HR Officer',                           (select id from public.organizations where name = 'HR/GA'), (select id from public.roles where name = 'TOP MANAGEMENT')),
 
   -- Sales
-  ('Gilang Satrya Putra',                         'gilang.satrya@sprout.co.id',           'Admin Staff Coordinator',              (select id from public.organizations where name = 'Sales'),             (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-  ('Vania Aribowo',                               'vania.aribowo@sprout.co.id',           'Business Development Manager',         (select id from public.organizations where name = 'Sales'),             (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-  ('Sanny Martin',                                'sanny.martin@sprout.co.id',            'Head of Sales',                        (select id from public.organizations where name = 'Sales'),             (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-  ('Sakti Ambawani',                              'sakti.ambawani@sprout.co.id',          'Business Development Manager',         (select id from public.organizations where name = 'Sales'),             (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
+  ('Gilang Satrya Putra',                         'gilang.satrya@sprout.co.id',           'Admin Staff Coordinator',              (select id from public.organizations where name = 'Sales'), (select id from public.roles where name = 'TOP MANAGEMENT')),
+  ('Vania Aribowo',                               'vania.aribowo@sprout.co.id',           'Business Development Manager',         (select id from public.organizations where name = 'Sales'), (select id from public.roles where name = 'TOP MANAGEMENT')),
+  ('Sanny Martin',                                'sanny.martin@sprout.co.id',            'Head of Sales',                        (select id from public.organizations where name = 'Sales'), (select id from public.roles where name = 'TOP MANAGEMENT')),
+  ('Sakti Ambawani',                              'sakti.ambawani@sprout.co.id',          'Business Development Manager',         (select id from public.organizations where name = 'Sales'), (select id from public.roles where name = 'TOP MANAGEMENT')),
 
   -- Product
-  ('Alistair Tody',                               'alistair.tody@sprout.co.id',           'Business & Strategic Development Lead',(select id from public.organizations where name = 'Product'),           (select id from public.projects where name = 'HI-FELLA'),        (select id from public.roles where name = 'SQUAD LEAD')),
-  ('Nathanneal Audris',                           'nathanneal.audris@sprout.co.id',       'Project Manager',                      (select id from public.organizations where name = 'Product'),           (select id from public.projects where name = 'KHONIC'),          (select id from public.roles where name = 'STAFF')),
-  ('Lamhot Pardamean Siahaan',                    'lamhot.siahaan@sprout.co.id',          'Junior Technical Product',             (select id from public.organizations where name = 'Product'),           (select id from public.projects where name = 'SMARCO'),          (select id from public.roles where name = 'STAFF')),
-  ('Tjiong Teguh Arianto',                        'teguh.arianto@sprout.co.id',           'Sr Product Manager',                   (select id from public.organizations where name = 'Product'),           (select id from public.projects where name = 'LABAMU SINGAPORE'),(select id from public.roles where name = 'SQUAD LEAD')),
-  ('Marlon P V M Keintjem',                       'marlon.keintjem@sprout.co.id',        'VP of Product',                        (select id from public.organizations where name = 'Product'),           (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-  ('Briyan Benget Alfonsius',                     'briyan.benget@sprout.co.id',           'Product Manager Support',              (select id from public.organizations where name = 'Product'),           (select id from public.projects where name = 'HI-FELLA'),        (select id from public.roles where name = 'SQUAD LEAD')),
-  ('Eldaa Warapsari',                             'eldaa.warapsari@sprout.co.id',         'Product Manager Officer',              (select id from public.organizations where name = 'Product'),           (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'SQUAD LEAD')),
-  ('Reynaldo Damara Salim',                       'reynaldo.damara@sprout.co.id',         'Associate Product Manager',            (select id from public.organizations where name = 'Product'),           (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'SQUAD LEAD')),
-  ('Shafa Matahati',                              'shafa.matahati@sprout.co.id',          'Jr Product Manager',                   (select id from public.organizations where name = 'Product'),           (select id from public.projects where name = 'JAPFA'),           (select id from public.roles where name = 'SQUAD LEAD')),
-  ('Grisviany',                                   'grisviany@sprout.co.id',               'Product Manager',                      (select id from public.organizations where name = 'Product'),           (select id from public.projects where name = 'LABAMU SINGAPORE'),(select id from public.roles where name = 'STAFF')),
+  ('Alistair Tody',                               'alistair.tody@sprout.co.id',           'Business & Strategic Development Lead',(select id from public.organizations where name = 'Product'), (select id from public.roles where name = 'SQUAD LEAD')),
+  ('Nathanneal Audris',                           'nathanneal.audris@sprout.co.id',       'Project Manager',                      (select id from public.organizations where name = 'Product'), (select id from public.roles where name = 'STAFF')),
+  ('Lamhot Pardamean Siahaan',                    'lamhot.siahaan@sprout.co.id',          'Junior Technical Product',             (select id from public.organizations where name = 'Product'), (select id from public.roles where name = 'STAFF')),
+  ('Tjiong Teguh Arianto',                        'teguh.arianto@sprout.co.id',           'Sr Product Manager',                   (select id from public.organizations where name = 'Product'), (select id from public.roles where name = 'SQUAD LEAD')),
+  ('Marlon P V M Keintjem',                       'marlon.keintjem@sprout.co.id',        'VP of Product',                        (select id from public.organizations where name = 'Product'), (select id from public.roles where name = 'TOP MANAGEMENT')),
+  ('Briyan Benget Alfonsius',                     'briyan.benget@sprout.co.id',           'Product Manager Support',              (select id from public.organizations where name = 'Product'), (select id from public.roles where name = 'SQUAD LEAD')),
+  ('Eldaa Warapsari',                             'eldaa.warapsari@sprout.co.id',         'Product Manager Officer',              (select id from public.organizations where name = 'Product'), (select id from public.roles where name = 'SQUAD LEAD')),
+  ('Reynaldo Damara Salim',                       'reynaldo.damara@sprout.co.id',         'Associate Product Manager',            (select id from public.organizations where name = 'Product'), (select id from public.roles where name = 'SQUAD LEAD')),
+  ('Shafa Matahati',                              'shafa.matahati@sprout.co.id',          'Jr Product Manager',                   (select id from public.organizations where name = 'Product'), (select id from public.roles where name = 'SQUAD LEAD')),
+  ('Grisviany',                                   'grisviany@sprout.co.id',               'Product Manager',                      (select id from public.organizations where name = 'Product'), (select id from public.roles where name = 'STAFF')),
 
   -- UI/UX
-  ('Vanessa Gunawan',                             'vanessa.gunawan@sprout.co.id',         'UI/UX Designer Lead',                  (select id from public.organizations where name = 'UI/UX'),             (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'SQUAD LEAD')),
-  ('Moch Baiz Kamarulredzuan',                    'moch.baiz@sprout.co.id',               'Jr UI/UX Designer',                    (select id from public.organizations where name = 'UI/UX'),             (select id from public.projects where name = 'TOCO'),            (select id from public.roles where name = 'STAFF')),
-  ('Darren Ekaseptian',                           'darren.ekaseptian@sprout.co.id',       'UI/UX Designer',                       (select id from public.organizations where name = 'UI/UX'),             (select id from public.projects where name = 'JAPFA'),           (select id from public.roles where name = 'STAFF')),
-  ('Bimo Prayogo Muhammad',                       'bimo.prayogo@sprout.co.id',            'UI/UX Designer',                       (select id from public.organizations where name = 'UI/UX'),             (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'STAFF')),
-  ('Glenn Vhalado Dykaputra L. Toruan',           'glenn.vhalado@sprout.co.id',           'UI/UX Designer',                       (select id from public.organizations where name = 'UI/UX'),             (select id from public.projects where name = 'SPECTRA'),         (select id from public.roles where name = 'STAFF')),
+  ('Vanessa Gunawan',                             'vanessa.gunawan@sprout.co.id',         'UI/UX Designer Lead',                  (select id from public.organizations where name = 'UI/UX'), (select id from public.roles where name = 'SQUAD LEAD')),
+  ('Moch Baiz Kamarulredzuan',                    'moch.baiz@sprout.co.id',               'Jr UI/UX Designer',                    (select id from public.organizations where name = 'UI/UX'), (select id from public.roles where name = 'STAFF')),
+  ('Darren Ekaseptian',                           'darren.ekaseptian@sprout.co.id',       'UI/UX Designer',                       (select id from public.organizations where name = 'UI/UX'), (select id from public.roles where name = 'STAFF')),
+  ('Bimo Prayogo Muhammad',                       'bimo.prayogo@sprout.co.id',            'UI/UX Designer',                       (select id from public.organizations where name = 'UI/UX'), (select id from public.roles where name = 'STAFF')),
+  ('Glenn Vhalado Dykaputra L. Toruan',           'glenn.vhalado@sprout.co.id',           'UI/UX Designer',                       (select id from public.organizations where name = 'UI/UX'), (select id from public.roles where name = 'STAFF')),
 
   -- Quality Assurance
-  ('Wirapa Pillay',                               'wirapa.pillay@sprout.co.id',           'VP of Quality Assurance',              (select id from public.organizations where name = 'Quality Assurance'), (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'SQUAD LEAD')),
-  ('Devi Rahmawati',                              'devi.rahmawati@sprout.co.id',          'QA Engineer Associate',                (select id from public.organizations where name = 'Quality Assurance'), (select id from public.projects where name = 'JAPFA'),           (select id from public.roles where name = 'STAFF')),
-  ('Sangan Nathan',                               'sangan.nathan@sprout.co.id',           'QA Lead',                              (select id from public.organizations where name = 'Quality Assurance'), (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'STAFF')),
-  ('Triisya Velly',                               'triisya.velly@sprout.co.id',           'QA Engineer Associate',                (select id from public.organizations where name = 'Quality Assurance'), (select id from public.projects where name = 'JAPFA'),           (select id from public.roles where name = 'STAFF')),
-  ('Rahadiyan Koesandrianto',                     'rahadiyan.koesandrianto@sprout.co.id', 'QA Engineer (Associate)',              (select id from public.organizations where name = 'Quality Assurance'), (select id from public.projects where name = 'LABAMU SINGAPORE'),(select id from public.roles where name = 'STAFF')),
-  ('Dian Marsha Putri',                           'dian.marsha@sprout.co.id',             'Sr QA Engineer',                       (select id from public.organizations where name = 'Quality Assurance'), (select id from public.projects where name = 'LABAMU SINGAPORE'),(select id from public.roles where name = 'STAFF')),
-  ('Muhammad Raihan Mubaroq',                     'muhammad.raihan@sprout.co.id',         'QA Engineer Junior',                   (select id from public.organizations where name = 'Quality Assurance'), (select id from public.projects where name = 'LABAMU SINGAPORE'),(select id from public.roles where name = 'STAFF')),
-  ('Leni Hendra',                                 'leni.hendra@sprout.co.id',             'QA Engineer Associate',                (select id from public.organizations where name = 'Quality Assurance'), (select id from public.projects where name = 'QINERJA'),         (select id from public.roles where name = 'STAFF')),
+  ('Wirapa Pillay',                               'wirapa.pillay@sprout.co.id',           'VP of Quality Assurance',              (select id from public.organizations where name = 'Quality Assurance'), (select id from public.roles where name = 'SQUAD LEAD')),
+  ('Devi Rahmawati',                              'devi.rahmawati@sprout.co.id',          'QA Engineer Associate',                (select id from public.organizations where name = 'Quality Assurance'), (select id from public.roles where name = 'STAFF')),
+  ('Sangan Nathan',                               'sangan.nathan@sprout.co.id',           'QA Lead',                              (select id from public.organizations where name = 'Quality Assurance'), (select id from public.roles where name = 'STAFF')),
+  ('Triisya Velly',                               'triisya.velly@sprout.co.id',           'QA Engineer Associate',                (select id from public.organizations where name = 'Quality Assurance'), (select id from public.roles where name = 'STAFF')),
+  ('Rahadiyan Koesandrianto',                     'rahadiyan.koesandrianto@sprout.co.id', 'QA Engineer (Associate)',              (select id from public.organizations where name = 'Quality Assurance'), (select id from public.roles where name = 'STAFF')),
+  ('Dian Marsha Putri',                           'dian.marsha@sprout.co.id',             'Sr QA Engineer',                       (select id from public.organizations where name = 'Quality Assurance'), (select id from public.roles where name = 'STAFF')),
+  ('Muhammad Raihan Mubaroq',                     'muhammad.raihan@sprout.co.id',         'QA Engineer Junior',                   (select id from public.organizations where name = 'Quality Assurance'), (select id from public.roles where name = 'STAFF')),
+  ('Leni Hendra',                                 'leni.hendra@sprout.co.id',             'QA Engineer Associate',                (select id from public.organizations where name = 'Quality Assurance'), (select id from public.roles where name = 'STAFF')),
 
   -- Tech
-  ('Heri Herlambang Lumanto',                     'heri.herlambang@sprout.co.id',         'IT System Admin',                      (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'STAFF')),
-  ('Maya Andira',                                 'maya.andira@sprout.co.id',             'Scrum Master',                         (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU'),          (select id from public.roles where name = 'STAFF')),
-  ('Muhammad Firza',                              'muhammad.firza@sprout.co.id',          'Data Engineer',                        (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'EDOTCO'),          (select id from public.roles where name = 'STAFF')),
-  ('Ugan Saripudin',                              'ugan.saripudin@sprout.co.id',          'Tech Lead',                            (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU'),          (select id from public.roles where name = 'SQUAD LEAD')),
-  ('Faisal Ariyanto',                             'faisal.ariyanto@sprout.co.id',         'Team Lead',                            (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'ALODOKTER'),       (select id from public.roles where name = 'SQUAD LEAD')),
-  ('Kevin Godrikus Archibald Tagading P',         'kevin.gading@sprout.co.id',            'Team Lead',                            (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'HI-FELLA'),        (select id from public.roles where name = 'STAFF')),
-  ('Muhammad Azki Darmawan',                      'azki.darmawan@sprout.co.id',           'Tech Lead',                            (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'SPROUT'),          (select id from public.roles where name = 'TOP MANAGEMENT')),
-  ('Bagus Kurnianto',                             'bagus.kurnianto@sprout.co.id',         'Lead Mobile Developer',                (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU SINGAPORE'),(select id from public.roles where name = 'STAFF')),
-  ('Valentinus Hendy Odwin Santoso',              'hendy.odwin@sprout.co.id',             'Sr. Mobile Developer',                 (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU SINGAPORE'),(select id from public.roles where name = 'STAFF')),
-  ('David Santoso',                               'david.santoso@sprout.co.id',           'Mobile Developer',                     (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU'),          (select id from public.roles where name = 'STAFF')),
-  ('Sesaka Aji Nursah Bantani',                   'sesaka.aji@sprout.co.id',              'Jr Mobile Developer',                  (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'KHONIC'),          (select id from public.roles where name = 'STAFF')),
-  ('Jaka Hajar Wiguna',                           'jaka.hajar@sprout.co.id',              'Mobile Developer',                     (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'QINERJA'),         (select id from public.roles where name = 'STAFF')),
-  ('Zikry Kurniawan',                             'zikry.kurniawan@sprout.co.id',         'Sr. Backend Engineer',                 (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU'),          (select id from public.roles where name = 'STAFF')),
-  ('Alda Delas',                                  'alda.delas@sprout.co.id',              'Software Engineer',                    (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU SINGAPORE'),(select id from public.roles where name = 'STAFF')),
-  ('Bintang Muhammad Wahid',                      'bintang.muhammad@sprout.co.id',        'Backend Engineer',                     (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'SMARCO'),          (select id from public.roles where name = 'STAFF')),
-  ('Fakhrul Muhammad Rijal',                      'fakhrul.rijal@sprout.co.id',           'Backend Engineer',                     (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'SPECTRA'),         (select id from public.roles where name = 'STAFF')),
-  ('Teddy Adji Pangestu',                         'teddy.adji@sprout.co.id',              'Frontend Engineer',                    (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU'),          (select id from public.roles where name = 'STAFF')),
-  ('Gaizka Valencia',                             'gaizka.valencia@sprout.co.id',         'Jr. Software Engineer',                (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU'),          (select id from public.roles where name = 'STAFF')),
-  ('Fian Febry Ispianto',                         'fian.febry@sprout.co.id',              'Frontend Engineer',                    (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'STAFF')),
-  ('Al Fatih Abdurrahman Syah',                   'al.fatih@sprout.co.id',                'Software Engineer',                    (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU'),          (select id from public.roles where name = 'STAFF')),
-  ('Mahar Prasetio',                              'mahar.prasetio@sprout.co.id',          'Sr. Fullstack Engineer',               (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'STAFF')),
-  ('Irwin Pratajaya',                             'irwin.pratajaya@sprout.co.id',         'Sr. Software Engineer',                (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'JAPFA'),           (select id from public.roles where name = 'STAFF')),
-  ('Muhamad Danang Priambodo',                    'muhamad.danang@sprout.co.id',          'Software Engineer',                    (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'STAFF')),
-  ('Rizky Maulita Putri',                         'rizky.maulita@sprout.co.id',           'Software Engineer',                    (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'STAFF')),
-  ('Ryan Apratama',                               'ryan.apratama@sprout.co.id',           'Software Engineer',                    (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'STAFF')),
-  ('Marcellus Denta Widyapramana',                'marcellus.denta@sprout.co.id',         'Software Engineer',                    (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'LABAMU SINGAPORE'),(select id from public.roles where name = 'STAFF')),
-  ('Fawaz',                                       'fawaz.hustomi@sprout.co.id',           'Software Engineer',                    (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'STAFF')),
-  ('Yusuf Farhan Abdullah',                       'yusuf.farhan@sprout.co.id',            'Software Engineer',                    (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'JAPFA'),           (select id from public.roles where name = 'STAFF')),
-  ('Herjuno Pangestu',                            'herjuno.pangestu@sprout.co.id',        'DevOps',                               (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'STAFF')),
-  ('Ahmad Dhiya Ilmam Putra',                     'ahmad.dhiya@sprout.co.id',             'Jr DevOps',                            (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'QINERJA'),         (select id from public.roles where name = 'STAFF')),
-  ('Harun Arasyid',                               'harun.arasyid@sprout.co.id',           'Sr DevOps',                            (select id from public.organizations where name = 'Tech'),              (select id from public.projects where name = 'BOUCHON'),         (select id from public.roles where name = 'STAFF'));
+  ('Heri Herlambang Lumanto',                     'heri.herlambang@sprout.co.id',         'IT System Admin',                      (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Maya Andira',                                 'maya.andira@sprout.co.id',             'Scrum Master',                         (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Muhammad Firza',                              'muhammad.firza@sprout.co.id',          'Data Engineer',                        (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Ugan Saripudin',                              'ugan.saripudin@sprout.co.id',          'Tech Lead',                            (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'SQUAD LEAD')),
+  ('Faisal Ariyanto',                             'faisal.ariyanto@sprout.co.id',         'Team Lead',                            (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'SQUAD LEAD')),
+  ('Kevin Godrikus Archibald Tagading P',         'kevin.gading@sprout.co.id',            'Team Lead',                            (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Muhammad Azki Darmawan',                      'azki.darmawan@sprout.co.id',           'Tech Lead',                            (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'TOP MANAGEMENT')),
+  ('Bagus Kurnianto',                             'bagus.kurnianto@sprout.co.id',         'Lead Mobile Developer',                (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Valentinus Hendy Odwin Santoso',              'hendy.odwin@sprout.co.id',             'Sr. Mobile Developer',                 (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('David Santoso',                               'david.santoso@sprout.co.id',           'Mobile Developer',                     (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Sesaka Aji Nursah Bantani',                   'sesaka.aji@sprout.co.id',              'Jr Mobile Developer',                  (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Jaka Hajar Wiguna',                           'jaka.hajar@sprout.co.id',              'Mobile Developer',                     (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Zikry Kurniawan',                             'zikry.kurniawan@sprout.co.id',         'Sr. Backend Engineer',                 (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Alda Delas',                                  'alda.delas@sprout.co.id',              'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Bintang Muhammad Wahid',                      'bintang.muhammad@sprout.co.id',        'Backend Engineer',                     (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Fakhrul Muhammad Rijal',                      'fakhrul.rijal@sprout.co.id',           'Backend Engineer',                     (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Teddy Adji Pangestu',                         'teddy.adji@sprout.co.id',              'Frontend Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Gaizka Valencia',                             'gaizka.valencia@sprout.co.id',         'Jr. Software Engineer',                (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Fian Febry Ispianto',                         'fian.febry@sprout.co.id',              'Frontend Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Al Fatih Abdurrahman Syah',                   'al.fatih@sprout.co.id',                'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Mahar Prasetio',                              'mahar.prasetio@sprout.co.id',          'Sr. Fullstack Engineer',               (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Irwin Pratajaya',                             'irwin.pratajaya@sprout.co.id',         'Sr. Software Engineer',                (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Muhamad Danang Priambodo',                    'muhamad.danang@sprout.co.id',          'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Rizky Maulita Putri',                         'rizky.maulita@sprout.co.id',           'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Ryan Apratama',                               'ryan.apratama@sprout.co.id',           'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Marcellus Denta Widyapramana',                'marcellus.denta@sprout.co.id',         'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Fawaz',                                       'fawaz.hustomi@sprout.co.id',           'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Yusuf Farhan Abdullah',                       'yusuf.farhan@sprout.co.id',            'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Herjuno Pangestu',                            'herjuno.pangestu@sprout.co.id',        'DevOps',                               (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Ahmad Dhiya Ilmam Putra',                     'ahmad.dhiya@sprout.co.id',             'Jr DevOps',                            (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Harun Arasyid',                               'harun.arasyid@sprout.co.id',           'Sr DevOps',                            (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF'));
+
+insert into public.employee_projects (employee_id, project_id)
+select e.id, p.id
+from public.employees e
+inner join (
+  values
+    ('arnold.sebastian@sprout.co.id', 'SPROUT'),
+    ('angelina.kesya@sprout.co.id', 'SPROUT'),
+    ('christina.devi@sprout.co.id', 'SPROUT'),
+    ('rebecca.deborah@sprout.co.id', 'SPROUT'),
+    ('sukardi@sprout.co.id', 'SPROUT'),
+    ('patricia.timothy@sprout.co.id', 'SPROUT'),
+    ('gilang.satrya@sprout.co.id', 'SPROUT'),
+    ('vania.aribowo@sprout.co.id', 'SPROUT'),
+    ('sanny.martin@sprout.co.id', 'SPROUT'),
+    ('sakti.ambawani@sprout.co.id', 'SPROUT'),
+    ('alistair.tody@sprout.co.id', 'HI-FELLA'),
+    ('nathanneal.audris@sprout.co.id', 'KHONIC'),
+    ('lamhot.siahaan@sprout.co.id', 'SMARCO'),
+    ('teguh.arianto@sprout.co.id', 'LABAMU SINGAPORE'),
+    ('marlon.keintjem@sprout.co.id', 'SPROUT'),
+    ('briyan.benget@sprout.co.id', 'HI-FELLA'),
+    ('eldaa.warapsari@sprout.co.id', 'SPROUT'),
+    ('reynaldo.damara@sprout.co.id', 'BOUCHON'),
+    ('shafa.matahati@sprout.co.id', 'JAPFA'),
+    ('grisviany@sprout.co.id', 'LABAMU SINGAPORE'),
+    ('vanessa.gunawan@sprout.co.id', 'SPROUT'),
+    ('moch.baiz@sprout.co.id', 'TOCO'),
+    ('darren.ekaseptian@sprout.co.id', 'JAPFA'),
+    ('bimo.prayogo@sprout.co.id', 'BOUCHON'),
+    ('glenn.vhalado@sprout.co.id', 'SPECTRA'),
+    ('wirapa.pillay@sprout.co.id', 'SPROUT'),
+    ('devi.rahmawati@sprout.co.id', 'JAPFA'),
+    ('sangan.nathan@sprout.co.id', 'SPROUT'),
+    ('triisya.velly@sprout.co.id', 'JAPFA'),
+    ('rahadiyan.koesandrianto@sprout.co.id', 'LABAMU SINGAPORE'),
+    ('dian.marsha@sprout.co.id', 'LABAMU SINGAPORE'),
+    ('muhammad.raihan@sprout.co.id', 'LABAMU SINGAPORE'),
+    ('leni.hendra@sprout.co.id', 'QINERJA'),
+    ('heri.herlambang@sprout.co.id', 'SPROUT'),
+    ('maya.andira@sprout.co.id', 'LABAMU'),
+    ('muhammad.firza@sprout.co.id', 'EDOTCO'),
+    ('ugan.saripudin@sprout.co.id', 'LABAMU'),
+    ('faisal.ariyanto@sprout.co.id', 'ALODOKTER'),
+    ('kevin.gading@sprout.co.id', 'HI-FELLA'),
+    ('azki.darmawan@sprout.co.id', 'SPROUT'),
+    ('bagus.kurnianto@sprout.co.id', 'LABAMU SINGAPORE'),
+    ('hendy.odwin@sprout.co.id', 'LABAMU SINGAPORE'),
+    ('david.santoso@sprout.co.id', 'LABAMU'),
+    ('sesaka.aji@sprout.co.id', 'KHONIC'),
+    ('jaka.hajar@sprout.co.id', 'QINERJA'),
+    ('zikry.kurniawan@sprout.co.id', 'LABAMU'),
+    ('alda.delas@sprout.co.id', 'LABAMU SINGAPORE'),
+    ('bintang.muhammad@sprout.co.id', 'SMARCO'),
+    ('fakhrul.rijal@sprout.co.id', 'SPECTRA'),
+    ('teddy.adji@sprout.co.id', 'LABAMU'),
+    ('gaizka.valencia@sprout.co.id', 'LABAMU'),
+    ('fian.febry@sprout.co.id', 'BOUCHON'),
+    ('al.fatih@sprout.co.id', 'LABAMU'),
+    ('mahar.prasetio@sprout.co.id', 'BOUCHON'),
+    ('irwin.pratajaya@sprout.co.id', 'JAPFA'),
+    ('muhamad.danang@sprout.co.id', 'BOUCHON'),
+    ('rizky.maulita@sprout.co.id', 'BOUCHON'),
+    ('ryan.apratama@sprout.co.id', 'BOUCHON'),
+    ('marcellus.denta@sprout.co.id', 'LABAMU SINGAPORE'),
+    ('fawaz.hustomi@sprout.co.id', 'BOUCHON'),
+    ('yusuf.farhan@sprout.co.id', 'JAPFA'),
+    ('herjuno.pangestu@sprout.co.id', 'BOUCHON'),
+    ('ahmad.dhiya@sprout.co.id', 'QINERJA'),
+    ('harun.arasyid@sprout.co.id', 'BOUCHON')
+) as v(email, project_name)
+  on e.email = v.email
+inner join public.projects p on p.name = v.project_name;
 
 -- Set squad leads per project (based on provided mapping)
 update public.projects
