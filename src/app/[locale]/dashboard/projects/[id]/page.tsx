@@ -3,19 +3,11 @@
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { ArrowLeft, AlertCircle, Trophy, User, Share2, Heart, Clock, MessageSquare, Star, Zap } from "lucide-react";
+import { ArrowLeft, AlertCircle, Trophy, Share2, Heart, Clock, Zap, LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
 import { DUMMY_PROJECTS } from "@/lib/constants/projects";
 import { DUMMY_ACTIVITIES, type ActivityItem } from "@/lib/constants/activity";
-
-const statusStyles: Record<string, string> = {
-  Planning: "bg-slate-50 text-slate-700 border-slate-100",
-  Development: "bg-blue-50 text-blue-700 border-blue-100",
-  UAT: "bg-amber-50 text-amber-700 border-amber-100",
-  Deployment: "bg-emerald-50 text-emerald-700 border-emerald-100",
-  Maintenance: "bg-indigo-50 text-indigo-700 border-indigo-100",
-};
 
 const healthStyles: Record<string, string> = {
   Healthy: "bg-green-500",
@@ -23,11 +15,10 @@ const healthStyles: Record<string, string> = {
   "At Risk": "bg-red-500",
 };
 
-const activityTypeStyles: Record<ActivityItem["type"], { icon: any, color: string, bgColor: string }> = {
+const activityTypeStyles: Record<Exclude<ActivityItem["type"], "status">, { icon: LucideIcon, color: string, bgColor: string }> = {
   achievement: { icon: Trophy, color: "text-emerald-500", bgColor: "bg-emerald-50" },
   concern: { icon: AlertCircle, color: "text-red-500", bgColor: "bg-red-50" },
   kudos: { icon: Heart, color: "text-pink-500", bgColor: "bg-pink-50" },
-  status: { icon: Zap, color: "text-blue-500", bgColor: "bg-blue-50" },
 };
 
 export default function ProjectDetailPage() {
@@ -36,9 +27,9 @@ export default function ProjectDetailPage() {
   const t = useTranslations("ProjectDetail");
   
   const project = DUMMY_PROJECTS.find(p => p.id === id);
-  const projectActivities = DUMMY_ACTIVITIES.filter(a => a.projectId === id).sort((a, b) => 
-    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-  );
+  const projectActivities = DUMMY_ACTIVITIES
+    .filter(a => a.projectId === id && a.type !== "status")
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   if (!project) {
     return (
@@ -75,15 +66,6 @@ export default function ProjectDetailPage() {
         <div className="absolute -inset-full [background:conic-gradient(from_0deg,transparent_0_80%,#FFD300_100%)] animate-[border-rotate_8s_linear_infinite]" />
         
         <div className="relative z-10 bg-white rounded-[30.5px] p-8 md:p-12 space-y-6">
-          <div className="flex flex-wrap items-center gap-4">
-            <span className={cn(
-              "rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wider",
-              statusStyles[project.status]
-            )}>
-              {project.status}
-            </span>
-          </div>
-          
           <h1 className="font-plus-jakarta text-4xl md:text-5xl font-bold text-brand-primary tracking-tight">
             {project.name}
           </h1>
@@ -106,9 +88,6 @@ export default function ProjectDetailPage() {
           <div className="flex flex-col items-end gap-1 text-right">
             <span className="text-2xl font-bold font-plus-jakarta text-slate-900">
               {project.healthStatus}
-            </span>
-            <span className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-700">
-              {project.health}% Optimal
             </span>
           </div>
         </div>
@@ -162,7 +141,7 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      {/* Squad Overview Section - MOVED UP */}
+      {/* Squad Overview Section */}
       <div className="space-y-6">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <h2 className="font-plus-jakarta text-xl font-bold text-brand-primary">{t("squad")}</h2>
@@ -196,7 +175,7 @@ export default function ProjectDetailPage() {
         {projectActivities.length > 0 ? (
           <div className="space-y-4">
             {projectActivities.map((activity) => {
-              const Style = activityTypeStyles[activity.type];
+              const Style = activityTypeStyles[activity.type as Exclude<ActivityItem["type"], "status">];
               const Icon = Style.icon;
               return (
                 <div key={activity.id} className="group relative bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-brand-primary/10">

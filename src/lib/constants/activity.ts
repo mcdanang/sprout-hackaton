@@ -41,16 +41,6 @@ export const DUMMY_ACTIVITIES: ActivityItem[] = [
     content: "Huge thanks to Sarah for quickly identifying the regional scaling bug. Realy saved us during the peak traffic hour!",
     timestamp: "2026-04-02T10:00:00Z",
   },
-  {
-    id: "act-4",
-    projectId: "1",
-    userId: "system",
-    userName: "Signal Bot",
-    userAvatar: "/signal_logo.svg",
-    type: "status",
-    content: "Project status changed from Planning to Development.",
-    timestamp: "2026-04-01T14:00:00Z",
-  },
   
   // Security Audit 2026 (Project 2)
   {

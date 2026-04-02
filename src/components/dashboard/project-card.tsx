@@ -7,14 +7,12 @@ import { AlertCircle, Trophy, ArrowRight, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
 
-export type ProjectStatus = "Planning" | "Development" | "UAT" | "Deployment" | "Maintenance";
 export type ProjectHealthStatus = "Healthy" | "Stable" | "At Risk";
 
 export interface Project {
   id: string;
   name: string;
   description: string;
-  status: ProjectStatus;
   team: string[]; // Array of avatar URLs
   health: number; // 0-100
   healthStatus: ProjectHealthStatus;
@@ -26,14 +24,6 @@ export interface Project {
 interface ProjectCardProps {
   project: Project;
 }
-
-const statusStyles: Record<ProjectStatus, string> = {
-  Planning: "bg-slate-50 text-slate-700 border-slate-100",
-  Development: "bg-blue-50 text-blue-700 border-blue-100",
-  UAT: "bg-amber-50 text-amber-700 border-amber-100",
-  Deployment: "bg-emerald-50 text-emerald-700 border-emerald-100",
-  Maintenance: "bg-indigo-50 text-indigo-700 border-indigo-100",
-};
 
 const healthStyles: Record<ProjectHealthStatus, string> = {
   Healthy: "bg-green-500",
@@ -55,12 +45,6 @@ export function ProjectCard({ project }: ProjectCardProps) {
         {/* Top Section: Status & Team */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className={cn(
-              "rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wider",
-              statusStyles[project.status]
-            )}>
-              {project.status}
-            </span>
             <ArrowRight className="h-4 w-4 text-slate-300 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
           </div>
           
