@@ -1,9 +1,10 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { ArrowLeft, AlertCircle, Trophy, Heart, Share2 } from "lucide-react";
+import { ArrowLeft, AlertCircle, Trophy, Heart, Plus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { ActivityItem } from "@/lib/constants/activity";
@@ -11,7 +12,7 @@ import type { Project } from "@/lib/types/project";
 import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
 import { healthStyles } from "@/lib/constants/project-ui";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
-import { SignalComposer } from "@/components/dashboard/signal-composer";
+import { SignalModal } from "@/components/dashboard/signal-modal";
 
 interface Props {
 	project: Project;
@@ -21,11 +22,28 @@ interface Props {
 export function ProjectDetailClient({ project, activities }: Props) {
 	const router = useRouter();
 	const t = useTranslations("ProjectDetail");
+	const [scrolled, setScrolled] = useState(false);
+	const [isModalOpen, setIsModalOpen] = useState(false);
+	const sentinelRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const observer = new IntersectionObserver(
+			([entry]) => setScrolled(!entry.isIntersecting),
+			{ threshold: 0 },
+		);
+		if (sentinelRef.current) observer.observe(sentinelRef.current);
+		return () => observer.disconnect();
+	}, []);
 
 	return (
 		<div className="max-w-5xl mx-auto space-y-10 pb-20 animate-in fade-in duration-700">
-			{/* Navigation & Actions */}
-			<div className="flex items-center justify-between">
+			{/* Sticky header */}
+			<div className={cn(
+				"md:sticky z-30 flex items-center justify-between transition-all duration-500",
+				scrolled
+					? "md:top-3 py-3 px-5 md:rounded-2xl md:bg-white/60 md:backdrop-blur-xl md:border md:border-slate-200/50 md:shadow-md"
+					: "md:top-0 py-4 bg-transparent",
+			)}>
 				<button
 					onClick={() => router.back()}
 					className="group flex items-center gap-2 text-slate-500 hover:text-brand-primary transition-colors font-plus-jakarta text-sm font-semibold"
@@ -33,10 +51,19 @@ export function ProjectDetailClient({ project, activities }: Props) {
 					<ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
 					{t("back")}
 				</button>
-				<button className="p-2 rounded-full border border-slate-200 text-slate-400 hover:text-brand-primary hover:border-brand-primary/20 transition-all">
-					<Share2 className="h-4 w-4" />
+
+				{/* Desktop only */}
+				<button
+					onClick={() => setIsModalOpen(true)}
+					className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-brand-primary text-white font-plus-jakarta text-sm font-bold hover:bg-brand-primary/90 active:scale-95 transition-all shadow-sm"
+				>
+					<Plus className="h-3.5 w-3.5" />
+					Signal
 				</button>
 			</div>
+
+			{/* Sentinel for scroll detection */}
+			<div ref={sentinelRef} className="h-0" />
 
 			{/* Hero Header Card */}
 			<div className="group relative rounded-[32px] p-[1.5px] overflow-hidden border border-slate-100">
@@ -93,10 +120,7 @@ export function ProjectDetailClient({ project, activities }: Props) {
 				<Progress value={project.health} className="h-3 w-full">
 					<ProgressTrack className="h-full w-full bg-slate-50">
 						<ProgressIndicator
-							className={cn(
-								"h-full transition-all duration-1000",
-								healthStyles[project.healthStatus],
-							)}
+							className={cn("h-full transition-all duration-1000", healthStyles[project.healthStatus])}
 						/>
 					</ProgressTrack>
 				</Progress>
@@ -147,12 +171,23 @@ export function ProjectDetailClient({ project, activities }: Props) {
 				</div>
 			</div>
 
-			{/* Signal Composer */}
-			<SignalComposer projectId={project.id} projectName={project.name} />
-
 			{/* Activity Feed */}
 			<ActivityFeed activities={activities} projectName={project.name} />
+
+			{/* Mobile FAB */}
+			<button
+				onClick={() => setIsModalOpen(true)}
+				className="md:hidden fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full bg-brand-primary text-white shadow-lg flex items-center justify-center hover:bg-brand-primary/90 active:scale-95 transition-all"
+			>
+				<Plus className="h-5 w-5" />
+			</button>
+
+			<SignalModal
+				isOpen={isModalOpen}
+				projectId={project.id}
+				projectName={project.name}
+				onClose={() => setIsModalOpen(false)}
+			/>
 		</div>
 	);
 }
-

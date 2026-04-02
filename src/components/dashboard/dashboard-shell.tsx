@@ -26,7 +26,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
   };
 
   return (
-    <div className="flex min-h-screen bg-background transition-colors duration-300">
+    <div className="flex h-screen bg-background transition-colors duration-300">
       {/* Sidebar Container */}
       <DashboardSidebar 
         isCollapsed={isCollapsed} 
