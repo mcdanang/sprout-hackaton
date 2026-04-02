@@ -143,3 +143,12 @@
     @apply font-sans;
   }
 }
+
+@keyframes border-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
