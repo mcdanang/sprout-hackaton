@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Geist, Geist_Mono, Open_Sans } from "next/font/google";
+import { Geist, Geist_Mono, Open_Sans, Plus_Jakarta_Sans } from "next/font/google";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -19,6 +19,11 @@ const geistMono = Geist_Mono({
 
 const openSans = Open_Sans({
   variable: "--font-open-sans",
+  subsets: ["latin"],
+});
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta",
   subsets: ["latin"],
 });
 
@@ -50,7 +55,7 @@ export default async function RootLayout({
     <ClerkProvider>
       <html
         lang={locale}
-        className={`${geistSans.variable} ${geistMono.variable} ${openSans.variable} h-full antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${openSans.variable} ${plusJakartaSans.variable} h-full antialiased`}
       >
         <body className="min-h-full flex flex-col">
           <NextIntlClientProvider messages={messages}>

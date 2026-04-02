@@ -22,9 +22,22 @@
     }
   },
   "Dashboard": {
-    "title": "Pusat Kepemilikan",
-    "description": "Bangun budaya tanggung jawab dan pengakuan dengan berbagi sinyal kepemilikan kepada tim Anda.",
-    "overview": "Ikhtisar"
+    "title": "Dashboard Tim",
+    "welcome": "Selamat datang kembali, {name}",
+    "subtitle": "Tempat perlindungan pribadi Anda untuk kejelasan, fokus, dan koneksi tim.",
+    "quote": {
+      "text": "Keamanan psikologis adalah jembatan antara bakat individu dan kegeniusan kolektif.",
+      "author": "SIGNAL SANCTUARY AI"
+    },
+    "overview": "Ikhtisar",
+    "nav": {
+      "dashboard": "Dashboard",
+      "projects": "Proyek",
+      "myConcern": "Keluhan Saya",
+      "myAchievement": "Pencapaian Saya",
+      "privateFeedback": "Umpan Balik Privat",
+      "aiAssistant": "Asisten AI"
+    }
   },
   "Unauthorized": {
     "title": "Akses Ditolak",
