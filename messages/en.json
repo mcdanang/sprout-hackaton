@@ -29,11 +29,6 @@
       "text": "Psychological safety is the bridge between individual talent and collective genius.",
       "author": "SIGNAL SANCTUARY AI"
     },
-    "Projects": {
-      "label": "Team Projects",
-      "title": "Ongoing Projects",
-      "subtitle": "Track and manage your team's tactical and strategic ownership initiatives."
-    },
     "overview": "Overview",
     "nav": {
       "dashboard": "Dashboard",
@@ -75,5 +70,10 @@
     "signIn": "Sign In",
     "dashboard": "Dashboard",
     "anonymous": "Anonymous"
+  },
+  "Projects": {
+    "label": "Team Projects",
+    "title": "Ongoing Projects",
+    "subtitle": "Track and manage your team's tactical and strategic ownership initiatives."
   }
 }

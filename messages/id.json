@@ -29,11 +29,6 @@
       "text": "Keamanan psikologis adalah jembatan antara bakat individu dan kegeniusan kolektif.",
       "author": "SIGNAL SANCTUARY AI"
     },
-    "Projects": {
-      "label": "Proyek Tim",
-      "title": "Proyek Berjalan",
-      "subtitle": "Pantau dan kelola inisiatif kepemilikan taktis dan strategis tim Anda."
-    },
     "overview": "Ikhtisar",
     "nav": {
       "dashboard": "Dashboard",
@@ -75,5 +70,10 @@
     "signIn": "Masuk",
     "dashboard": "Dashboard",
     "anonymous": "Anonim"
+  },
+  "Projects": {
+    "label": "Proyek Tim",
+    "title": "Proyek Berjalan",
+    "subtitle": "Pantau dan kelola inisiatif kepemilikan taktis dan strategis tim Anda."
   }
 }
