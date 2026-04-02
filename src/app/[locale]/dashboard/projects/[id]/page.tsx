@@ -314,7 +314,7 @@ export default function ProjectDetailPage() {
                           {activity.replies.map((reply) => (
                             <div key={reply.id} className="relative flex gap-4 pl-10 animate-in fade-in slide-in-from-left-2 duration-300">
                               <div className="shrink-0 relative">
-                                <div className="h-8 w-8 rounded-xl overflow-hidden border-2 border-white shadow-sm">
+                                <div className="h-8 w-8 rounded-full overflow-hidden border-2 border-white shadow-sm">
                                   <Image src={reply.userAvatar} alt={reply.userName} fill className="object-cover" />
                                 </div>
                                 {/* Small connector branch */}
