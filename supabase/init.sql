@@ -138,6 +138,62 @@ create policy "signal_targets readable by authenticated" on public.signal_target
   for select to authenticated using (true);
 alter table public.signal_targets disable row level security;
 
+-- 7. SIGNAL LIKES + REPLIES
+-- These power the Project feed actions (like/unlike + reply).
+
+-- 7.1 SIGNAL LIKES
+create table if not exists public.signal_likes (
+  id uuid primary key default gen_random_uuid(),
+
+  signal_id uuid not null
+    references public.signals(id) on delete cascade,
+
+  author_employee_id uuid not null
+    references public.employees(id) on delete cascade,
+
+  created_at timestamptz not null default now(),
+
+  constraint signal_likes_unique_pair unique (signal_id, author_employee_id)
+);
+
+create index if not exists signal_likes_signal_id_idx on public.signal_likes(signal_id);
+create index if not exists signal_likes_author_employee_id_idx on public.signal_likes(author_employee_id);
+
+alter table public.signal_likes enable row level security;
+create policy "signal_likes readable by authenticated" on public.signal_likes
+  for select to authenticated using (true);
+create policy "signal_likes insertable by authenticated" on public.signal_likes
+  for insert to authenticated with check (true);
+create policy "signal_likes deletable by authenticated" on public.signal_likes
+  for delete to authenticated using (true);
+alter table public.signal_likes disable row level security;
+
+-- 7.2 SIGNAL REPLIES
+create table if not exists public.signal_replies (
+  id uuid primary key default gen_random_uuid(),
+
+  signal_id uuid not null
+    references public.signals(id) on delete cascade,
+
+  author_employee_id uuid not null
+    references public.employees(id) on delete cascade,
+
+  content text not null,
+
+  created_at timestamptz not null default now()
+);
+
+create index if not exists signal_replies_signal_id_idx on public.signal_replies(signal_id);
+create index if not exists signal_replies_author_employee_id_idx on public.signal_replies(author_employee_id);
+create index if not exists signal_replies_created_at_idx on public.signal_replies(created_at desc);
+
+alter table public.signal_replies enable row level security;
+create policy "signal_replies readable by authenticated" on public.signal_replies
+  for select to authenticated using (true);
+create policy "signal_replies insertable by authenticated" on public.signal_replies
+  for insert to authenticated with check (true);
+alter table public.signal_replies disable row level security;
+
 
 -- ============================================================
 -- SEED DATA
