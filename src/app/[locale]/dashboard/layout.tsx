@@ -1,8 +1,9 @@
 import { UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { Signal } from "lucide-react";
-import Link from "next/link";
-import { redirect } from "next/navigation";
+import { Link, redirect } from "@/i18n/routing";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { getLocale } from "next-intl/server";
 
 export default async function DashboardLayout({
   children,
@@ -10,10 +11,12 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { userId } = await auth();
+  const locale = await getLocale();
 
   if (!userId) {
-    redirect("/unauthorized");
+    redirect({ href: "/unauthorized", locale });
   }
+
   return (
     <div className="flex min-h-screen flex-col bg-muted/20">
       {/* Dashboard Header */}
@@ -24,6 +27,7 @@ export default async function DashboardLayout({
             <span>Sprout</span>
           </Link>
           <div className="flex items-center gap-4">
+            <LanguageSwitcher />
             <UserButton />
           </div>
         </div>

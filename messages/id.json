@@ -1,0 +1,61 @@
+{
+  "Landing": {
+    "title": "Bicara dan Akui Kepemilikan Positif",
+    "description": "Platform internal yang aman bagi karyawan untuk menyampaikan kekhawatiran lebih awal dan mengakui rekan kerja yang menunjukkan rasa memiliki. Tingkatkan transparansi, kepercayaan, dan akuntabilitas dalam tim Anda.",
+    "getStarted": "Mulai Sekarang",
+    "goDashboard": "Ke Dashboard",
+    "learnMore": "Pelajari Lebih Lanjut",
+    "badge": "Project Sprout Ownership",
+    "features": {
+      "safe": {
+        "title": "Aman & Anonim",
+        "description": "Sampaikan kekhawatiran tanpa rasa takut. Anonimitas opsional memastikan setiap suara didengar."
+      },
+      "peer": {
+        "title": "Pengakuan Rekan",
+        "description": "Soroti kinerja dan rasa memiliki yang luar biasa. Bangun budaya apresiasi."
+      },
+      "rapid": {
+        "title": "Umpan Balik Cepat",
+        "description": "Dapatkan sinyal internal langsung ke pengambil keputusan untuk menyelesaikan hambatan dengan cepat."
+      }
+    }
+  },
+  "Dashboard": {
+    "title": "Pusat Kepemilikan",
+    "description": "Bangun budaya tanggung jawab dan pengakuan dengan berbagi sinyal kepemilikan kepada tim Anda.",
+    "overview": "Ikhtisar"
+  },
+  "Unauthorized": {
+    "title": "Akses Ditolak",
+    "description": "Anda mencoba mengakses area yang dilindungi. Silakan masuk untuk melanjutkan atau kembali ke halaman utama.",
+    "signIn": "Masuk Sekarang",
+    "backHome": "Kembali ke Beranda"
+  },
+  "Form": {
+    "title": "Bicara atau Akui Rekan",
+    "type": "Jenis Sinyal",
+    "typeConcern": "Kekhawatiran / Risiko",
+    "typeRecognition": "Pengakuan / Kepemilikan Positif",
+    "titleLabel": "Judul",
+    "titlePlaceholder": "Contoh: Hambatan dalam dependensi API",
+    "detailsLabel": "Detail",
+    "detailsPlaceholder": "Berikan konteks yang cukup agar orang lain dapat mengambil tindakan.",
+    "anonymous": "Kirim sebagai anonim",
+    "submit": "Kirim Sinyal",
+    "submitting": "Mengirim...",
+    "success": "Sinyal berhasil dikirim.",
+    "error": "Harap perbaiki kesalahan pada formulir.",
+    "unauthorized": "Tidak sah. Silakan masuk untuk mengirim sinyal.",
+    "failed": "Pengiriman gagal"
+  },
+  "Recent": {
+    "title": "Sinyal Terbaru",
+    "empty": "Belum ada sinyal."
+  },
+  "Common": {
+    "signIn": "Masuk",
+    "dashboard": "Dashboard",
+    "anonymous": "Anonim"
+  }
+}

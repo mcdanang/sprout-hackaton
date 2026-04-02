@@ -5,17 +5,19 @@ import { createClient } from "@/lib/supabase/server";
 import { auth } from "@clerk/nextjs/server";
 import { OwnershipActionState } from "./ownership.types";
 import { ownershipSchema } from "@/lib/validations/ownership";
+import { getTranslations } from "next-intl/server";
 
 export async function submitOwnershipSignal(
   _prevState: OwnershipActionState,
   formData: FormData
 ): Promise<OwnershipActionState> {
   const { userId } = await auth();
+  const t = await getTranslations("Form");
 
   if (!userId) {
     return {
       status: "error",
-      message: "Unauthorized. Please sign in to submit a signal.",
+      message: t("unauthorized"),
     };
   }
 
@@ -31,7 +33,7 @@ export async function submitOwnershipSignal(
   if (!validatedFields.success) {
     return {
       status: "error",
-      message: "Please fix the errors in the form.",
+      message: t("error"),
       errors: validatedFields.error.flatten().fieldErrors,
     };
   }
@@ -50,14 +52,15 @@ export async function submitOwnershipSignal(
   if (error) {
     return {
       status: "error",
-      message: `Submission failed: ${error.message}`,
+      message: `${t("failed")}: ${error.message}`,
     };
   }
 
-  revalidatePath("/dashboard");
+  // Use dynamic revalidation if possible, but basic works for now
+  revalidatePath("/[locale]/dashboard", "page");
 
   return {
     status: "success",
-    message: "Signal submitted successfully.",
+    message: t("success"),
   };
 }
