@@ -10,6 +10,7 @@ import { DUMMY_PROJECTS } from "@/lib/constants/projects";
 import { DUMMY_ACTIVITIES } from "@/lib/constants/activity";
 import { healthStyles } from "@/lib/constants/project-ui";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
+import { SignalComposer } from "@/components/dashboard/signal-composer";
 
 export default function ProjectDetailPage() {
   const { id } = useParams();
@@ -145,6 +146,9 @@ export default function ProjectDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Signal Composer */}
+      <SignalComposer projectId={project.id} projectName={project.name} />
 
       {/* Activity Feed */}
       <ActivityFeed activities={activities} projectName={project.name} />
