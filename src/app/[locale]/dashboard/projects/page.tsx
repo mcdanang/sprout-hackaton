@@ -1,7 +1,7 @@
-"use client";
-
 import { useTranslations } from "next-intl";
+import { AlertCircle, TrendingUp } from "lucide-react";
 import { ProjectCard, type Project } from "@/components/dashboard/project-card";
+import { ShortInfoCard } from "@/components/dashboard/short-info-card";
 
 // Dummy Data
 const DUMMY_PROJECTS: Project[] = [
@@ -77,6 +77,24 @@ export default function ProjectsPage() {
         <p className="font-plus-jakarta text-[18px] font-normal leading-[28px] text-dashboard-description max-w-2xl">
           {t("subtitle")}
         </p>
+      </div>
+
+      {/* Team Stats Overview */}
+      <div className="flex flex-wrap gap-4 pt-4">
+        <ShortInfoCard 
+          title="Concerns" 
+          value="12" 
+          icon={AlertCircle} 
+          iconClassName="text-red-500"
+          className="flex-1 min-w-[200px]"
+        />
+        <ShortInfoCard 
+          title="Achievements" 
+          value="8" 
+          icon={TrendingUp} 
+          iconClassName="text-emerald-500"
+          className="flex-1 min-w-[200px]"
+        />
       </div>
 
       {/* Projects Grid */}
