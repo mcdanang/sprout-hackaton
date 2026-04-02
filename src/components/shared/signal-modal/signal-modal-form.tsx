@@ -26,9 +26,10 @@ export function SignalModalForm({ projectId, onClose }: Props) {
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [projectEmployees, setProjectEmployees] = useState<EmployeeRecord[]>([]);
   const [taggedEmployees, setTaggedEmployees] = useState<EmployeeRecord[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
 
-  const [state, formAction, isPending] = useActionState(createSignal, initialSignalActionState);
+  const [state, dispatch, isPending] = useActionState(createSignal, initialSignalActionState);
   const activeType = SIGNAL_TYPES.find((t) => t.id === selectedType);
 
   useEffect(() => {
@@ -126,12 +127,45 @@ export function SignalModalForm({ projectId, onClose }: Props) {
     setMentionQuery(null);
   };
 
+  // On submit: call AI first, then dispatch to server action with AI results
+  async function handlePost() {
+    if (!content.trim() || !selectedType) return;
+
+    const formData = new FormData();
+    formData.set("category", selectedType);
+    formData.set("projectId", projectId);
+    formData.set("isPublic", isPublic ? "on" : "");
+    formData.set("details", content);
+    formData.set("title", content.replace(/@\[([^\]]+)\]\([^)]+\)/g, "@$1").slice(0, 100) || "Signal Update");
+    taggedEmployees.forEach((e) => formData.append("targetEmployeeIds[]", e.id));
+
+    setIsAnalyzing(true);
+    try {
+      const res = await fetch("/api/analyze-signal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: content, category: selectedType }),
+      });
+      const data = await res.json();
+      if (data.issueCategory) formData.set("aiIssueCategory", data.issueCategory);
+      if (data.sentiment != null) formData.set("aiSentiment", String(data.sentiment));
+    } catch {
+      // AI failed — server action will fall back to mock analysis
+    } finally {
+      setIsAnalyzing(false);
+    }
+
+    dispatch(formData);
+  }
+
   const displayLength = content.replace(/@\[([^\]]+)\]\([^)]+\)/g, "@$1").length;
   const mentionResults = mentionQuery !== null
     ? projectEmployees
         .filter((e) => e.fullName.toLowerCase().includes(mentionQuery.toLowerCase()))
         .slice(0, 5)
     : [];
+
+  const isLoading = isAnalyzing || isPending;
 
   return (
     <div className="bg-white rounded-[32px] shadow-2xl">
@@ -171,62 +205,57 @@ export function SignalModalForm({ projectId, onClose }: Props) {
             onSelect={handleMentionSelect}
           />
 
-          <form action={formAction}>
-            <input type="hidden" name="category" value={selectedType ?? ""} />
-            <input type="hidden" name="projectId" value={projectId} />
-            <input type="hidden" name="isPublic" value={isPublic ? "on" : ""} />
-            <input type="hidden" name="details" value={content} />
-            <input type="hidden" name="title" value={content.replace(/@\[([^\]]+)\]\([^)]+\)/g, "@$1").slice(0, 100) || "Signal Update"} />
-            {taggedEmployees.map((e) => (
-              <input key={e.id} type="hidden" name="targetEmployeeIds[]" value={e.id} />
-            ))}
-
-            {!content && (
-              <div className="absolute top-0 left-0 p-6 font-plus-jakarta text-sm text-slate-400 pointer-events-none select-none">
-                {activeType?.placeholder}
-              </div>
-            )}
-
-            <div
-              ref={editorRef}
-              contentEditable
-              suppressContentEditableWarning
-              onInput={handleEditorInput}
-              className="w-full bg-transparent p-6 pb-20 font-plus-jakarta text-sm leading-relaxed text-brand-primary focus:outline-none min-h-[140px]"
-            />
-
-            <div className="absolute bottom-4 left-6 right-6 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {!isPublic && (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-500">
-                    <Lock className="h-3 w-3" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Private</span>
-                  </div>
-                )}
-                <span className={cn("text-[10px] font-bold uppercase tracking-wider", displayLength > 450 ? "text-red-400" : "text-slate-400")}>
-                  {displayLength}/500
-                </span>
-              </div>
-
-              <button
-                type="submit"
-                disabled={!content.trim() || isPending || !selectedType}
-                className={cn("flex items-center gap-2.5 px-6 py-2.5 rounded-full font-plus-jakarta text-xs font-bold transition-all shadow-md active:scale-95 disabled:opacity-40", activeType ? cn(activeType.sendBg, "text-white") : "bg-brand-primary text-white")}
-              >
-                {isPending ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    <span>Sending...</span>
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-3.5 w-3.5" />
-                    <span>Post Signal</span>
-                  </>
-                )}
-              </button>
+          {!content && (
+            <div className="absolute top-0 left-0 p-6 font-plus-jakarta text-sm text-slate-400 pointer-events-none select-none">
+              {activeType?.placeholder}
             </div>
-          </form>
+          )}
+
+          <div
+            ref={editorRef}
+            contentEditable
+            suppressContentEditableWarning
+            onInput={handleEditorInput}
+            className="w-full bg-transparent p-6 pb-20 font-plus-jakarta text-sm leading-relaxed text-brand-primary focus:outline-none min-h-[140px]"
+          />
+
+          <div className="absolute bottom-4 left-6 right-6 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {!isPublic && (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-500">
+                  <Lock className="h-3 w-3" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Private</span>
+                </div>
+              )}
+              <span className={cn("text-[10px] font-bold uppercase tracking-wider", displayLength > 450 ? "text-red-400" : "text-slate-400")}>
+                {displayLength}/500
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={handlePost}
+              disabled={!content.trim() || isLoading || !selectedType}
+              className={cn("flex items-center gap-2.5 px-6 py-2.5 rounded-full font-plus-jakarta text-xs font-bold transition-all shadow-md active:scale-95 disabled:opacity-40", activeType ? cn(activeType.sendBg, "text-white") : "bg-brand-primary text-white")}
+            >
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Analyzing...</span>
+                </>
+              ) : isPending ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Sending...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="h-3.5 w-3.5" />
+                  <span>Post Signal</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

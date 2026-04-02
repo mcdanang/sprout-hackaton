@@ -65,11 +65,17 @@ export async function createSignal(
 	}
 
 	const v = validated.data;
-	const aiAnalysis = analyzeSignalWithMockAI({
-		category: v.category,
-		title: v.title,
-		details: v.details,
-	});
+
+	// Use AI values pre-computed on client if available, else fall back to mock
+	const preComputedCategory = formData.get("aiIssueCategory") as string | null;
+	const preComputedSentiment = formData.get("aiSentiment");
+	const aiAnalysis =
+		preComputedCategory && preComputedSentiment
+			? {
+					issueCategory: preComputedCategory as ReturnType<typeof analyzeSignalWithMockAI>["issueCategory"],
+					sentiment: Number(preComputedSentiment),
+				}
+			: analyzeSignalWithMockAI({ category: v.category, title: v.title, details: v.details });
 
 	try {
 		const { data: created, error: insertError } = await supabase
