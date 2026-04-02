@@ -1,30 +1,32 @@
-import { Folder } from "iconoir-react";
+"use client";
+
 import { useTranslations } from "next-intl";
+import { ProjectCard } from "@/components/dashboard/project-card";
+import { DUMMY_PROJECTS } from "@/lib/constants/projects";
 
 export default function ProjectsPage() {
-  const t = useTranslations("Dashboard.nav");
+  const t = useTranslations("Projects");
 
   return (
-    <div className="flex flex-col gap-6">
-      <section className="flex flex-col gap-2">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Folder className="h-4 w-4" />
-          <span className="text-sm font-medium uppercase tracking-wider">{t("projects")}</span>
-        </div>
-        <h1 className="text-4xl font-extrabold tracking-tight">
-          {t("projects")}
+    <div className="max-w-5xl mx-auto space-y-12 pb-20">
+      {/* Hero Section */}
+      <div className="space-y-4">
+        <p className="font-plus-jakarta text-[12px] font-semibold leading-[16px] tracking-[1.2px] uppercase text-[#B09100]">
+          {t("label")}
+        </p>
+        <h1 className="font-plus-jakarta text-[48px] font-bold leading-[48px] tracking-[-1.2px] text-brand-primary">
+          {t("title")}
         </h1>
-        <p className="max-w-2xl text-lg text-muted-foreground">
-          Manage and track your ongoing ownership projects here.
+        <p className="font-plus-jakarta text-[18px] font-normal leading-[28px] text-dashboard-description max-w-2xl">
+          {t("subtitle")}
         </p>
-      </section>
-      
-      <div className="rounded-xl border border-dashed p-20 flex flex-col items-center justify-center text-center bg-background/50">
-        <Folder className="h-12 w-12 text-muted-foreground/30 mb-4" />
-        <h3 className="text-lg font-semibold text-muted-foreground">No projects yet</h3>
-        <p className="text-sm text-muted-foreground/60 max-w-xs">
-          This page is currently a placeholder and will be functional soon.
-        </p>
+      </div>
+
+      {/* Projects Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {DUMMY_PROJECTS.map((project) => (
+          <ProjectCard key={project.id} project={project} />
+        ))}
       </div>
     </div>
   );

@@ -68,7 +68,9 @@ export function DashboardSidebar({ isCollapsed, onToggle }: DashboardSidebarProp
       {/* Navigation */}
       <nav className="flex-1 space-y-2">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = item.href === "/dashboard" 
+            ? pathname === item.href 
+            : pathname.startsWith(item.href);
           const Icon = item.icon;
           
           return (
@@ -179,7 +181,9 @@ export function DashboardSidebar({ isCollapsed, onToggle }: DashboardSidebarProp
           {/* Navigation */}
           <nav className="flex-1 space-y-2">
             {navItems.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = item.href === "/dashboard" 
+                ? pathname === item.href 
+                : pathname.startsWith(item.href);
               const Icon = item.icon;
               
               return (

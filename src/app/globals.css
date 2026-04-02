@@ -37,6 +37,7 @@
   --color-secondary: var(--secondary);
   --color-brand: var(--primary);
   --color-brand-primary: var(--brand-primary);
+  --color-text-primary: var(--text-primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
   --color-popover-foreground: var(--popover-foreground);
@@ -64,6 +65,7 @@
   --brand: #FFD300;
   --brand-foreground: oklch(0.145 0 0);
   --brand-primary: #081021;
+  --text-primary: #081021;
   --dashboard-label: #B09100;
   --dashboard-title: #191C1D;
   --dashboard-description: #3F484A;
@@ -139,5 +141,14 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+@keyframes border-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
