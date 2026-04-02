@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
@@ -11,15 +12,70 @@ import { DUMMY_ACTIVITIES, type ActivityItem } from "@/lib/constants/activity";
 import { getRelativeTime } from "@/lib/utils/time";
 import { healthStyles, activityTypeStyles } from "@/lib/constants/project-ui";
 
+function SignalSkeleton() {
+  return (
+    <div className="animate-pulse bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm">
+      <div className="flex gap-5">
+        <div className="h-12 w-12 rounded-2xl bg-slate-100" />
+        <div className="flex-1 space-y-3">
+          <div className="flex justify-between items-center">
+            <div className="h-4 w-32 bg-slate-100 rounded" />
+            <div className="h-3 w-16 bg-slate-50 rounded" />
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 w-full bg-slate-50 rounded" />
+            <div className="h-4 w-2/3 bg-slate-50 rounded" />
+          </div>
+          <div className="h-6 w-16 bg-slate-50 rounded-full" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ProjectDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const t = useTranslations("ProjectDetail");
   
   const project = DUMMY_PROJECTS.find(p => p.id === id);
-  const projectActivities = DUMMY_ACTIVITIES
+  const allActivities = DUMMY_ACTIVITIES
     .filter(a => a.projectId === id && a.type !== "status")
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+  // Infinite Scroll States
+  const [visibleCount, setVisibleCount] = useState(5);
+  const [isLoading, setIsLoading] = useState(false);
+  const observerTarget = useRef(null);
+
+  const visibleActivities = allActivities.slice(0, visibleCount);
+  const hasMore = visibleCount < allActivities.length;
+
+  const loadMore = () => {
+    setIsLoading(true);
+    // Simulate network delay
+    setTimeout(() => {
+      setVisibleCount(prev => prev + 5);
+      setIsLoading(false);
+    }, 800);
+  };
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoading) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasMore, isLoading, visibleCount]);
 
   if (!project) {
     return (
@@ -153,20 +209,24 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      {/* Main Activity Hub: Dynamic List */}
+      {/* Main Activity Hub: Dynamic List with Infinite Scroll */}
       <div className="space-y-6">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <h2 className="font-plus-jakarta text-xl font-bold text-brand-primary">{t("activity")}</h2>
           <span className="text-[11px] font-bold text-slate-600 uppercase tracking-widest">Historical Signal Timeline</span>
         </div>
         
-        {projectActivities.length > 0 ? (
+        {visibleActivities.length > 0 ? (
           <div className="space-y-4">
-            {projectActivities.map((activity) => {
+            {visibleActivities.map((activity, index) => {
               const Style = activityTypeStyles[activity.type as Exclude<ActivityItem["type"], "status">];
               const Icon = Style.icon;
               return (
-                <div key={activity.id} className="group relative bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-brand-primary/10">
+                <div 
+                  key={activity.id} 
+                  className="group relative bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-brand-primary/10 animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both"
+                  style={{ animationDelay: `${(index % 5) * 100}ms` }}
+                >
                   <div className="flex gap-5">
                     <div className="shrink-0">
                       <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", Style.bgColor, Style.color)}>
@@ -221,6 +281,24 @@ export default function ProjectDetailPage() {
                 </div>
               );
             })}
+
+            {/* Loading Indicator / Skeletons */}
+            {isLoading && (
+              <div className="space-y-4 pt-4">
+                <SignalSkeleton />
+                <SignalSkeleton />
+              </div>
+            )}
+
+            {/* Intersection Observer Target */}
+            <div ref={observerTarget} className="h-10 w-full" />
+
+            {!hasMore && visibleActivities.length > 0 && (
+              <div className="flex flex-col items-center justify-center py-12 text-slate-400 space-y-2">
+                <div className="h-px w-12 bg-slate-100" />
+                <span className="text-[11px] font-bold uppercase tracking-widest">End of Activity Feed</span>
+              </div>
+            )}
           </div>
         ) : (
           <div className="bg-white rounded-[32px] p-20 border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center space-y-6 w-full">

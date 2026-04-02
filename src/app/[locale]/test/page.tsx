@@ -41,7 +41,6 @@ async function SignalsTest() {
 		"use server";
 		const signal = await createSignal(initialSignalActionState, formData);
 		console.log({ signal });
-		return signal;
 	};
 
 	return (
