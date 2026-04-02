@@ -1,6 +1,7 @@
 // src/app/actions/ai-insights.ts
 "use server";
 
+import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { openai } from "@/lib/ai-client";
 import { getCurrentEmployee } from "@/lib/get-current-employee";
@@ -19,50 +20,47 @@ export type AiInsightsResult = {
   generatedAt: string;
 };
 
-export async function getAiInsights(): Promise<AiInsightsResult> {
-  const employee = await getCurrentEmployee();
-  if (!employee) return { insights: [], generatedAt: new Date().toISOString() };
+// Cached per employee — revalidates every hour (3600s)
+const fetchInsightsForEmployee = unstable_cache(
+  async (employeeId: string, isTopManagement: boolean): Promise<AiInsightsResult> => {
+    const supabase = await createClient();
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-  const supabase = await createClient();
+    const { data: signals } = await supabase
+      .from("signals")
+      .select(`
+        id, category, ai_issue_category, sentiment_score, concern_status, created_at,
+        project:projects(id, name)
+      `)
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(100);
 
-  // Fetch last 30 days of signals
-  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    if (!signals?.length) {
+      return {
+        insights: [
+          {
+            level: "nudge",
+            title: "No signals yet",
+            body: "No signals have been submitted in the last 30 days. Encourage your team to share.",
+          },
+        ],
+        generatedAt: new Date().toISOString(),
+      };
+    }
 
-  const { data: signals } = await supabase
-    .from("signals")
-    .select(`
-      id, category, ai_issue_category, sentiment_score, concern_status, created_at,
-      project:projects(id, name)
-    `)
-    .gte("created_at", since)
-    .order("created_at", { ascending: false })
-    .limit(100);
+    const summary = buildSignalSummary(signals);
 
-  if (!signals?.length) {
-    return {
-      insights: [
-        {
-          level: "nudge",
-          title: "No signals yet",
-          body: "No signals have been submitted in the last 30 days. Encourage your team to share.",
-        },
-      ],
-      generatedAt: new Date().toISOString(),
-    };
-  }
+    const systemPrompt = isTopManagement
+      ? `You are an HR analytics AI for a software company. Analyze team signals and return 3-5 actionable insight cards for top management. Focus on project health, burnout risk, and team morale trends. Be specific and data-backed. Return valid JSON only.`
+      : `You are a personal work-wellbeing assistant. Analyze signals from the employee's team and return 2-3 personal nudge cards. Focus on encouragement, awareness of team mood, and gentle prompts to engage. Return valid JSON only.`;
 
-  const summary = buildSignalSummary(signals);
-
-  const systemPrompt = employee.isTopManagement
-    ? `You are an HR analytics AI for a software company. Analyze team signals and return 3-5 actionable insight cards for top management. Focus on project health, burnout risk, and team morale trends. Be specific and data-backed. Return valid JSON only.`
-    : `You are a personal work-wellbeing assistant. Analyze signals from the employee's team and return 2-3 personal nudge cards. Focus on encouragement, awareness of team mood, and gentle prompts to engage. Return valid JSON only.`;
-
-  const userPrompt = `
+    const userPrompt = `
 Here is a summary of recent team signals (last 30 days):
 
 ${summary}
 
-${employee.isTopManagement
+${isTopManagement
   ? `Return a JSON array of 3-5 insight cards. Each card:
 {
   "level": "critical" | "warning" | "positive",
@@ -82,35 +80,46 @@ ${employee.isTopManagement
 Respond with ONLY the JSON array, no markdown, no explanation.
 `;
 
-  try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      max_tokens: 800,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-    });
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        max_tokens: 800,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+      });
 
-    const text = response.choices[0]?.message?.content ?? "[]";
-    const parsed = JSON.parse(text) as AiInsightCard[];
+      const text = response.choices[0]?.message?.content ?? "[]";
+      const parsed = JSON.parse(text) as AiInsightCard[];
 
-    return {
-      insights: Array.isArray(parsed) ? parsed : [],
-      generatedAt: new Date().toISOString(),
-    };
-  } catch {
-    return {
-      insights: [
-        {
-          level: "nudge",
-          title: "AI insights unavailable",
-          body: "Could not generate insights right now. Try again later.",
-        },
-      ],
-      generatedAt: new Date().toISOString(),
-    };
-  }
+      return {
+        insights: Array.isArray(parsed) ? parsed : [],
+        generatedAt: new Date().toISOString(),
+      };
+    } catch {
+      return {
+        insights: [
+          {
+            level: "nudge",
+            title: "AI insights unavailable",
+            body: "Could not generate insights right now. Try again later.",
+          },
+        ],
+        generatedAt: new Date().toISOString(),
+      };
+    }
+  },
+  // Cache key prefix — employeeId + isTopManagement are appended as args automatically
+  ["ai-insights"],
+  { revalidate: 3600 }, // 1 hour
+);
+
+export async function getAiInsights(): Promise<AiInsightsResult> {
+  const employee = await getCurrentEmployee();
+  if (!employee) return { insights: [], generatedAt: new Date().toISOString() };
+
+  return fetchInsightsForEmployee(employee.id, employee.isTopManagement);
 }
 
 function buildSignalSummary(signals: any[]): string {
