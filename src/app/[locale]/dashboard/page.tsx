@@ -33,7 +33,7 @@ export default function DashboardPage() {
         <Quote className="h-10 w-10 text-[#FEF3C7] mb-8" />
         
         <div className="space-y-8">
-          <p className="font-plus-jakarta text-[32px] md:text-[40px] font-medium leading-tight tracking-tight text-[#191C1D]">
+          <p className="font-plus-jakarta text-[32px] md:text-[40px] font-medium leading-tight tracking-tight text-brand-primary">
             &ldquo;{t("quote.text")}&rdquo;
           </p>
           
