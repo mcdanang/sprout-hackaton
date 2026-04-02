@@ -1,298 +1,312 @@
 export interface ReplyItem {
-  id: string;
-  userId: string;
-  userName: string;
-  userAvatar: string;
-  content: string;
-  timestamp: string; // ISO string
+	id: string;
+	userId: string;
+	userName: string;
+	userAvatar: string;
+	content: string;
+	timestamp: string; // ISO string
 }
 
 export interface ActivityItem {
-  id: string;
-  projectId: string;
-  userId: string;
-  userName: string;
-  userAvatar: string;
-  type: 'concern' | 'achievement' | 'kudos' | 'status';
-  content: string;
-  timestamp: string; // ISO string
-  likesCount: number;
-  isLiked: boolean;
-  replies?: ReplyItem[];
+	id: string;
+	projectId: string;
+	userId: string;
+	userName: string;
+	userAvatar: string;
+	type: "concern" | "achievement" | "kudos" | "status";
+	content: string;
+	timestamp: string; // ISO string
+	likesCount: number;
+	isLiked: boolean;
+	replies?: ReplyItem[];
 }
 
 export const DUMMY_ACTIVITIES: ActivityItem[] = [
-  // Internal API Platform (Project 1) - EXTENDED for Replies Demo
-  {
-    id: "act-1",
-    projectId: "1",
-    userId: "u1",
-    userName: "Alex Rivera",
-    userAvatar: "https://i.pravatar.cc/150?u=1",
-    type: "achievement",
-    content: "Successfully deployed the new edge-auth service to 3 global regions with <10ms latency overhead.",
-    timestamp: "2026-04-02T08:30:00Z",
-    likesCount: 12,
-    isLiked: true,
-    replies: [
-      {
-        id: "rep-1",
-        userId: "u5",
-        userName: "Jack Thompson",
-        userAvatar: "https://i.pravatar.cc/150?u=5",
-        content: "Huge win for the edge strategy! This makes our Singapore expansion so much easier.",
-        timestamp: "2026-04-02T08:45:00Z"
-      }
-    ]
-  },
-  {
-    id: "act-2",
-    projectId: "1",
-    userId: "u2",
-    userName: "Sarah Chen",
-    userAvatar: "https://i.pravatar.cc/150?u=2",
-    type: "concern",
-    content: "Observing sporadic rate-limiting issues in the Singapore region. Investigating the worker node scaling logic.",
-    timestamp: "2026-04-02T09:15:00Z",
-    likesCount: 2,
-    isLiked: false,
-    replies: [
-      {
-        id: "rep-2",
-        userId: "u3",
-        userName: "Michael Song",
-        userAvatar: "https://i.pravatar.cc/150?u=3",
-        content: "I'll double-check the VPC peering rules in that region, could be a routing bottleneck.",
-        timestamp: "2026-04-02T09:30:00Z"
-      },
-      {
-        id: "rep-3",
-        userId: "u2",
-        userName: "Sarah Chen",
-        userAvatar: "https://i.pravatar.cc/150?u=2",
-        content: "@Michael, that would be helpful. I'm seeing 502s on about 2% of traffic currently.",
-        timestamp: "2026-04-02T09:40:00Z"
-      }
-    ]
-  },
-  {
-    id: "act-3",
-    projectId: "1",
-    userId: "u3",
-    userName: "Michael Song",
-    userAvatar: "https://i.pravatar.cc/150?u=3",
-    type: "kudos",
-    content: "Huge thanks to Sarah for quickly identifying the regional scaling bug. Realy saved us during the peak traffic hour!",
-    timestamp: "2026-04-02T10:00:00Z",
-    likesCount: 8,
-    isLiked: true,
-  },
-  {
-    id: "act-101",
-    projectId: "1",
-    userId: "u4",
-    userName: "Emma Wilson",
-    userAvatar: "https://i.pravatar.cc/150?u=4",
-    type: "achievement",
-    content: "Refactored the gateway routing logic, reducing cold-start times by 45%.",
-    timestamp: "2026-04-01T15:30:00Z",
-    likesCount: 24,
-    isLiked: false,
-  },
-  {
-    id: "act-102",
-    projectId: "1",
-    userId: "u5",
-    userName: "Jack Thompson",
-    userAvatar: "https://i.pravatar.cc/150?u=5",
-    type: "kudos",
-    content: "Emma's refactor is incredible. The edge metrics are lookign better than ever!",
-    timestamp: "2026-04-01T16:45:00Z",
-    likesCount: 15,
-    isLiked: true,
-  },
-  {
-    id: "act-103",
-    projectId: "1",
-    userId: "u1",
-    userName: "Alex Rivera",
-    userAvatar: "https://i.pravatar.cc/150?u=1",
-    type: "concern",
-    content: "Redis cache hit ratio dropped to 72% after the latest deployment. Monitoring for potential memory leaks.",
-    timestamp: "2026-04-01T18:10:00Z",
-    likesCount: 4,
-    isLiked: false,
-  },
-  {
-    id: "act-104",
-    projectId: "1",
-    userId: "u6",
-    userName: "Luna Lovegood",
-    userAvatar: "https://i.pravatar.cc/150?u=6",
-    type: "achievement",
-    content: "Completed migration of all internal telemetry to the new unified logging standard.",
-    timestamp: "2026-03-31T10:20:00Z",
-    likesCount: 19,
-    isLiked: false,
-  },
-  {
-    id: "act-105",
-    projectId: "1",
-    userId: "u2",
-    userName: "Sarah Chen",
-    userAvatar: "https://i.pravatar.cc/150?u=2",
-    type: "kudos",
-    content: "Thanks Luna for the migration assistance! The debug dashboards are so much cleaner now.",
-    timestamp: "2026-03-31T11:45:00Z",
-    likesCount: 11,
-    isLiked: true,
-  },
-  {
-    id: "act-106",
-    projectId: "1",
-    userId: "u3",
-    userName: "Michael Song",
-    userAvatar: "https://i.pravatar.cc/150?u=3",
-    type: "achievement",
-    content: "Internal API Documentation (v2) is now live on the developer portal. Full Swagger support included.",
-    timestamp: "2023-03-31T14:00:00Z",
-    likesCount: 30,
-    isLiked: true,
-  },
-  {
-    id: "act-107",
-    projectId: "1",
-    userId: "u6",
-    userName: "Luna Lovegood",
-    userAvatar: "https://i.pravatar.cc/150?u=6",
-    type: "concern",
-    content: "API keys are being leaked in some client-side logs. Urgent patch needed for the logger middleware.",
-    timestamp: "2026-03-31T16:30:00Z",
-    likesCount: 8,
-    isLiked: false,
-  },
-  {
-    id: "act-108",
-    projectId: "1",
-    userId: "u4",
-    userName: "Emma Wilson",
-    userAvatar: "https://i.pravatar.cc/150?u=4",
-    type: "achievement",
-    content: "Fixed the key leaking issue in telemetry. All logs from the last 24h have been scrubbed.",
-    timestamp: "2026-03-31T17:45:00Z",
-    likesCount: 42,
-    isLiked: false,
-  },
-  {
-    id: "act-109",
-    projectId: "1",
-    userId: "u1",
-    userName: "Alex Rivera",
-    userAvatar: "https://i.pravatar.cc/150?u=1",
-    type: "kudos",
-    content: "Rapid response on the security fix, Emma! Essential work for team trust.",
-    timestamp: "2026-03-31T18:20:00Z",
-    likesCount: 22,
-    isLiked: true,
-  },
-  {
-    id: "act-110",
-    projectId: "1",
-    userId: "u5",
-    userName: "Jack Thompson",
-    userAvatar: "https://i.pravatar.cc/150?u=5",
-    type: "achievement",
-    content: "Successfully upgraded the staging cluster to K8s 1.29. Production scheduled for next week.",
-    timestamp: "2026-03-30T09:00:00Z",
-    likesCount: 18,
-    isLiked: false,
-  },
-  {
-    id: "act-111",
-    projectId: "1",
-    userId: "u2",
-    userName: "Sarah Chen",
-    userAvatar: "https://i.pravatar.cc/150?u=2",
-    type: "concern",
-    content: "Load balancer health checks are failing inconsistently across the Tokyo zone. Investigating VPC rules.",
-    timestamp: "2026-03-30T10:30:00Z",
-    likesCount: 6,
-    isLiked: false,
-  },
-  {
-    id: "act-112",
-    projectId: "1",
-    userId: "u3",
-    userName: "Michael Song",
-    userAvatar: "https://i.pravatar.cc/150?u=3",
-    type: "achievement",
-    content: "Resolved the Tokyo zone connection issues. It was a routing priority conflict.",
-    timestamp: "2026-03-30T13:45:00Z",
-    likesCount: 14,
-    isLiked: false,
-  },
-  {
-    id: "act-113",
-    projectId: "1",
-    userId: "u2",
-    userName: "Sarah Chen",
-    userAvatar: "https://i.pravatar.cc/150?u=2",
-    type: "kudos",
-    content: "Great catch Michael! Tokyo is now fully operational again.",
-    timestamp: "2026-03-30T14:15:00Z",
-    likesCount: 9,
-    isLiked: true,
-  },
-  
-  // Security Audit 2026 (Project 2)
-  {
-    id: "act-5",
-    projectId: "2",
-    userId: "u10",
-    userName: "Devon Lane",
-    userAvatar: "https://i.pravatar.cc/150?u=10",
-    type: "achievement",
-    content: "Completed the initial security scan of all S3 buckets. 100% compliance achieved on encryption-at-rest.",
-    timestamp: "2026-04-02T11:20:00Z",
-    likesCount: 5,
-    isLiked: false,
-  },
-  {
-    id: "act-6",
-    projectId: "2",
-    userId: "u11",
-    userName: "Bessie Cooper",
-    userAvatar: "https://i.pravatar.cc/150?u=11",
-    type: "kudos",
-    content: "Great job on the S3 scan, Devon! Clean report always makes me happy.",
-    timestamp: "2026-04-02T12:05:00Z",
-    likesCount: 3,
-    isLiked: true,
-  },
+	// Internal API Platform (Project 1) - EXTENDED for Replies Demo
+	{
+		id: "act-1",
+		projectId: "1",
+		userId: "u1",
+		userName: "Alex Rivera",
+		userAvatar: "https://i.pravatar.cc/150?u=1",
+		type: "achievement",
+		content:
+			"Successfully deployed the new edge-auth service to 3 global regions with <10ms latency overhead.",
+		timestamp: "2026-04-02T08:30:00Z",
+		likesCount: 12,
+		isLiked: true,
+		replies: [
+			{
+				id: "rep-1",
+				userId: "u5",
+				userName: "Jack Thompson",
+				userAvatar: "https://i.pravatar.cc/150?u=5",
+				content:
+					"Huge win for the edge strategy! This makes our Singapore expansion so much easier.",
+				timestamp: "2026-04-02T08:45:00Z",
+			},
+		],
+	},
+	{
+		id: "act-2",
+		projectId: "1",
+		userId: "u2",
+		userName: "Sarah Chen",
+		userAvatar: "https://i.pravatar.cc/150?u=2",
+		type: "concern",
+		content:
+			"Observing sporadic rate-limiting issues in the Singapore region. Investigating the worker node scaling logic.",
+		timestamp: "2026-04-02T09:15:00Z",
+		likesCount: 2,
+		isLiked: false,
+		replies: [
+			{
+				id: "rep-2",
+				userId: "u3",
+				userName: "Michael Song",
+				userAvatar: "https://i.pravatar.cc/150?u=3",
+				content:
+					"I'll double-check the VPC peering rules in that region, could be a routing bottleneck.",
+				timestamp: "2026-04-02T09:30:00Z",
+			},
+			{
+				id: "rep-3",
+				userId: "u2",
+				userName: "Sarah Chen",
+				userAvatar: "https://i.pravatar.cc/150?u=2",
+				content:
+					"@Michael, that would be helpful. I'm seeing 502s on about 2% of traffic currently.",
+				timestamp: "2026-04-02T09:40:00Z",
+			},
+		],
+	},
+	{
+		id: "act-3",
+		projectId: "1",
+		userId: "u3",
+		userName: "Michael Song",
+		userAvatar: "https://i.pravatar.cc/150?u=3",
+		type: "kudos",
+		content:
+			"Huge thanks to Sarah for quickly identifying the regional scaling bug. Realy saved us during the peak traffic hour!",
+		timestamp: "2026-04-02T10:00:00Z",
+		likesCount: 8,
+		isLiked: true,
+	},
+	{
+		id: "act-101",
+		projectId: "1",
+		userId: "u4",
+		userName: "Emma Wilson",
+		userAvatar: "https://i.pravatar.cc/150?u=4",
+		type: "achievement",
+		content: "Refactored the gateway routing logic, reducing cold-start times by 45%.",
+		timestamp: "2026-04-01T15:30:00Z",
+		likesCount: 24,
+		isLiked: false,
+	},
+	{
+		id: "act-102",
+		projectId: "1",
+		userId: "u5",
+		userName: "Jack Thompson",
+		userAvatar: "https://i.pravatar.cc/150?u=5",
+		type: "kudos",
+		content: "Emma's refactor is incredible. The edge metrics are lookign better than ever!",
+		timestamp: "2026-04-01T16:45:00Z",
+		likesCount: 15,
+		isLiked: true,
+	},
+	{
+		id: "act-103",
+		projectId: "1",
+		userId: "u1",
+		userName: "Alex Rivera",
+		userAvatar: "https://i.pravatar.cc/150?u=1",
+		type: "concern",
+		content:
+			"Redis cache hit ratio dropped to 72% after the latest deployment. Monitoring for potential memory leaks.",
+		timestamp: "2026-04-01T18:10:00Z",
+		likesCount: 4,
+		isLiked: false,
+	},
+	{
+		id: "act-104",
+		projectId: "1",
+		userId: "u6",
+		userName: "Luna Lovegood",
+		userAvatar: "https://i.pravatar.cc/150?u=6",
+		type: "achievement",
+		content: "Completed migration of all internal telemetry to the new unified logging standard.",
+		timestamp: "2026-03-31T10:20:00Z",
+		likesCount: 19,
+		isLiked: false,
+	},
+	{
+		id: "act-105",
+		projectId: "1",
+		userId: "u2",
+		userName: "Sarah Chen",
+		userAvatar: "https://i.pravatar.cc/150?u=2",
+		type: "kudos",
+		content:
+			"Thanks Luna for the migration assistance! The debug dashboards are so much cleaner now.",
+		timestamp: "2026-03-31T11:45:00Z",
+		likesCount: 11,
+		isLiked: true,
+	},
+	{
+		id: "act-106",
+		projectId: "1",
+		userId: "u3",
+		userName: "Michael Song",
+		userAvatar: "https://i.pravatar.cc/150?u=3",
+		type: "achievement",
+		content:
+			"Internal API Documentation (v2) is now live on the developer portal. Full Swagger support included.",
+		timestamp: "2023-03-31T14:00:00Z",
+		likesCount: 30,
+		isLiked: true,
+	},
+	{
+		id: "act-107",
+		projectId: "1",
+		userId: "u6",
+		userName: "Luna Lovegood",
+		userAvatar: "https://i.pravatar.cc/150?u=6",
+		type: "concern",
+		content:
+			"API keys are being leaked in some client-side logs. Urgent patch needed for the logger middleware.",
+		timestamp: "2026-03-31T16:30:00Z",
+		likesCount: 8,
+		isLiked: false,
+	},
+	{
+		id: "act-108",
+		projectId: "1",
+		userId: "u4",
+		userName: "Emma Wilson",
+		userAvatar: "https://i.pravatar.cc/150?u=4",
+		type: "achievement",
+		content:
+			"Fixed the key leaking issue in telemetry. All logs from the last 24h have been scrubbed.",
+		timestamp: "2026-03-31T17:45:00Z",
+		likesCount: 42,
+		isLiked: false,
+	},
+	{
+		id: "act-109",
+		projectId: "1",
+		userId: "u1",
+		userName: "Alex Rivera",
+		userAvatar: "https://i.pravatar.cc/150?u=1",
+		type: "kudos",
+		content: "Rapid response on the security fix, Emma! Essential work for team trust.",
+		timestamp: "2026-03-31T18:20:00Z",
+		likesCount: 22,
+		isLiked: true,
+	},
+	{
+		id: "act-110",
+		projectId: "1",
+		userId: "u5",
+		userName: "Jack Thompson",
+		userAvatar: "https://i.pravatar.cc/150?u=5",
+		type: "achievement",
+		content:
+			"Successfully upgraded the staging cluster to K8s 1.29. Production scheduled for next week.",
+		timestamp: "2026-03-30T09:00:00Z",
+		likesCount: 18,
+		isLiked: false,
+	},
+	{
+		id: "act-111",
+		projectId: "1",
+		userId: "u2",
+		userName: "Sarah Chen",
+		userAvatar: "https://i.pravatar.cc/150?u=2",
+		type: "concern",
+		content:
+			"Load balancer health checks are failing inconsistently across the Tokyo zone. Investigating VPC rules.",
+		timestamp: "2026-03-30T10:30:00Z",
+		likesCount: 6,
+		isLiked: false,
+	},
+	{
+		id: "act-112",
+		projectId: "1",
+		userId: "u3",
+		userName: "Michael Song",
+		userAvatar: "https://i.pravatar.cc/150?u=3",
+		type: "achievement",
+		content: "Resolved the Tokyo zone connection issues. It was a routing priority conflict.",
+		timestamp: "2026-03-30T13:45:00Z",
+		likesCount: 14,
+		isLiked: false,
+	},
+	{
+		id: "act-113",
+		projectId: "1",
+		userId: "u2",
+		userName: "Sarah Chen",
+		userAvatar: "https://i.pravatar.cc/150?u=2",
+		type: "kudos",
+		content: "Great catch Michael! Tokyo is now fully operational again.",
+		timestamp: "2026-03-30T14:15:00Z",
+		likesCount: 9,
+		isLiked: true,
+	},
 
-  // Dashboard UI Revamp (Project 3)
-  {
-    id: "act-7",
-    projectId: "3",
-    userId: "u20",
-    userName: "Guy Hawkins",
-    userAvatar: "https://i.pravatar.cc/150?u=20",
-    type: "achievement",
-    content: "Finalized the Glassmorphism theme implementation for the main dashboard shell.",
-    timestamp: "2026-04-02T07:45:00Z",
-    likesCount: 15,
-    isLiked: true,
-  },
-  {
-    id: "act-8",
-    projectId: "3",
-    userId: "u21",
-    userName: "Eleanor Pena",
-    userAvatar: "https://i.pravatar.cc/150?u=21",
-    type: "achievement",
-    content: "Added full accessibility coverage (WCAG 2.1) to the new navigation components.",
-    timestamp: "2026-04-02T09:30:00Z",
-    likesCount: 9,
-    isLiked: false,
-  },
+	// Security Audit 2026 (Project 2)
+	{
+		id: "act-5",
+		projectId: "2",
+		userId: "u10",
+		userName: "Devon Lane",
+		userAvatar: "https://i.pravatar.cc/150?u=10",
+		type: "achievement",
+		content:
+			"Completed the initial security scan of all S3 buckets. 100% compliance achieved on encryption-at-rest.",
+		timestamp: "2026-04-02T11:20:00Z",
+		likesCount: 5,
+		isLiked: false,
+	},
+	{
+		id: "act-6",
+		projectId: "2",
+		userId: "u11",
+		userName: "Bessie Cooper",
+		userAvatar: "https://i.pravatar.cc/150?u=11",
+		type: "kudos",
+		content: "Great job on the S3 scan, Devon! Clean report always makes me happy.",
+		timestamp: "2026-04-02T12:05:00Z",
+		likesCount: 3,
+		isLiked: true,
+	},
+
+	// Dashboard UI Revamp (Project 3)
+	{
+		id: "act-7",
+		projectId: "3",
+		userId: "u20",
+		userName: "Guy Hawkins",
+		userAvatar: "https://i.pravatar.cc/150?u=20",
+		type: "achievement",
+		content: "Finalized the Glassmorphism theme implementation for the main dashboard shell.",
+		timestamp: "2026-04-02T07:45:00Z",
+		likesCount: 15,
+		isLiked: true,
+	},
+	{
+		id: "act-8",
+		projectId: "3",
+		userId: "u21",
+		userName: "Eleanor Pena",
+		userAvatar: "https://i.pravatar.cc/150?u=21",
+		type: "achievement",
+		content: "Added full accessibility coverage (WCAG 2.1) to the new navigation components.",
+		timestamp: "2026-04-02T09:30:00Z",
+		likesCount: 9,
+		isLiked: false,
+	},
 ];

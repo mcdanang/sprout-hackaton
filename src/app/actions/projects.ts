@@ -2,7 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 
-import type { Project } from "@/components/dashboard/project-card";
+import type { ActivityItem } from "@/lib/constants/activity";
+import type { Project } from "@/lib/types/project";
 
 type ProjectMetrics = {
 	concernsCount: number;
@@ -43,11 +44,9 @@ export async function getDashboardProjects(): Promise<Project[]> {
 
 	const { data: projects, error: projectsError } = await supabase
 		.from("projects")
-		.select("id, name, description, status")
+		.select("id, name, description")
 		.order("name");
 
-	console.log({ projects });
-	console.log({ projectsError });
 	if (projectsError || !projects) return [];
 
 	// Build "team" from employees assigned to each project.
@@ -109,7 +108,6 @@ export async function getDashboardProjects(): Promise<Project[]> {
 			id: p.id,
 			name: p.name,
 			description: p.description,
-			status: p.status as Project["status"],
 			team: teamByProjectId.get(p.id) ?? [],
 			health: healthMetrics.health,
 			healthStatus: healthMetrics.healthStatus,
@@ -120,4 +118,112 @@ export async function getDashboardProjects(): Promise<Project[]> {
 	});
 
 	return result;
+}
+
+export async function getProjectDetail(projectId: string): Promise<{
+	project: Project | null;
+	activities: ActivityItem[];
+}> {
+	const supabase = await createClient();
+
+	// 1) Project record
+	const { data: projectRow } = await supabase
+		.from("projects")
+		.select("id, name, description")
+		.eq("id", projectId)
+		.maybeSingle();
+
+	if (!projectRow) {
+		return { project: null, activities: [] };
+	}
+
+	// 2) Team avatars from employees assigned to the project
+	const { data: employeeRows } = await supabase
+		.from("employees")
+		.select("email")
+		.eq("project_id", projectId)
+		.order("email");
+
+	const team: string[] = Array.from(
+		new Set(
+			(employeeRows ?? [])
+				.filter((e): e is { email: string } => Boolean(e?.email))
+				.map(e => `https://i.pravatar.cc/150?u=${encodeURIComponent(e.email)}`),
+		),
+	);
+
+	// 3) Signals for metrics + timeline
+	const { data: signals } = await supabase
+		.from("signals")
+		.select(
+			"id, project_id, author_employee_id, is_anonymous, category, title, details, created_at",
+		)
+		.eq("project_id", projectId)
+		.order("created_at", { ascending: false });
+
+	const safeSignals = signals ?? [];
+
+	let concernsCount = 0;
+	let achievementsCount = 0;
+	let kudosCount = 0;
+
+	for (const s of safeSignals) {
+		if (s.category === "concern") concernsCount += 1;
+		if (s.category === "achievement") achievementsCount += 1;
+		if (s.category === "appreciation") kudosCount += 1;
+	}
+
+	const healthMetrics = computeHealth(concernsCount, achievementsCount);
+
+	const project: Project = {
+		id: projectRow.id,
+		name: projectRow.name,
+		description: projectRow.description,
+		team,
+		health: healthMetrics.health,
+		healthStatus: healthMetrics.healthStatus,
+		concernsCount,
+		achievementsCount,
+		kudosCount,
+	};
+
+	// 4) Resolve author names/emails for timeline activity cards
+	const authorIds = Array.from(new Set(safeSignals.map(s => s.author_employee_id).filter(Boolean)));
+	const { data: authors } = await supabase
+		.from("employees")
+		.select("id, full_name, email")
+		.in("id", authorIds);
+
+	const authorById = new Map<string, { full_name: string; email: string }>();
+	for (const a of authors ?? []) {
+		if (!a?.id) continue;
+		authorById.set(a.id, { full_name: a.full_name, email: a.email });
+	}
+
+	const activities: ActivityItem[] = safeSignals.map(s => {
+		const activityType =
+			s.category === "concern" ? "concern" : s.category === "achievement" ? "achievement" : "kudos";
+
+		const author = authorById.get(s.author_employee_id);
+		const userName = s.is_anonymous ? "Anonymous" : (author?.full_name ?? "Unknown");
+		const userAvatarSeed = s.is_anonymous
+			? `anonymous-${s.id}`
+			: (author?.email ?? s.author_employee_id);
+		const userAvatar = `https://i.pravatar.cc/150?u=${encodeURIComponent(userAvatarSeed)}`;
+
+		return {
+			id: s.id,
+			projectId: s.project_id ?? projectId,
+			userId: s.author_employee_id,
+			userName,
+			userAvatar,
+			type: activityType,
+			content: s.details,
+			timestamp: new Date(s.created_at).toISOString(),
+			likesCount: 0,
+			isLiked: false,
+		};
+	});
+
+	return { project, activities };
 }
