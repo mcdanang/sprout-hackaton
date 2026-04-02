@@ -13,6 +13,7 @@ create table if not exists public.organizations (
 alter table public.organizations enable row level security;
 create policy "organizations readable by authenticated" on public.organizations
   for select to authenticated using (true);
+alter table public.organizations disable row level security;
 
 -- 2. PROJECTS
 create table if not exists public.projects (
@@ -24,6 +25,7 @@ create table if not exists public.projects (
 alter table public.projects enable row level security;
 create policy "projects readable by authenticated" on public.projects
   for select to authenticated using (true);
+alter table public.projects disable row level security;
 
 -- 3. ROLES
 create table if not exists public.roles (
@@ -35,6 +37,7 @@ create table if not exists public.roles (
 alter table public.roles enable row level security;
 create policy "roles readable by authenticated" on public.roles
   for select to authenticated using (true);
+alter table public.roles disable row level security;
 
 -- 4. EMPLOYEES
 create table if not exists public.employees (
@@ -55,6 +58,7 @@ create policy "employees readable by authenticated" on public.employees
   for select to authenticated using (true);
 create policy "employees can update own profile" on public.employees
   for update to authenticated using (auth.uid() = auth_id);
+alter table public.employees disable row level security;
 
 
 -- ============================================================
