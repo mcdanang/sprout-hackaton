@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { ArrowLeft, AlertCircle, Trophy, Share2, Heart, Clock, Zap } from "lucide-react";
+import { ArrowLeft, AlertCircle, Trophy, Share2, Heart, Clock, Zap, Send, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
 import { DUMMY_PROJECTS } from "@/lib/constants/projects";
@@ -43,10 +43,11 @@ export default function ProjectDetailPage() {
     .filter(a => a.projectId === id && a.type !== "status")
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-  // Infinite Scroll States
+  // Interaction States
   const [visibleCount, setVisibleCount] = useState(5);
   const [isLoading, setIsLoading] = useState(false);
   const [replyingToId, setReplyingToId] = useState<string | null>(null);
+  const [sendingId, setSendingId] = useState<string | null>(null);
   const observerTarget = useRef(null);
 
   const visibleActivities = allActivities.slice(0, visibleCount);
@@ -59,6 +60,15 @@ export default function ProjectDetailPage() {
       setVisibleCount(prev => prev + 5);
       setIsLoading(false);
     }, 800);
+  };
+
+  const handleSendReply = (activityId: string) => {
+    setSendingId(activityId);
+    // Simulate sending delay
+    setTimeout(() => {
+      setSendingId(null);
+      setReplyingToId(null);
+    }, 1500);
   };
 
   useEffect(() => {
@@ -306,15 +316,15 @@ export default function ProjectDetailPage() {
                             />
                             <div className="absolute bottom-3 right-3 flex items-center gap-2">
                               <button 
-                                onClick={() => setReplyingToId(null)}
-                                className="px-3 py-1.5 rounded-xl text-[11px] font-bold text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-wider"
+                                onClick={() => handleSendReply(activity.id)}
+                                disabled={sendingId === activity.id}
+                                className="h-9 w-9 flex items-center justify-center rounded-xl bg-brand-primary text-white hover:scale-105 active:scale-95 transition-all shadow-sm disabled:opacity-50 disabled:scale-100"
                               >
-                                Cancel
-                              </button>
-                              <button 
-                                className="px-4 py-1.5 rounded-xl bg-brand-primary text-white text-[11px] font-bold hover:scale-105 active:scale-95 transition-all uppercase tracking-wider shadow-sm"
-                              >
-                                Send
+                                {sendingId === activity.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Send className="h-4 w-4" />
+                                )}
                               </button>
                             </div>
                           </div>
