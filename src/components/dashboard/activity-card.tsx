@@ -72,9 +72,23 @@ export function ActivityCard({ activity, index }: Props) {
           </div>
 
           {/* Content */}
-          <p className="font-plus-jakarta text-[15px] text-slate-600 leading-relaxed">
-            {activity.content}
-          </p>
+          <div className="font-plus-jakarta text-[15px] text-slate-600 leading-relaxed whitespace-pre-wrap">
+            {activity.content.split(/(@\[[^\]]+\]\([^)]+\))/g).map((part, i) => {
+              const match = part.match(/@\[([^\]]+)\]\(([^)]+)\)/);
+              if (match) {
+                const name = match[1];
+                return (
+                  <span
+                    key={i}
+                    className="inline-flex items-center bg-brand-primary/5 text-brand-primary px-1.5 py-0.5 rounded-lg font-bold text-[14px] leading-none mx-0.5 align-baseline translate-y-[-1px]"
+                  >
+                    @{name}
+                  </span>
+                );
+              }
+              return part;
+            })}
+          </div>
 
           {/* Like & Reply actions */}
           <div className="flex items-center gap-3 pt-1">

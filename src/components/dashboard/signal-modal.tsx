@@ -18,7 +18,7 @@ interface Props {
   onClose: () => void;
 }
 
-type SignalType = "concern" | "achievement" | "kudos";
+type SignalType = "concern" | "achievement" | "appreciation";
 
 const SIGNAL_TYPES = [
   {
@@ -46,7 +46,7 @@ const SIGNAL_TYPES = [
     placeholder: "What did the team accomplish?",
   },
   {
-    id: "kudos" as const,
+    id: "appreciation" as const,
     label: "Kudos",
     icon: Heart,
     color: "text-pink-500",
