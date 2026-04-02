@@ -7,8 +7,8 @@ import { AlertCircle, TrendingUp, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
 
-export type ProjectStatus = "active" | "completed" | "on-hold" | "planning";
-export type ProjectHealthStatus = "Stable" | "At Risk" | "Critical";
+export type ProjectStatus = "Planning" | "Development" | "UAT" | "Deployment" | "Maintenance";
+export type ProjectHealthStatus = "Healthy" | "Stable" | "At Risk";
 
 export interface Project {
   id: string;
@@ -27,16 +27,17 @@ interface ProjectCardProps {
 }
 
 const statusStyles: Record<ProjectStatus, string> = {
-  active: "bg-emerald-50 text-emerald-700 border-emerald-100",
-  completed: "bg-blue-50 text-blue-700 border-blue-100",
-  "on-hold": "bg-amber-50 text-amber-700 border-amber-100",
-  planning: "bg-slate-50 text-slate-700 border-slate-100",
+  Planning: "bg-slate-50 text-slate-700 border-slate-100",
+  Development: "bg-blue-50 text-blue-700 border-blue-100",
+  UAT: "bg-amber-50 text-amber-700 border-amber-100",
+  Deployment: "bg-emerald-50 text-emerald-700 border-emerald-100",
+  Maintenance: "bg-indigo-50 text-indigo-700 border-indigo-100",
 };
 
 const healthStyles: Record<ProjectHealthStatus, string> = {
-  Stable: "bg-green-500", // Signal Brand Yellow
-  "At Risk": "bg-orange-500",
-  Critical: "bg-red-500",
+  Healthy: "bg-green-500",
+  Stable: "bg-[#FFD300]", // Signal Brand Yellow
+  "At Risk": "bg-red-500",
 };
 
 export function ProjectCard({ project }: ProjectCardProps) {
@@ -57,7 +58,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
               "rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wider",
               statusStyles[project.status]
             )}>
-              {project.status.replace("-", " ")}
+              {project.status}
             </span>
             <ArrowRight className="h-4 w-4 text-slate-300 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
           </div>
@@ -104,7 +105,9 @@ export function ProjectCard({ project }: ProjectCardProps) {
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between text-[13px] font-medium font-plus-jakarta">
               <span className="text-slate-600">Project Health</span>
-              <span className="text-brand-primary">{project.healthStatus}</span>
+              <span className={cn("font-bold", project.healthStatus === "At Risk" ? "text-red-500" : project.healthStatus === "Healthy" ? "text-green-600" : "text-brand-primary")}>
+                {project.healthStatus}
+              </span>
             </div>
             <Progress value={project.health} className="flex-col gap-0 h-1.5 w-full">
               <ProgressTrack className="h-full w-full bg-slate-100">

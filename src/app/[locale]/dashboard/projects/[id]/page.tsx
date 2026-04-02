@@ -9,16 +9,17 @@ import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/prog
 import { DUMMY_PROJECTS } from "@/lib/constants/projects";
 
 const statusStyles: Record<string, string> = {
-  active: "bg-emerald-50 text-emerald-700 border-emerald-100",
-  completed: "bg-blue-50 text-blue-700 border-blue-100",
-  "on-hold": "bg-amber-50 text-amber-700 border-amber-100",
-  planning: "bg-slate-50 text-slate-700 border-slate-100",
+  Planning: "bg-slate-50 text-slate-700 border-slate-100",
+  Development: "bg-blue-50 text-blue-700 border-blue-100",
+  UAT: "bg-amber-50 text-amber-700 border-amber-100",
+  Deployment: "bg-emerald-50 text-emerald-700 border-emerald-100",
+  Maintenance: "bg-indigo-50 text-indigo-700 border-indigo-100",
 };
 
 const healthStyles: Record<string, string> = {
-  Stable: "bg-green-500",
-  "At Risk": "bg-orange-500",
-  Critical: "bg-red-500",
+  Healthy: "bg-green-500",
+  Stable: "bg-[#FFD300]",
+  "At Risk": "bg-red-500",
 };
 
 export default function ProjectDetailPage() {
@@ -90,7 +91,11 @@ export default function ProjectDetailPage() {
             <span className="font-plus-jakarta text-[13px] font-bold text-slate-500 uppercase tracking-wider">
               {t("healthLabel")}
             </span>
-            <span className={cn("text-xs font-bold", project.healthStatus === "Stable" ? "text-green-600" : "text-amber-600")}>
+            <span className={cn("text-xs font-bold", 
+              project.healthStatus === "Healthy" ? "text-green-600" : 
+              project.healthStatus === "At Risk" ? "text-red-500" : 
+              "text-brand-primary"
+            )}>
               {project.healthStatus}
             </span>
           </div>
