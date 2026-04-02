@@ -85,15 +85,31 @@ async function getCurrentEmployeeId(
 
 export async function getDashboardProjects(): Promise<Project[]> {
 	const supabase = await createClient();
- 
+
+	const employeeId = await getCurrentEmployeeId(supabase);
+	if (!employeeId) return [];
+
+	const { data: membershipLinks } = await supabase
+		.from("employee_projects")
+		.select("project_id")
+		.eq("employee_id", employeeId);
+
+	const allowedProjectIds = new Set(
+		(membershipLinks ?? []).map(l => l.project_id).filter((id): id is string => Boolean(id)),
+	);
+	if (allowedProjectIds.size === 0) return [];
+
+	const projectIdList = [...allowedProjectIds];
+
 	const { data: projects, error: projectsError } = await supabase
 		.from("projects")
 		.select("id, name, description")
+		.in("id", projectIdList)
 		.order("name");
- 
+
 	if (projectsError || !projects) return [];
- 
-	// Build "team" from employees assigned to each project (many-to-many).
+
+	// Build "team" from employees assigned to each project (many-to-many), scoped to this user's projects.
 	const { data: projectLinks } = await supabase
 		.from("employee_projects")
 		.select(
@@ -106,7 +122,8 @@ export async function getDashboardProjects(): Promise<Project[]> {
 				job_position
 			)
 		`,
-		);
+		)
+		.in("project_id", projectIdList);
 
 	type Emb = {
 		id: string;
@@ -154,7 +171,7 @@ export async function getDashboardProjects(): Promise<Project[]> {
 		});
 		teamByProjectId.set(row.project_id, list);
 	}
- 
+
 	// Signal metrics.
 	let signals: {
 		project_id: string | null;
@@ -173,7 +190,7 @@ export async function getDashboardProjects(): Promise<Project[]> {
 		// If signals table isn't present yet, still return projects.
 		signals = [];
 	}
- 
+
 	const metricsByProjectId = new Map<
 		string,
 		{
@@ -185,9 +202,9 @@ export async function getDashboardProjects(): Promise<Project[]> {
 			issueCounts: Record<SignalIssueCategory, number>;
 		}
 	>();
- 
+
 	for (const s of signals) {
-		if (!s.project_id) continue; // general signals don't affect project metrics
+		if (!s.project_id || !allowedProjectIds.has(s.project_id)) continue;
 		const current = metricsByProjectId.get(s.project_id) ?? {
 			concernsCount: 0,
 			achievementsCount: 0,
@@ -206,12 +223,13 @@ export async function getDashboardProjects(): Promise<Project[]> {
 				others: 0,
 			},
 		};
- 
+
 		if (s.category === "concern") current.concernsCount += 1;
 		if (s.category === "achievement") current.achievementsCount += 1;
 		if (s.category === "appreciation") current.kudosCount += 1;
 		const analyzed = analyzeSignalWithMockAI(s);
-		const sentiment = typeof s.sentiment_score === "number" ? s.sentiment_score : analyzed.sentiment;
+		const sentiment =
+			typeof s.sentiment_score === "number" ? s.sentiment_score : analyzed.sentiment;
 		const issueCategory = isSignalIssueCategory(s.ai_issue_category)
 			? s.ai_issue_category
 			: analyzed.issueCategory;
@@ -220,7 +238,7 @@ export async function getDashboardProjects(): Promise<Project[]> {
 		current.issueCounts[issueCategory] += 1;
 		metricsByProjectId.set(s.project_id, current);
 	}
- 
+
 	// The client ProjectCard expects additional UI fields.
 	// For now we map them to a reasonable default + derived health metrics.
 	const result: Project[] = projects.map(p => {
@@ -257,27 +275,27 @@ export async function getDashboardProjects(): Promise<Project[]> {
 			kudosCount: metrics.kudosCount,
 		};
 	});
- 
+
 	return result;
 }
- 
+
 export async function getProjectDetail(projectId: string): Promise<{
 	project: Project | null;
 	activities: ActivityItem[];
 }> {
 	const supabase = await createClient();
- 
+
 	// 1) Project record
 	const { data: projectRow } = await supabase
 		.from("projects")
 		.select("id, name, description")
 		.eq("id", projectId)
 		.maybeSingle();
- 
+
 	if (!projectRow) {
 		return { project: null, activities: [] };
 	}
- 
+
 	// 2) Team members from employees assigned to the project
 	const { data: teamLinks } = await supabase
 		.from("employee_projects")
@@ -309,13 +327,22 @@ export async function getProjectDetail(projectId: string): Promise<{
 
 	const teamEmails = employeeRows.map(e => e.email).filter(Boolean) as string[];
 	const teamEmailToAvatar = new Map<string, string | null>();
-	
+
 	if (teamEmails.length > 0) {
 		try {
 			const clerk = await clerkClient();
-			const { data: clerkUsers } = await clerk.users.getUserList({ emailAddress: teamEmails, limit: 100 });
+			const { data: clerkUsers } = await clerk.users.getUserList({
+				emailAddress: teamEmails,
+				limit: 100,
+			});
 			console.log("[team] emails queried:", teamEmails);
-			console.log("[team] clerk users:", clerkUsers.map(u => ({ imageUrl: u.imageUrl, emails: u.emailAddresses.map(e => e.emailAddress) })));
+			console.log(
+				"[team] clerk users:",
+				clerkUsers.map(u => ({
+					imageUrl: u.imageUrl,
+					emails: u.emailAddresses.map(e => e.emailAddress),
+				})),
+			);
 			for (const u of clerkUsers) {
 				for (const em of u.emailAddresses) {
 					teamEmailToAvatar.set(em.emailAddress, u.imageUrl ?? null);
@@ -325,14 +352,14 @@ export async function getProjectDetail(projectId: string): Promise<{
 			console.error("[team] clerk error:", err);
 		}
 	}
- 
+
 	const team = employeeRows.map(e => ({
 		id: e.id,
 		name: e.full_name,
 		role: e.job_position,
 		avatar: (e.email ? teamEmailToAvatar.get(e.email) : null) || null,
 	}));
- 
+
 	const { data: signals } = await supabase
 		.from("signals")
 		.select(
@@ -340,9 +367,9 @@ export async function getProjectDetail(projectId: string): Promise<{
 		)
 		.eq("project_id", projectId)
 		.order("created_at", { ascending: false });
- 
+
 	const safeSignals = signals ?? [];
- 
+
 	let concernsCount = 0;
 	let achievementsCount = 0;
 	let kudosCount = 0;
@@ -364,7 +391,8 @@ export async function getProjectDetail(projectId: string): Promise<{
 		if (s.category === "achievement") achievementsCount += 1;
 		if (s.category === "appreciation") kudosCount += 1;
 		const analyzed = analyzeSignalWithMockAI(s);
-		const sentiment = typeof s.sentiment_score === "number" ? s.sentiment_score : analyzed.sentiment;
+		const sentiment =
+			typeof s.sentiment_score === "number" ? s.sentiment_score : analyzed.sentiment;
 		const issueCategory = isSignalIssueCategory(s.ai_issue_category)
 			? s.ai_issue_category
 			: analyzed.issueCategory;
@@ -385,11 +413,11 @@ export async function getProjectDetail(projectId: string): Promise<{
 		achievementsCount,
 		kudosCount,
 	};
- 
+
 	// 4) Resolve author names + Clerk profile pictures for timeline activity cards
 	const authorIds = Array.from(new Set(safeSignals.map(s => s.author_employee_id).filter(Boolean)));
 	const signalIds = safeSignals.map(s => s.id);
-	
+
 	// Collect ALL unique employee IDs that might need avatars (signal authors + reply authors)
 	let allAvatarEmployeeIds = [...authorIds];
 	let repliesData: { author_employee_id: string | null }[] = [];
@@ -414,7 +442,10 @@ export async function getProjectDetail(projectId: string): Promise<{
 	if (emails.length > 0) {
 		try {
 			const clerk = await clerkClient();
-			const { data: clerkUsers } = await clerk.users.getUserList({ emailAddress: emails, limit: 100 });
+			const { data: clerkUsers } = await clerk.users.getUserList({
+				emailAddress: emails,
+				limit: 100,
+			});
 			for (const u of clerkUsers) {
 				for (const em of u.emailAddresses) {
 					emailToAvatar.set(em.emailAddress, u.imageUrl ?? null);
@@ -501,13 +532,15 @@ export async function getProjectDetail(projectId: string): Promise<{
 	const activities: ActivityItem[] = safeSignals.map(s => {
 		const activityType =
 			s.category === "concern" ? "concern" : s.category === "achievement" ? "achievement" : "kudos";
- 
+
 		const author = authorById.get(s.author_employee_id);
 		const userName = s.is_anonymous ? "Anonymous" : (author?.full_name ?? "Unknown");
 		const userAvatar = s.is_anonymous
 			? null
-			: (author?.email ? (emailToAvatar.get(author.email) || null) : null);
- 
+			: author?.email
+				? emailToAvatar.get(author.email) || null
+				: null;
+
 		return {
 			id: s.id,
 			projectId: s.project_id ?? projectId,
@@ -523,6 +556,6 @@ export async function getProjectDetail(projectId: string): Promise<{
 			replies: repliesBySignal.get(s.id) ?? [],
 		};
 	});
- 
+
 	return { project, activities };
 }
