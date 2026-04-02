@@ -125,7 +125,7 @@ export function DashboardSidebar({ isCollapsed, onToggle }: DashboardSidebarProp
 
       {/* Desktop Sidebar Container */}
       <div className={cn(
-        "hidden border-r bg-background md:block transition-all duration-300 ease-in-out h-screen sticky top-0",
+        "hidden bg-background md:block transition-all duration-300 ease-in-out h-screen sticky top-0 rounded-tr-[40px] rounded-br-[40px] z-10",
         isCollapsed ? "w-20" : "w-72"
       )}>
         {/* Toggle Button */}
