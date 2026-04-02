@@ -113,6 +113,10 @@ create table if not exists public.signals (
   project_id uuid references public.projects(id) on delete set null,
   is_public boolean not null default false,
 
+  concern_status text check (
+    concern_status is null or concern_status in ('open', 'in_progress', 'closed')
+  ),
+
   created_at timestamptz not null default now()
 );
 
@@ -122,6 +126,11 @@ create index if not exists signals_created_at_idx on public.signals(created_at d
 -- Backward-compatible in case table already exists in an environment.
 alter table public.signals add column if not exists sentiment_score int;
 alter table public.signals add column if not exists ai_issue_category text;
+alter table public.signals add column if not exists concern_status text;
+alter table public.signals drop constraint if exists signals_concern_status_check;
+alter table public.signals add constraint signals_concern_status_check check (
+  concern_status is null or concern_status in ('open', 'in_progress', 'closed')
+);
 alter table public.signals drop constraint if exists signals_sentiment_score_check;
 alter table public.signals add constraint signals_sentiment_score_check
   check (sentiment_score between 0 and 100);
@@ -153,23 +162,39 @@ create table if not exists public.signal_targets (
   signal_id uuid not null
     references public.signals(id) on delete cascade,
 
-  target_type text not null check (target_type in ('all', 'role', 'employee')),
+  target_type text not null check (target_type in ('all', 'role', 'employee', 'organization')),
   target_role_id uuid references public.roles(id) on delete set null,
   target_employee_id uuid references public.employees(id) on delete set null,
+  target_organization_id uuid references public.organizations(id) on delete set null,
 
   created_at timestamptz not null default now(),
 
   -- Basic consistency rules between target_type and the provided target ids
   constraint signal_targets_target_consistency check (
-    (target_type = 'all' and target_role_id is null and target_employee_id is null)
-    or (target_type = 'role' and target_role_id is not null and target_employee_id is null)
-    or (target_type = 'employee' and target_role_id is null and target_employee_id is not null)
+    (target_type = 'all' and target_role_id is null and target_employee_id is null and target_organization_id is null)
+    or (target_type = 'role' and target_role_id is not null and target_employee_id is null and target_organization_id is null)
+    or (target_type = 'employee' and target_role_id is null and target_employee_id is not null and target_organization_id is null)
+    or (target_type = 'organization' and target_role_id is null and target_employee_id is null and target_organization_id is not null)
   )
 );
 
 create index if not exists signal_targets_signal_id_idx on public.signal_targets(signal_id);
 create index if not exists signal_targets_target_role_id_idx on public.signal_targets(target_role_id);
 create index if not exists signal_targets_target_employee_id_idx on public.signal_targets(target_employee_id);
+create index if not exists signal_targets_target_organization_id_idx on public.signal_targets(target_organization_id);
+
+-- Backward-compatible: widen target_type + add organization column on existing DBs.
+alter table public.signal_targets add column if not exists target_organization_id uuid references public.organizations(id) on delete set null;
+alter table public.signal_targets drop constraint if exists signal_targets_target_type_check;
+alter table public.signal_targets add constraint signal_targets_target_type_check
+  check (target_type in ('all', 'role', 'employee', 'organization'));
+alter table public.signal_targets drop constraint if exists signal_targets_target_consistency;
+alter table public.signal_targets add constraint signal_targets_target_consistency check (
+  (target_type = 'all' and target_role_id is null and target_employee_id is null and target_organization_id is null)
+  or (target_type = 'role' and target_role_id is not null and target_employee_id is null and target_organization_id is null)
+  or (target_type = 'employee' and target_role_id is null and target_employee_id is not null and target_organization_id is null)
+  or (target_type = 'organization' and target_role_id is null and target_employee_id is null and target_organization_id is not null)
+);
 
 alter table public.signal_targets enable row level security;
 create policy "signal_targets readable by authenticated" on public.signal_targets
