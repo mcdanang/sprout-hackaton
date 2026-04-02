@@ -23,7 +23,7 @@ export default async function DashboardLayout({
       <header className="sticky top-0 z-30 flex h-16 items-center border-b bg-background/80 backdrop-blur-md px-6 shadow-sm">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FFD300] shadow-sm overflow-hidden">
+            <div className="flex h-8 w-8 items-center justify-center overflow-hidden">
               <Image 
                 src="/signal_logo.svg" 
                 alt="Signal Logo" 
