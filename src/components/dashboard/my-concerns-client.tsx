@@ -164,10 +164,16 @@ function SubmitConcernModal({
 		if (state.status === "success" && !successHandled.current) {
 			successHandled.current = true;
 			toast.success(state.message);
-			setFormKey(k => k + 1);
-			setVisibility("management");
-			onClose();
+			
+			// Pushing state updates to the next tick to avoid cascading renders warning
+			const timer = setTimeout(() => {
+				setFormKey(k => k + 1);
+				setVisibility("management");
+				onClose();
+			}, 0);
+			
 			router.refresh();
+			return () => clearTimeout(timer);
 		} else if (state.status === "error" && state.message) {
 			toast.error(state.message);
 		}
@@ -382,27 +388,28 @@ export function MyConcernsClient({ initialConcerns, organizations, employees }: 
 	const [modalOpen, setModalOpen] = useState(false);
 
 	return (
-		<div className="mx-auto max-w-3xl space-y-8 pb-16">
-			<header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-				<div className="space-y-2">
-					<div className="flex items-center gap-2 text-muted-foreground">
-						<ChatLines className="h-4 w-4" />
-						<span className="text-sm font-medium uppercase tracking-wider">{t("eyebrow")}</span>
-					</div>
-					<h1 className="font-plus-jakarta text-3xl font-bold tracking-tight text-slate-900">
+		<div className="max-w-5xl mx-auto space-y-12 pb-20">
+			<div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+				<div className="space-y-4">
+					<p className="font-plus-jakarta text-[12px] font-semibold leading-[16px] tracking-[1.2px] uppercase text-[#B09100]">
+						{t("eyebrow")}
+					</p>
+					<h1 className="font-plus-jakarta text-[48px] font-bold leading-[48px] tracking-[-1.2px] text-brand-primary">
 						{t("title")}
 					</h1>
-					<p className="max-w-xl text-base text-slate-600">{t("subtitle")}</p>
+					<p className="font-plus-jakarta text-[18px] font-normal leading-[28px] text-dashboard-description max-w-2xl">
+						{t("subtitle")}
+					</p>
 				</div>
 				<Button
 					type="button"
 					onClick={() => setModalOpen(true)}
-					className="shrink-0 gap-2 bg-slate-900 text-white hover:bg-slate-900/90"
+					className="shrink-0 gap-2 bg-brand-primary text-white hover:bg-brand-primary/90 rounded-full px-8 h-12 font-plus-jakarta font-bold shadow-sm transition-all active:scale-95"
 				>
 					<Plus className="size-4" />
 					{t("submitCta")}
 				</Button>
-			</header>
+			</div>
 
 			{initialConcerns.length === 0 ? (
 				<div className="mt-4 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white/50 px-6 py-20 text-center">
