@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Heart, Clock } from "lucide-react";
+import { Heart, Clock, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type ActivityItem } from "@/lib/constants/activity";
 import { activityTypeStyles } from "@/lib/constants/project-ui";
@@ -32,7 +32,10 @@ export function ActivityCard({ activity, index }: Props) {
 
   return (
     <div
-      className="group relative bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-brand-primary/10 animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both"
+      className={cn(
+        "group relative bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-brand-primary/10 animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both",
+        !activity.isPublic && "border-l-4 border-l-slate-200"
+      )}
       style={{ animationDelay: `${(index % 5) * 100}ms` }}
     >
       <div className="flex gap-5">
@@ -52,11 +55,19 @@ export function ActivityCard({ activity, index }: Props) {
               </div>
               <span className="font-plus-jakarta text-sm font-bold text-brand-primary">{activity.userName}</span>
             </div>
-            <div className="flex items-center gap-1.5 text-slate-600 shrink-0">
-              <Clock className="h-3 w-3" />
-              <span className="text-[10px] font-bold uppercase tracking-wider">
-                {getRelativeTime(activity.timestamp)}
-              </span>
+            <div className="flex items-center gap-2 text-slate-600 shrink-0">
+              {!activity.isPublic && (
+                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                  <Lock className="h-2.5 w-2.5" />
+                  Private
+                </span>
+              )}
+              <div className="flex items-center gap-1.5">
+                <Clock className="h-3 w-3" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">
+                  {getRelativeTime(activity.timestamp)}
+                </span>
+              </div>
             </div>
           </div>
 

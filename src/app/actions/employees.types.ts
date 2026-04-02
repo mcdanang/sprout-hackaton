@@ -4,6 +4,7 @@ export type EmployeesListFilters = {
 	organizationName?: string;
 	roleName?: string;
 	onlyActive?: boolean;
+	projectId?: string;
 };
 
 export type EmployeeRecord = {

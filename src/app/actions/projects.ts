@@ -152,11 +152,10 @@ export async function getProjectDetail(projectId: string): Promise<{
 		),
 	);
 
-	// 3) Signals for metrics + timeline
 	const { data: signals } = await supabase
 		.from("signals")
 		.select(
-			"id, project_id, author_employee_id, is_anonymous, category, title, details, created_at",
+			"id, project_id, author_employee_id, is_anonymous, category, title, details, created_at, is_public",
 		)
 		.eq("project_id", projectId)
 		.order("created_at", { ascending: false });
@@ -222,6 +221,7 @@ export async function getProjectDetail(projectId: string): Promise<{
 			timestamp: new Date(s.created_at).toISOString(),
 			likesCount: 0,
 			isLiked: false,
+			isPublic: s.is_public ?? true,
 		};
 	});
 

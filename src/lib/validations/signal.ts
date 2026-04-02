@@ -8,15 +8,13 @@ export const signalSchema = z.object({
     .min(10, "Details must be at least 10 characters for useful context.")
     .max(2000),
   isAnonymous: z.boolean().default(false),
-  isPublic: z.boolean().default(false),
+  isPublic: z.boolean().default(true),
   projectId: z.string().uuid().nullable().optional(),
 
-  authorEmployeeId: z.string().uuid(),
-
-  // Recipient targeting
-  targetType: z.enum(["all", "role", "employee"]),
-  targetRoleId: z.string().uuid().nullable().optional(),
-  targetEmployeeId: z.string().uuid().nullable().optional(),
+  // @mentioned employees — always stored as signal_targets regardless of isPublic.
+  // isPublic only controls visibility, not whether targets exist.
+  // If empty and isPublic=true → server inserts a single 'all' target as fallback.
+  targetEmployeeIds: z.array(z.string().uuid()).default([]),
 });
 
 export type SignalFormValues = z.infer<typeof signalSchema>;
