@@ -1,27 +1,38 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import createMiddleware from 'next-intl/middleware';
+import { routing } from './i18n/routing';
+
+const intlMiddleware = createMiddleware(routing);
 
 const isPublicRoute = createRouteMatcher([
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-  "/",
-  "/api/webhook(.*)",
-  "/unauthorized",
+  "/:locale",
+  "/:locale/sign-in(.*)",
+  "/:locale/sign-up(.*)",
+  "/:locale/unauthorized",
+  "/", // Root redirect
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
+  // Step 1: Handle i18n
+  const response = intlMiddleware(request);
+
+  // Step 2: Handle Auth
   const { userId } = await auth();
 
   if (!userId && !isPublicRoute(request)) {
-    return NextResponse.redirect(new URL("/unauthorized", request.url));
+    // Extract locale from path or default to 'en'
+    const locale = request.nextUrl.pathname.split('/')[1] || 'en';
+    const unauthorizedUrl = new URL(`/${locale}/unauthorized`, request.url);
+    return Response.redirect(unauthorizedUrl);
   }
+
+  return response;
 });
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
+    // Enable i18n for all routes except static assets
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    // Always run for API routes
     "/(api|trpc)(.*)",
   ],
 };

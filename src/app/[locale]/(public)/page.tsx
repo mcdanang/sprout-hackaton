@@ -3,10 +3,13 @@ import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button.variants";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, ShieldCheck, Zap, Users } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 export default function Home() {
+  const t = useTranslations("Landing");
+
   return (
     <main className="flex min-h-screen flex-col">
       {/* Hero Section */}
@@ -15,27 +18,23 @@ export default function Home() {
         
         <div className="mb-8 flex justify-center">
           <Badge variant="secondary" className="px-3 py-1 text-sm font-medium">
-            Project Sprout Ownership
+            {t("badge")}
           </Badge>
         </div>
         
         <h1 className="mx-auto max-w-4xl text-5xl font-bold tracking-tight sm:text-7xl">
-          Speak Up and Recognize <br />
-          <span className="bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            Positive Ownership
-          </span>
+          {t("title")}
         </h1>
         
         <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-          A safe internal platform for employees to raise concerns early and acknowledge peers who show
-          ownership. Improve transparency, trust, and accountability within your team.
+          {t("description")}
         </p>
         
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Show when="signed-out">
             <SignInButton mode="modal">
               <Button size="lg" className="h-12 px-8 text-base font-semibold transition-all hover:scale-105">
-                Get Started
+                {t("getStarted")}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </SignInButton>
@@ -45,12 +44,12 @@ export default function Home() {
               href="/dashboard"
               className={cn(buttonVariants({ size: "lg" }), "h-12 px-8 text-base font-semibold")}
             >
-              Go to Dashboard
+              {t("goDashboard")}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Show>
           <Button variant="outline" size="lg" className="h-12 px-8 text-base font-semibold">
-            Learn More
+            {t("learnMore")}
           </Button>
         </div>
       </section>
@@ -63,27 +62,27 @@ export default function Home() {
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-600 text-white">
                 <ShieldCheck className="h-6 w-6" />
               </div>
-              <h3 className="text-xl font-bold">Safe & Anonymous</h3>
+              <h3 className="text-xl font-bold">{t("features.safe.title")}</h3>
               <p className="text-muted-foreground">
-                Submit concerns without fear. Optional anonymity ensures every voice is heard.
+                {t("features.safe.description")}
               </p>
             </div>
             <div className="space-y-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-600 text-white">
                 <Users className="h-6 w-6" />
               </div>
-              <h3 className="text-xl font-bold">Peer Recognition</h3>
+              <h3 className="text-xl font-bold">{t("features.peer.title")}</h3>
               <p className="text-muted-foreground">
-                Highlight excellent performance and ownership. Build a culture of appreciation.
+                {t("features.peer.description")}
               </p>
             </div>
             <div className="space-y-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-600 text-white">
                 <Zap className="h-6 w-6" />
               </div>
-              <h3 className="text-xl font-bold">Rapid Feedback</h3>
+              <h3 className="text-xl font-bold">{t("features.rapid.title")}</h3>
               <p className="text-muted-foreground">
-                Get internal signals directly to decision makers to resolve blockers fast.
+                {t("features.rapid.description")}
               </p>
             </div>
           </div>

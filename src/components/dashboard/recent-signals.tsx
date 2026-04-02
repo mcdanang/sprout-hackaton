@@ -2,8 +2,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { History } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 export async function RecentSignals() {
+  const t = await getTranslations("Recent");
+  const commonT = await getTranslations("Common");
+  const formT = await getTranslations("Form");
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("ownership_signals")
@@ -13,14 +18,14 @@ export async function RecentSignals() {
 
   if (error) {
     return (
-      <Card className="border-destructive/20 bg-destructive/5">
+      <Card className="border-destructive/20 bg-destructive/5 shadow-none">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <History className="h-5 w-5" />
-            Recent Signals
+          <CardTitle className="flex items-center gap-2 text-lg font-bold">
+            <History className="h-5 w-5 text-destructive" />
+            {t("title")}
           </CardTitle>
         </CardHeader>
-        <CardContent className="text-sm text-destructive">
+        <CardContent className="text-sm font-medium text-destructive">
           Error loading signals: {error.message}
         </CardContent>
       </Card>
@@ -28,45 +33,52 @@ export async function RecentSignals() {
   }
 
   return (
-    <Card>
+    <Card className="shadow-sm border-muted/50">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
+        <CardTitle className="flex items-center gap-2 text-lg font-bold">
           <History className="h-5 w-5 text-muted-foreground" />
-          Recent Signals
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {data.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-            <p className="text-sm">No signals yet. Submit your first one!</p>
+          <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground bg-muted/20 rounded-xl border border-dashed">
+            <p className="text-sm font-medium px-4">{t("empty")}</p>
           </div>
         ) : (
-          data.map((item) => (
-            <div
-              key={item.id}
-              className="group relative rounded-lg border p-4 transition-colors hover:bg-muted/50"
-            >
-              <div className="mb-2 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant={item.type === "recognition" ? "default" : "secondary"}
-                    className="capitalize"
-                  >
-                    {item.type}
-                  </Badge>
-                  {item.is_anonymous && (
-                    <Badge variant="outline" className="text-[10px] uppercase tracking-wider">
-                      Anonymous
+          <div className="flex flex-col gap-3">
+            {data.map((item) => (
+              <div
+                key={item.id}
+                className="group relative rounded-xl border border-muted/50 p-4 transition-all hover:bg-muted/30 hover:border-muted-foreground/20"
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant={item.type === "recognition" ? "default" : "secondary"}
+                      className="text-[10px] font-bold uppercase tracking-wider px-2"
+                    >
+                      {item.type === "recognition" ? formT("typeRecognition") : formT("typeConcern")}
                     </Badge>
-                  )}
+                    {item.is_anonymous && (
+                      <Badge variant="outline" className="text-[10px] font-semibold uppercase tracking-wider bg-background/50">
+                        {commonT("anonymous")}
+                      </Badge>
+                    )}
+                  </div>
+                  <span className="text-[10px] font-bold text-muted-foreground/60 uppercase">
+                    {new Date(item.created_at).toLocaleDateString(undefined, { 
+                      month: 'short', 
+                      day: 'numeric' 
+                    })}
+                  </span>
                 </div>
-                <span className="text-[10px] text-muted-foreground">
-                  {new Date(item.created_at).toLocaleDateString()}
-                </span>
+                <p className="line-clamp-2 text-sm font-bold leading-snug group-hover:text-primary transition-colors">
+                  {item.title}
+                </p>
               </div>
-              <p className="line-clamp-1 text-sm font-semibold">{item.title}</p>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </CardContent>
     </Card>
