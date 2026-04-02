@@ -8,7 +8,6 @@ import {
 } from "@/app/actions/ownership";
 import {
   initialOwnershipActionState,
-  OwnershipActionState,
 } from "@/app/actions/ownership.types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

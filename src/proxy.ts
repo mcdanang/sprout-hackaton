@@ -6,18 +6,18 @@ const isPublicRoute = createRouteMatcher([
   "/sign-up(.*)",
   "/",
   "/api/webhook(.*)",
+  "/unauthorized",
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
-  if (!isPublicRoute(request)) {
-    await auth.protect();
+  const { userId } = await auth();
+
+  if (!userId && !isPublicRoute(request)) {
+    return Response.redirect(new URL("/unauthorized", request.url));
   }
 
   const { supabase, response } = createClient(request);
-
-  // Refresh the auth session if it exists — keeps cookies alive.
   await supabase.auth.getUser();
-
   return response;
 });
 
