@@ -88,7 +88,7 @@ export default function ProjectDetailPage() {
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <h2 className="font-plus-jakarta text-xl font-bold text-brand-primary">{t("healthLabel")}</h2>
-            <p className="text-sm text-slate-600 leading-none font-medium italic">
+            <p className="text-sm text-slate-600 leading-none font-medium">
               Real-time team performance and psychological safety indicator
             </p>
           </div>
