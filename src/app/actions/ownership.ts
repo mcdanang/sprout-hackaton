@@ -4,15 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 
-export type OwnershipActionState = {
-  status: "idle" | "success" | "error";
-  message: string;
-};
-
-export const initialOwnershipActionState: OwnershipActionState = {
-  status: "idle",
-  message: "",
-};
+import { OwnershipActionState } from "./ownership.types";
 
 export async function submitOwnershipSignal(
   _prevState: OwnershipActionState,
