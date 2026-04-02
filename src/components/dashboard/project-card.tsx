@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { User } from "iconoir-react";
-import { AlertCircle, TrendingUp, ArrowRight } from "lucide-react";
+import { AlertCircle, TrendingUp, ArrowRight, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
 
@@ -20,6 +20,7 @@ export interface Project {
   healthStatus: ProjectHealthStatus;
   concernsCount: number;
   achievementsCount: number;
+  kudosCount: number;
 }
 
 interface ProjectCardProps {
@@ -96,15 +97,15 @@ export function ProjectCard({ project }: ProjectCardProps) {
             <h3 className="font-plus-jakarta text-lg font-bold text-brand-primary group-hover:text-dashboard-label transition-colors">
               {project.name}
             </h3>
-            <p className="font-plus-jakarta text-sm text-slate-500 leading-relaxed line-clamp-2">
+            <p className="font-plus-jakarta text-sm text-slate-500 leading-relaxed line-clamp-2 min-h-[40px]">
               {project.description}
             </p>
           </div>
 
-          {/* Project Health Section */}
+          {/* Project Health Section -> Team Pulse */}
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between text-[13px] font-medium font-plus-jakarta">
-              <span className="text-slate-600">Project Health</span>
+              <span className="text-slate-600 font-bold uppercase text-[10px] tracking-wider">Team Pulse</span>
               <span className={cn("font-bold", project.healthStatus === "At Risk" ? "text-red-500" : project.healthStatus === "Healthy" ? "text-green-600" : "text-brand-primary")}>
                 {project.healthStatus}
               </span>
@@ -116,24 +117,33 @@ export function ProjectCard({ project }: ProjectCardProps) {
             </Progress>
           </div>
 
-          {/* Compact Info Cards */}
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100/50 flex flex-col gap-2">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />
-                <span className="font-plus-jakarta text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">Concerns</span>
+          {/* Metrics Grid: Concerns, Achievements, Kudos */}
+          <div className="grid grid-cols-3 gap-2 pt-2">
+            <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-100/50 flex flex-col gap-1.5 min-w-0">
+              <div className="flex items-center gap-1 min-w-0">
+                <AlertCircle className="h-3 w-3 text-red-500 shrink-0" />
+                <span className="font-plus-jakarta text-[8px] font-bold text-slate-500 uppercase tracking-tight truncate">Concerns</span>
               </div>
-              <div className="font-plus-jakarta text-lg font-bold text-brand-primary leading-none">
+              <div className="font-plus-jakarta text-sm font-bold text-brand-primary">
                 {project.concernsCount}
               </div>
             </div>
-            <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100/50 flex flex-col gap-2">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <TrendingUp className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                <span className="font-plus-jakarta text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">Achievements</span>
+            <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-100/50 flex flex-col gap-1.5 min-w-0">
+              <div className="flex items-center gap-1 min-w-0">
+                <TrendingUp className="h-3 w-3 text-emerald-500 shrink-0" />
+                <span className="font-plus-jakarta text-[8px] font-bold text-slate-500 uppercase tracking-tight truncate">Achievements</span>
               </div>
-              <div className="font-plus-jakarta text-lg font-bold text-brand-primary leading-none">
+              <div className="font-plus-jakarta text-sm font-bold text-brand-primary">
                 {project.achievementsCount}
+              </div>
+            </div>
+            <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-100/50 flex flex-col gap-1.5 min-w-0">
+              <div className="flex items-center gap-1 min-w-0">
+                <Heart className="h-3 w-3 text-pink-500 shrink-0 fill-pink-500/10" />
+                <span className="font-plus-jakarta text-[8px] font-bold text-slate-500 uppercase tracking-tight truncate">Kudos</span>
+              </div>
+              <div className="font-plus-jakarta text-sm font-bold text-brand-primary">
+                {project.kudosCount}
               </div>
             </div>
           </div>

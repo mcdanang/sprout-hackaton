@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { ArrowLeft, AlertCircle, TrendingUp, User, Share2 } from "lucide-react";
+import { ArrowLeft, AlertCircle, TrendingUp, User, Share2, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
 import { DUMMY_PROJECTS } from "@/lib/constants/projects";
@@ -83,55 +83,70 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      {/* Pulse Grid: Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Health Stats */}
-        <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="font-plus-jakarta text-[13px] font-bold text-slate-500 uppercase tracking-wider">
-              {t("healthLabel")}
-            </span>
-            <span className={cn("text-xs font-bold", 
+      {/* Team Pulse: Full Width Heading */}
+      <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h2 className="font-plus-jakarta text-xl font-bold text-brand-primary">{t("healthLabel")}</h2>
+            <p className="text-xs text-slate-400 font-medium">Real-time team performance and psychological safety indicator</p>
+          </div>
+          <div className="flex flex-col items-end gap-1 text-right">
+            <span className={cn("text-lg font-bold font-plus-jakarta", 
               project.healthStatus === "Healthy" ? "text-green-600" : 
               project.healthStatus === "At Risk" ? "text-red-500" : 
-              "text-brand-primary"
+              "text-[#FFD300]"
             )}>
               {project.healthStatus}
             </span>
-          </div>
-          <div className="space-y-2">
-            <Progress value={project.health} className="h-2 w-full">
-              <ProgressTrack className="h-full w-full bg-slate-50">
-                <ProgressIndicator className={cn("h-full transition-all", healthStyles[project.healthStatus])} />
-              </ProgressTrack>
-            </Progress>
-            <p className="text-[11px] text-slate-400 font-medium">{project.health}% Optimal Performance</p>
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{project.health}% Optimal</span>
           </div>
         </div>
+        
+        <Progress value={project.health} className="h-3 w-full">
+          <ProgressTrack className="h-full w-full bg-slate-50">
+            <ProgressIndicator className={cn("h-full transition-all duration-1000", healthStyles[project.healthStatus])} />
+          </ProgressTrack>
+        </Progress>
+      </div>
 
-        {/* Concerns Stats */}
-        <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm flex items-center justify-between group hover:border-red-100 transition-colors">
+      {/* Tri-Metric Summary: Concerns, Achievements, Kudos */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Concerns */}
+        <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm flex items-center justify-between group hover:border-red-100 transition-all hover:shadow-md">
           <div className="space-y-1">
             <span className="font-plus-jakarta text-[13px] font-bold text-slate-500 uppercase tracking-wider">
               {t("concernsLabel")}
             </span>
-            <p className="text-3xl font-bold font-plus-jakarta text-brand-primary">{project.concernsCount}</p>
+            <p className="text-3xl font-bold font-plus-jakarta text-brand-primary group-hover:text-red-600 transition-colors">{project.concernsCount}</p>
           </div>
-          <div className="p-3 rounded-2xl bg-red-50 text-red-500 group-hover:scale-110 transition-transform">
+          <div className="p-3 rounded-2xl bg-red-50 text-red-500 group-hover:bg-red-500 group-hover:text-white transition-all">
             <AlertCircle className="h-6 w-6" />
           </div>
         </div>
 
-        {/* Achievements Stats */}
-        <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm flex items-center justify-between group hover:border-emerald-100 transition-colors">
+        {/* Achievements */}
+        <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm flex items-center justify-between group hover:border-emerald-100 transition-all hover:shadow-md">
           <div className="space-y-1">
             <span className="font-plus-jakarta text-[13px] font-bold text-slate-500 uppercase tracking-wider">
               {t("achievementsLabel")}
             </span>
-            <p className="text-3xl font-bold font-plus-jakarta text-brand-primary">{project.achievementsCount}</p>
+            <p className="text-3xl font-bold font-plus-jakarta text-brand-primary group-hover:text-emerald-600 transition-colors">{project.achievementsCount}</p>
           </div>
-          <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-500 group-hover:scale-110 transition-transform">
+          <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-all">
             <TrendingUp className="h-6 w-6" />
+          </div>
+        </div>
+
+        {/* Kudos */}
+        <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm flex items-center justify-between group hover:border-pink-100 transition-all hover:shadow-md">
+          <div className="space-y-1">
+            <span className="font-plus-jakarta text-[13px] font-bold text-slate-500 uppercase tracking-wider">
+              Team Kudos
+            </span>
+            <p className="text-3xl font-bold font-plus-jakarta text-brand-primary group-hover:text-pink-600 transition-colors">{project.kudosCount}</p>
+          </div>
+          <div className="p-3 rounded-2xl bg-pink-50 text-pink-500 group-hover:bg-pink-500 group-hover:text-white transition-all">
+            <Heart className="h-6 w-6 fill-current" />
           </div>
         </div>
       </div>
