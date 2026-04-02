@@ -349,3 +349,23 @@ export async function createConcern(
 		return { status: "error", message: e instanceof Error ? e.message : "Error" };
 	}
 }
+
+export async function updateConcernStatus(
+  signalId: string,
+  status: "open" | "in_progress" | "closed",
+): Promise<{ ok: boolean; message: string }> {
+  const supabase = await createClient();
+  const employee = await resolveEmployeeId(supabase);
+  if (!employee) return { ok: false, message: "Unauthorized" };
+
+  const { error } = await supabase
+    .from("signals")
+    .update({ concern_status: status })
+    .eq("id", signalId)
+    .eq("category", "concern");
+
+  if (error) return { ok: false, message: error.message };
+
+  revalidatePath("/");
+  return { ok: true, message: "Status updated." };
+}
