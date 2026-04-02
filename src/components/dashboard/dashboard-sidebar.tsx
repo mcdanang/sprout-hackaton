@@ -62,10 +62,10 @@ export function DashboardSidebar() {
               href={item.href}
               onClick={() => setIsOpen(false)}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 text-[15px] font-medium transition-all duration-200 rounded-full",
+                "flex items-center gap-3 px-4 py-3 transition-all duration-200 rounded-full font-open-sans text-[14px] leading-[19px] tracking-[0.25px]",
                 isActive 
-                  ? "bg-[#FFD300] text-[#081021] shadow-sm" 
-                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                  ? "bg-[#FFD300] text-[#282828] font-bold shadow-sm" 
+                  : "text-[#64748B] font-semibold hover:bg-slate-100 hover:text-slate-900"
               )}
             >
               <Icon className={cn("h-5 w-5", isActive ? "stroke-[2.5px]" : "stroke-[1.5px]")} />
