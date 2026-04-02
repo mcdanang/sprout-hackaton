@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sprout Ownership Platform (Hackathon Starter)
 
-## Getting Started
+Starter app for a safe internal platform where employees can:
 
-First, run the development server:
+- raise concerns and risks early
+- share feedback with psychological safety
+- recognize peers for positive ownership behavior
+
+This project is initialized with:
+
+- Next.js (App Router + TypeScript)
+- shadcn/ui + Tailwind CSS
+- Supabase client setup for browser and server
+- Server Function (`use server`) example for form submission
+
+## Quick Start
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Set environment variables:
+
+```bash
+cp .env.example .env.local
+```
+
+Then fill:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (optional for future admin/server workflows)
+
+3. Create database table in Supabase SQL editor:
+
+Run SQL from `supabase/init.sql`.
+
+4. Start local app:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Current Starter Scope
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Landing page aligned to the ownership platform concept
+- shadcn form for submitting:
+  - concern/risk
+  - recognition
+- Server Function in `src/app/actions/ownership.ts`
+- Supabase read/write integration:
+  - insert new signal
+  - show latest 5 signals
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Suggested Next Tasks For Developers
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Add authentication and role-based views (employee, manager, admin)
+- Add moderation workflow for sensitive submissions
+- Add tags/team/project dimensions
+- Add analytics dashboard (trends: concern vs recognition)
+- Add notifications (Slack/email) for urgent risks
