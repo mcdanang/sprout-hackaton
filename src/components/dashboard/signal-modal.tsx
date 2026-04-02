@@ -125,7 +125,9 @@ function SignalModalContent({ projectName, projectId, onClose }: Omit<Props, "is
     } else if (state.status === "error") {
       toast.error(state.message || "Failed to post signal. Please try again.");
     }
-  }, [state.status, state.message, onClose]);
+    // state.message is always set when state.status changes — no separate dep needed
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.status, onClose]);
 
   // Close on Escape (but let the mention dropdown intercept first)
   useEffect(() => {
@@ -318,7 +320,7 @@ function SignalModalContent({ projectName, projectId, onClose }: Omit<Props, "is
                 <p className="font-plus-jakarta text-sm font-bold text-brand-primary">
                   Visibility
                 </p>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-slate-600">
                   {isPublic
                     ? "Everyone in the project can see this"
                     : "@Mentioned people only — others cannot see this"}

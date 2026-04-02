@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
@@ -18,13 +18,27 @@ export async function createSignal(
 	const supabase = await createClient();
 
 	// Resolve author from Clerk auth_id — never trust client-sent employee ID
-	const { data: employee, error: empError } = await supabase
+	let { data: employee, error: empError } = await supabase
 		.from("employees")
 		.select("id")
 		.eq("auth_id", userId)
 		.maybeSingle();
 
+	// Fallback: look up by Clerk primary email (for seeded accounts without auth_id)
 	if (empError || !employee) {
+		const user = await currentUser();
+		const email = user?.emailAddresses?.[0]?.emailAddress;
+		if (email) {
+			const { data: byEmail } = await supabase
+				.from("employees")
+				.select("id")
+				.eq("email", email)
+				.maybeSingle();
+			if (byEmail) employee = byEmail;
+		}
+	}
+
+	if (!employee) {
 		return { status: "error", message: "Employee profile not found." };
 	}
 
