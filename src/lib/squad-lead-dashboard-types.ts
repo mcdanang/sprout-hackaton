@@ -20,4 +20,6 @@ export type SquadLeadDashboardSnapshot = {
 		inProgress: number;
 		closed: number;
 	};
+	sentimentTrend: { date: string; value: number | null }[];
+	activityTrend: { date: string; count: number }[];
 };

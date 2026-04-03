@@ -143,7 +143,9 @@
 			"healthHint": "Rata-rata sentimen sinyal per proyek (30 hari). Sehat ≥ 75, pantau 50–74, kritis di bawah 50. Proyek tanpa sinyal dihitung sebagai pantau.",
 			"healthHealthy": "Sehat",
 			"healthWarning": "Pantau",
-			"healthCritical": "Kritis"
+			"healthCritical": "Kritis",
+			"pulseTrendTitle": "Denyut Sentimen Global (30 hari)",
+			"engagementTrendTitle": "Volume Sinyal vs Keluhan (30 hari)"
 		},
 		"squadLead": {
 			"eyebrow": "Kepemimpinan proyek",
@@ -160,7 +162,9 @@
 			"statusTitle": "Status keluhan",
 			"statusHint": "Kondisi keluhan saat ini di squad Anda.",
 			"leaderboardTitle": "Kontributor utama",
-			"leaderboardHint": "Anggota dengan poin pengakuan tertinggi di squad Anda."
+			"leaderboardHint": "Anggota dengan poin pengakuan tertinggi di squad Anda.",
+			"sentimentTrendTitle": "Denyut Sentimen Squad (30 hari)",
+			"activityTrendTitle": "Volume Aktivitas Squad (30 hari)"
 		}
 	},
 	"Unauthorized": {

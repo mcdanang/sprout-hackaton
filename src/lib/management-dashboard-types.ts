@@ -4,6 +4,11 @@ export type ManagementKpiTrend = {
 	pctChange: number | null;
 };
 
+export type TimeSeriesPoint = {
+	date: string; // YYYY-MM-DD
+	value: number | null;
+};
+
 export type ManagementKpis = {
 	concerns: ManagementKpiTrend;
 	achievements: ManagementKpiTrend;
@@ -46,5 +51,11 @@ export type ManagementDashboardSnapshot = {
 	burnoutAlerts: {
 		projectName: string;
 		count: number;
+	}[];
+	pulseTrend: TimeSeriesPoint[];
+	engagementTrend: {
+		date: string;
+		signals: number;
+		concerns: number;
 	}[];
 };

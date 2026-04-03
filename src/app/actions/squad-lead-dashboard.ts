@@ -69,7 +69,7 @@ export async function getSquadLeadDashboardSnapshot(): Promise<SquadLeadDashboar
 	// 1. Fetch current signals for led projects
 	const { data: currentSignals } = await supabase
 		.from("signals")
-		.select("id, category, sentiment_score, ai_issue_category, concern_status, project_id, author_employee_id, achievement_points")
+		.select("id, category, sentiment_score, ai_issue_category, concern_status, project_id, author_employee_id, achievement_points, created_at")
 		.in("project_id", projectIds)
 		.gte("created_at", currentStart);
 
@@ -162,6 +162,35 @@ export async function getSquadLeadDashboardSnapshot(): Promise<SquadLeadDashboar
 		});
 	}
 
+	// 30-day Trend Aggregation
+	const dayMap = new Map<string, { totalScore: number; count: number; totalSignals: number }>();
+	for (let i = 29; i >= 0; i--) {
+		const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+		dayMap.set(d, { totalScore: 0, count: 0, totalSignals: 0 });
+	}
+
+	for (const s of signals) {
+		const dateStr = (s as SignalMetricInput & { created_at: string }).created_at.split("T")[0];
+		const d = dayMap.get(dateStr);
+		if (d) {
+			if (s.sentiment_score != null) {
+				d.totalScore += s.sentiment_score;
+				d.count += 1;
+			}
+			d.totalSignals += 1;
+		}
+	}
+
+	const sentimentTrend = [...dayMap.entries()].map(([date, data]) => ({
+		date,
+		value: data.count > 0 ? Math.round(data.totalScore / data.count) : null,
+	}));
+
+	const activityTrend = [...dayMap.entries()].map(([date, data]) => ({
+		date,
+		count: data.totalSignals,
+	}));
+
 	return {
 		kpis: {
 			projectsLed: ledProjects.length,
@@ -173,5 +202,7 @@ export async function getSquadLeadDashboardSnapshot(): Promise<SquadLeadDashboar
 		sentimentSlices,
 		leaderboard,
 		concernStatusCount,
+		sentimentTrend,
+		activityTrend,
 	};
 }

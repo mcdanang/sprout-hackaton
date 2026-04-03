@@ -209,14 +209,14 @@ export async function getManagementDashboardSnapshot(): Promise<ManagementDashbo
 	const { data: allProjects } = await supabase.from("projects").select("id");
 	const projectIds = (allProjects ?? []).map(p => p.id);
 
-	let sentimentRows: SignalMetricInput[] = [];
+	let sentimentRows: (SignalMetricInput & { created_at: string })[] = [];
 	if (projectIds.length) {
 		const { data } = await supabase
 			.from("signals")
-			.select("project_id, category, sentiment_score, concern_status")
+			.select("project_id, category, sentiment_score, concern_status, created_at")
 			.in("project_id", projectIds)
 			.gte("created_at", currentStart);
-		sentimentRows = (data ?? []) as SignalMetricInput[];
+		sentimentRows = (data ?? []) as (SignalMetricInput & { created_at: string })[];
 	}
 
 	const signalsByProject = new Map<string, SignalMetricInput[]>();
@@ -272,6 +272,41 @@ export async function getManagementDashboardSnapshot(): Promise<ManagementDashbo
 		.sort((a, b) => b.count - a.count)
 		.slice(0, 3);
 
+	// 30-day Trend Aggregation
+	const dayMap = new Map<string, { totalScore: number; count: number; signals: number; concerns: number }>();
+	
+	// Pre-fill last 30 days
+	for (let i = 29; i >= 0; i--) {
+		const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+		dayMap.set(d, { totalScore: 0, count: 0, signals: 0, concerns: 0 });
+	}
+
+	for (const s of sentimentRows) {
+		const dateStr = s.created_at.split("T")[0];
+		const d = dayMap.get(dateStr);
+		if (d) {
+			if (s.sentiment_score != null) {
+				d.totalScore += s.sentiment_score;
+				d.count += 1;
+			}
+			d.signals += 1;
+			if (s.category === "concern") {
+				d.concerns += 1;
+			}
+		}
+	}
+
+	const pulseTrend = [...dayMap.entries()].map(([date, data]) => ({
+		date,
+		value: data.count > 0 ? Math.round(data.totalScore / data.count) : null,
+	}));
+
+	const engagementTrend = [...dayMap.entries()].map(([date, data]) => ({
+		date,
+		signals: data.signals,
+		concerns: data.concerns,
+	}));
+
 	return {
 		kpis,
 		sentimentSlices,
@@ -279,5 +314,7 @@ export async function getManagementDashboardSnapshot(): Promise<ManagementDashbo
 		projectHealth,
 		projectStatus,
 		burnoutAlerts,
+		pulseTrend,
+		engagementTrend,
 	};
 }

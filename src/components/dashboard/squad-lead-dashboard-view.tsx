@@ -9,6 +9,7 @@ import {
 	SentimentBar, 
 	rankBadgeClass 
 } from "@/components/dashboard/dashboard-widgets";
+import { PulseChart, SquadActivityChart } from "@/components/dashboard/dashboard-charts";
 
 export async function SquadLeadDashboardView({
 	firstName,
@@ -78,6 +79,15 @@ export async function SquadLeadDashboardView({
 			{insights.insights.length > 0 ? (
 				<AiInsightCards insights={insights.insights} generatedAt={insights.generatedAt} />
 			) : null}
+
+			<div className="grid gap-6 lg:grid-cols-2">
+				<div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+					<PulseChart data={snapshot.sentimentTrend} title={t("sentimentTrendTitle")} />
+				</div>
+				<div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+					<SquadActivityChart data={snapshot.activityTrend} title={t("activityTrendTitle")} />
+				</div>
+			</div>
 
 			<div className="grid gap-6 lg:grid-cols-2">
 				<div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
