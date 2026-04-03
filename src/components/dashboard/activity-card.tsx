@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Heart, Clock, Lock, User, Loader2, CheckCheck, CheckCircle2 } from "lucide-react";
+import { Heart, Clock, Lock, User, Loader2, CheckCheck, CheckCircle2, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type ActivityItem } from "@/lib/constants/activity";
+import { RatingModal } from "./rating-modal";
 import { activityTypeStyles } from "@/lib/constants/project-ui";
 import { getRelativeTime } from "@/lib/utils/time";
 import { FormattedContent } from "@/components/shared/formatted-content";
@@ -29,6 +30,8 @@ export function ActivityCard({ activity, index, isSquadLead, onReplyCreated, onR
   const [isLikeLoading, setIsLikeLoading] = useState(false);
   const [concernStatus, setConcernStatus] = useState(activity.concernStatus ?? null);
   const [isResolving, setIsResolving] = useState(false);
+  const [achievementPoints, setAchievementPoints] = useState(activity.achievementPoints ?? null);
+  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
 
   const [likesCount, setLikesCount] = useState(activity.likesCount);
   const [isLiked, setIsLiked] = useState(activity.isLiked);
@@ -39,7 +42,8 @@ export function ActivityCard({ activity, index, isSquadLead, onReplyCreated, onR
     setIsLiked(activity.isLiked);
     setReplies(activity.replies ?? []);
     setConcernStatus(activity.concernStatus ?? null);
-  }, [activity.id, activity.likesCount, activity.isLiked, activity.replies, activity.concernStatus]);
+    setAchievementPoints(activity.achievementPoints ?? null);
+  }, [activity.id, activity.likesCount, activity.isLiked, activity.replies, activity.concernStatus, activity.achievementPoints]);
 
   const Style = activityTypeStyles[activity.type as Exclude<ActivityItem["type"], "status">];
   const Icon = Style.icon;
@@ -148,6 +152,29 @@ export function ActivityCard({ activity, index, isSquadLead, onReplyCreated, onR
             className="font-plus-jakarta text-[15px] text-slate-600 leading-relaxed whitespace-pre-wrap"
           />
 
+          {/* Achievement Points Display */}
+          {achievementPoints && (
+            <div className="mt-3 mb-1 flex items-center gap-3 py-1.5 px-4 w-fit rounded-full bg-amber-50/80 border border-amber-100/50 backdrop-blur-xs animate-in fade-in zoom-in duration-500 shadow-[0_2px_10px_-4px_rgba(245,158,11,0.2)]">
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5, 6].map((star) => (
+                  <Star 
+                    key={star} 
+                    className={cn(
+                      "h-3.5 w-3.5 transition-all duration-500",
+                      star <= achievementPoints 
+                        ? "text-amber-500 fill-amber-500 drop-shadow-[0_0_3px_rgba(245,158,11,0.4)]" 
+                        : "text-amber-200/60"
+                    )} 
+                  />
+                ))}
+              </div>
+              <div className="w-px h-3 bg-amber-200/50" />
+              <span className="font-plus-jakarta text-[11px] font-extrabold text-amber-700 uppercase tracking-widest">
+                {achievementPoints}/6 Achievement Points
+              </span>
+            </div>
+          )}
+
           {/* Like & Reply actions */}
           <div className="flex items-center gap-3 pt-1">
             <button className={cn(
@@ -220,6 +247,22 @@ export function ActivityCard({ activity, index, isSquadLead, onReplyCreated, onR
                 <span className="font-plus-jakarta text-xs font-bold">Resolve</span>
               </button>
             )}
+            {activity.type === "achievement" && isSquadLead && (
+              <button
+                onClick={() => setIsRatingModalOpen(true)}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all group/rate",
+                  achievementPoints 
+                    ? "border-amber-200 bg-amber-50/50 text-amber-600 hover:bg-amber-50" 
+                    : "bg-white border-slate-100 hover:border-amber-200 text-slate-500 hover:text-amber-600 hover:shadow-sm"
+                )}
+              >
+                <Star className={cn("h-3.5 w-3.5", achievementPoints && "fill-amber-500")} />
+                <span className="font-plus-jakarta text-xs font-bold">
+                  {achievementPoints ? "Re-rate" : "Rate"}
+                </span>
+              </button>
+            )}
           </div>
 
           {/* Threaded replies */}
@@ -242,6 +285,17 @@ export function ActivityCard({ activity, index, isSquadLead, onReplyCreated, onR
           )}
         </div>
       </div>
+
+      {isRatingModalOpen && (
+        <RatingModal 
+          signalId={activity.id}
+          signalTitle={activity.content}
+          onClose={() => setIsRatingModalOpen(false)}
+          onSuccess={(points) => {
+            setAchievementPoints(points);
+          }}
+        />
+      )}
     </div>
   );
 }

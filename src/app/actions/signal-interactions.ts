@@ -215,3 +215,54 @@ export async function resolveConcern(signalId: string): Promise<{ ok: boolean }>
 
 	return { ok: true };
 }
+
+export async function rateAchievement(
+	signalId: string,
+	points: number
+): Promise<{ ok: boolean; achievementPoints: number }> {
+	const supabase = await createClient();
+	const employee = await getCurrentEmployee(supabase);
+	if (!employee) throw new Error("Unauthorized");
+
+	if (points < 1 || points > 6) {
+		throw new Error("Invalid points: must be between 1 and 6");
+	}
+
+	const roleName = await getRoleName({ supabase, roleId: employee.role_id });
+	if (roleName !== "SQUAD LEAD")
+		throw new Error("Unauthorized: only squad leads can rate achievements");
+
+	// Verify the signal is an achievement in a project this squad lead owns
+	const { data: signalRow } = await supabase
+		.from("signals")
+		.select("id, category, project_id")
+		.eq("id", signalId)
+		.maybeSingle();
+
+	if (!signalRow) throw new Error("Signal not found");
+	if (signalRow.category !== "achievement") throw new Error("Only achievements can be rated");
+
+	// Verify this squad lead owns the project
+	const { data: projectRow } = await supabase
+		.from("projects")
+		.select("id")
+		.eq("id", signalRow.project_id)
+		.eq("squad_lead_employee_id", employee.id)
+		.maybeSingle();
+
+	if (!projectRow) {
+		throw new Error("Unauthorized: you are not the squad lead for this project");
+	}
+
+	// Update the achievement_points field.
+	const { error: updateError } = await supabase
+		.from("signals")
+		.update({ achievement_points: points })
+		.eq("id", signalId);
+
+	if (updateError) {
+		throw new Error(updateError.message);
+	}
+
+	return { ok: true, achievementPoints: points };
+}

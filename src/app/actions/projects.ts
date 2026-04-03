@@ -339,7 +339,7 @@ export async function getProjectDetail(projectId: string): Promise<{
 	const { data: signals } = await supabase
 		.from("signals")
 		.select(
-			"id, project_id, author_employee_id, is_anonymous, category, title, details, created_at, is_public, sentiment_score, ai_issue_category, concern_status",
+			"*, signal_likes(count), signal_replies(id, content, created_at, employees(id, full_name, role_id))",
 		)
 		.eq("project_id", projectId)
 		.order("created_at", { ascending: false });
@@ -366,9 +366,9 @@ export async function getProjectDetail(projectId: string): Promise<{
 		if (s.category === "appreciation") kudosCount += 1;
 
 		const analyzed = analyzeSignalWithMockAI(s);
-		const issueCategory = isSignalIssueCategory(s.ai_issue_category)
+		const issueCategory = (isSignalIssueCategory(s.ai_issue_category)
 			? s.ai_issue_category
-			: analyzed.issueCategory;
+			: analyzed.issueCategory) as SignalIssueCategory;
 		issueCounts[issueCategory] += 1;
 	}
 
@@ -393,13 +393,19 @@ export async function getProjectDetail(projectId: string): Promise<{
 
 	// Collect ALL unique employee IDs that might need avatars (signal authors + reply authors)
 	let allAvatarEmployeeIds = [...authorIds];
-	let repliesData: { author_employee_id: string | null }[] = [];
+	let repliesData: { id: string; signal_id: string; author_employee_id: string | null; content: string; created_at: string }[] = [];
 	if (signalIds.length > 0) {
 		const { data: replies } = await supabase
 			.from("signal_replies")
-			.select("author_employee_id")
+			.select("id, signal_id, author_employee_id, content, created_at")
 			.in("signal_id", signalIds);
-		repliesData = replies ?? [];
+		repliesData = (replies ?? []) as { 
+      id: string; 
+      signal_id: string; 
+      author_employee_id: string | null; 
+      content: string; 
+      created_at: string; 
+    }[];
 		const replyAuthorIds = repliesData.map(r => r.author_employee_id).filter(Boolean);
 		allAvatarEmployeeIds = Array.from(new Set([...allAvatarEmployeeIds, ...replyAuthorIds]));
 	}
@@ -461,34 +467,11 @@ export async function getProjectDetail(projectId: string): Promise<{
 		}
 		likesBySignal = likeCountMap;
 
-		const { data: replies } = await supabase
-			.from("signal_replies")
-			.select("id, signal_id, author_employee_id, content, created_at")
-			.in("signal_id", signalIds)
-			.order("created_at", { ascending: true });
-
-		const replyAuthorIds = Array.from(
-			new Set((replies ?? []).map(r => r.author_employee_id).filter(Boolean)),
-		);
-		let replyAuthorById = new Map<string, { full_name: string; email: string }>();
-		if (replyAuthorIds.length > 0) {
-			const { data: replyAuthors } = await supabase
-				.from("employees")
-				.select("id, full_name, email")
-				.in("id", replyAuthorIds);
-
-			replyAuthorById = new Map(
-				(replyAuthors ?? [])
-					.filter((a): a is { id: string; full_name: string; email: string } => Boolean(a?.id))
-					.map(a => [a.id, { full_name: a.full_name, email: a.email }]),
-			);
-		}
-
 		const groupedReplies = new Map<string, NonNullable<ActivityItem["replies"]>>();
-		for (const reply of replies ?? []) {
+		for (const reply of repliesData) {
 			if (!reply?.signal_id || !reply?.id || !reply?.author_employee_id) continue;
 
-			const replyAuthor = replyAuthorById.get(reply.author_employee_id);
+			const replyAuthor = authorById.get(reply.author_employee_id);
 			const replyUserName = replyAuthor?.full_name ?? "Unknown";
 			const replyUserAvatar =
 				(replyAuthor?.email ? emailToAvatar.get(replyAuthor.email) : null) || null;
@@ -532,13 +515,9 @@ export async function getProjectDetail(projectId: string): Promise<{
 			isPublic: s.is_public ?? true,
 			replies: repliesBySignal.get(s.id) ?? [],
 			concernStatus:
-				s.category === "concern"
-					? ((s as { concern_status?: string | null }).concern_status as
-							| "open"
-							| "in_progress"
-							| "closed"
-							| null ?? null)
-					: null,
+				s.category === "concern" ? (s.concern_status as ActivityItem["concernStatus"]) : null,
+			achievementPoints:
+				s.category === "achievement" ? (s.achievement_points as number | null) : null,
 		};
 	});
 

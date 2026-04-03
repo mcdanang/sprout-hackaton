@@ -124,6 +124,7 @@ create table if not exists public.signals (
       'others'
     )
   ),
+  achievement_points int check (achievement_points between 1 and 6),
 
   project_id uuid references public.projects(id) on delete set null,
   is_public boolean not null default false,
