@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import type { MyConcernItem } from "@/app/actions/concerns.types";
+import { FormattedContent } from "@/components/shared/formatted-content";
 import { Link } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 
@@ -73,9 +74,10 @@ export function StaffConcernsStrip({ concerns }: { concerns: MyConcernItem[] }) 
 							className="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-slate-50/50 p-4 sm:flex-row sm:items-start sm:justify-between"
 						>
 							<div className="min-w-0 flex-1 text-left">
-								<p className="line-clamp-2 font-plus-jakarta text-sm font-medium text-slate-900">
-									{c.details}
-								</p>
+								<FormattedContent
+									content={c.details}
+									className="line-clamp-2 font-plus-jakarta text-sm font-medium text-slate-900"
+								/>
 								<p className="mt-1 text-xs text-slate-500">
 									{new Date(c.createdAt).toLocaleDateString(undefined, {
 										month: "short",

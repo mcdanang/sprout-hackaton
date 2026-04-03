@@ -6,6 +6,7 @@ import type { AiInsightsResult } from "@/app/actions/ai-insights";
 import type { StaffDashboardSnapshot } from "@/lib/staff-dashboard-types";
 import { AiInsightCards } from "@/components/dashboard/ai-insight-cards";
 import { StaffConcernsStrip } from "@/components/dashboard/staff-concerns-strip";
+import { FormattedContent } from "@/components/shared/formatted-content";
 import { Link } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 
@@ -199,9 +200,15 @@ export async function StaffDashboardView({
 										<span className="font-semibold text-brand-primary">{item.authorName}</span>{" "}
 										{activityVerb(item.category, t)}
 									</p>
-									<p className="mt-0.5 line-clamp-2 font-medium text-slate-900">{item.title}</p>
+									<FormattedContent
+										content={item.title}
+										className="mt-0.5 line-clamp-2 font-medium text-slate-900"
+									/>
 									{item.preview ? (
-										<p className="mt-1 line-clamp-2 text-xs text-slate-500">{item.preview}</p>
+										<FormattedContent
+											content={item.preview}
+											className="mt-1 line-clamp-2 text-xs text-slate-500"
+										/>
 									) : null}
 									<div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-400">
 										{item.projectName ? <span>{item.projectName}</span> : null}
