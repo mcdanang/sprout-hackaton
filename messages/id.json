@@ -1,6 +1,7 @@
 {
 	"AccountSwitch": {
 		"personaLabel": "Lihat aplikasi sebagai",
+		"switching": "Menerapkan…",
 		"hint": "Mode demo. Masuk Teams Anda tidak berubah. Kosongkan untuk akun Anda sendiri.",
 		"management": "Manajemen (Arnold)",
 		"deliveryLead": "Delivery lead (Reynaldo)",
