@@ -1,6 +1,7 @@
 {
 	"AccountSwitch": {
 		"personaLabel": "View app as",
+		"switching": "Applying…",
 		"hint": "Demo mode. Your Teams sign-in is unchanged. Clear to use your own account.",
 		"management": "Management (Arnold)",
 		"deliveryLead": "Delivery lead (Reynaldo)",
