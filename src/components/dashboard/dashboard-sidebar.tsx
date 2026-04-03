@@ -55,7 +55,7 @@ export function DashboardSidebar({ isCollapsed, onToggle }: DashboardSidebarProp
 			>
 				<Link href="/dashboard" className="flex items-center gap-3">
 					<Image
-						src="/signal_logo.svg"
+						src="/signal_logo.png"
 						alt="Signal Logo"
 						width={32}
 						height={32}
@@ -179,7 +179,7 @@ export function DashboardSidebar({ isCollapsed, onToggle }: DashboardSidebarProp
 					<div className="mb-10 px-2">
 						<Link href="/dashboard" className="flex items-center gap-3">
 							<Image
-								src="/signal_logo.svg"
+								src="/signal_logo.png"
 								alt="Signal Logo"
 								width={32}
 								height={32}
