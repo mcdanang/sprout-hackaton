@@ -7,6 +7,7 @@ import type {
 	StaffProjectSentiment,
 	StaffTeamActivityItem,
 } from "@/lib/staff-dashboard-types";
+import { computeAverageSentiment, type SignalMetricInput } from "@/lib/utils/signal-metrics";
 
 const RANGE_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -49,38 +50,34 @@ export async function getStaffDashboardSnapshot(): Promise<StaffDashboardSnapsho
 	if (projectIds.length) {
 		const { data: projSignals } = await supabase
 			.from("signals")
-			.select("project_id, sentiment_score, projects(name)")
+			.select("project_id, category, sentiment_score, concern_status, projects(name)")
 			.in("project_id", projectIds)
 			.gte("created_at", since);
 
-		const counts = new Map<string, number>();
-		const scoreBuckets = new Map<string, { name: string; scores: number[] }>();
+		const signalsByProject = new Map<string, SignalMetricInput[]>();
+		const projectLabels = new Map<string, string>();
 
 		for (const row of projSignals ?? []) {
 			const pid = row.project_id;
 			if (!pid) continue;
+			
 			const raw = row.projects as { name: string } | { name: string }[] | null | undefined;
 			const pname = Array.isArray(raw) ? raw[0]?.name : raw?.name;
-			const projectLabel = pname ?? "Project";
-			counts.set(pid, (counts.get(pid) ?? 0) + 1);
-			if (!scoreBuckets.has(pid)) scoreBuckets.set(pid, { name: projectLabel, scores: [] });
-			if (row.sentiment_score != null) {
-				scoreBuckets.get(pid)!.scores.push(row.sentiment_score);
-			}
+			if (pname) projectLabels.set(pid, pname);
+
+			const list = signalsByProject.get(pid) ?? [];
+			list.push(row as unknown as SignalMetricInput);
+			signalsByProject.set(pid, list);
 		}
 
-		projectSentiments = [...counts.entries()]
-			.map(([projectId, signalCount]) => {
-				const b = scoreBuckets.get(projectId);
-				const scores = b?.scores ?? [];
-				const avgSentiment = scores.length
-					? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
-					: null;
+		projectSentiments = Array.from(signalsByProject.entries())
+			.map(([projectId, signals]) => {
+				const avgSentiment = computeAverageSentiment(signals);
 				return {
 					projectId,
-					projectName: b?.name ?? "Project",
+					projectName: projectLabels.get(projectId) ?? "Project",
 					avgSentiment,
-					signalCount,
+					signalCount: signals.length,
 				};
 			})
 			.sort((a, b) => b.signalCount - a.signalCount);

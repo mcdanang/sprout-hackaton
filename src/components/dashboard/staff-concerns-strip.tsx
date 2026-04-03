@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import type { MyConcernItem } from "@/app/actions/concerns.types";
+import { FormattedContent } from "@/components/shared/formatted-content";
 import { Link } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 
@@ -70,23 +71,27 @@ export function StaffConcernsStrip({ concerns }: { concerns: MyConcernItem[] }) 
 					{filtered.slice(0, 6).map(c => (
 						<li
 							key={c.id}
-							className="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-slate-50/50 p-4 sm:flex-row sm:items-start sm:justify-between"
+							className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-4 sm:flex-row sm:items-start sm:justify-between"
 						>
-							<div className="min-w-0 flex-1 text-left">
-								<p className="line-clamp-2 font-plus-jakarta text-sm font-medium text-slate-900">
-									{c.details}
-								</p>
-								<p className="mt-1 text-xs text-slate-500">
-									{new Date(c.createdAt).toLocaleDateString(undefined, {
-										month: "short",
-										day: "numeric",
-									})}{" "}
-									· {c.targetLabel}
-								</p>
+							<div className="min-w-0 flex-1 space-y-1 text-left">
+								<FormattedContent
+									content={c.details}
+									className="line-clamp-2 font-plus-jakarta text-base font-bold tracking-tight text-brand-primary"
+								/>
+								<div className="flex items-center gap-2 font-plus-jakarta text-[11px] font-bold text-slate-400">
+									<span>
+										{new Date(c.createdAt).toLocaleDateString(undefined, {
+											month: "short",
+											day: "numeric",
+										})}
+									</span>
+									<span className="h-1 w-1 rounded-full bg-slate-300" />
+									<span>{c.targetLabel}</span>
+								</div>
 							</div>
 							<span
 								className={cn(
-									"shrink-0 self-start rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize",
+									"shrink-0 self-start rounded-xl border px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest",
 									statusStyle(c.status),
 								)}
 							>

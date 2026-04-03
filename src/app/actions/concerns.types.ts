@@ -25,5 +25,11 @@ export type MyConcernItem = {
 	isAnonymous: boolean;
 	targetLabel: string;
 	status: "open" | "in_progress" | "closed";
+	projectId: string | null;
 	replies: MyConcernReply[];
+};
+
+export type TeamConcernItem = MyConcernItem & {
+	projectName: string | null;
+	authorName: string | null; // always resolved, even when is_anonymous = true
 };

@@ -141,6 +141,7 @@
   }
   html {
     @apply font-plus-jakarta;
+    scroll-behavior: smooth;
   }
 }
 

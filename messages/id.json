@@ -78,7 +78,12 @@
 			"anonymousHint": "Identitas Anda akan dilindungi.",
 			"cancel": "Batal",
 			"submit": "Kirim Keluhan",
-			"submitting": "Mengirim..."
+			"submitting": "Mengirim...",
+			"tabMyConcerns": "Keluhan Saya",
+			"tabTeamConcerns": "Keluhan Tim",
+			"teamEmptyTitle": "Belum ada keluhan",
+			"teamEmptyHint": "Keluhan yang dikirim oleh tim project Anda akan muncul di sini.",
+			"projectTag": "Proyek"
 		},
 		"staff": {
 			"eyebrow": "Ruang kerja Anda",

@@ -5,42 +5,14 @@ import { createClient } from "@/lib/supabase/server";
 import { getEffectiveEmployeeRow } from "@/lib/effective-employee";
 
 import type { ActivityItem } from "@/lib/constants/activity";
-import { analyzeSignalWithMockAI, clamp, type SignalIssueCategory } from "@/lib/signal-ai";
+import { analyzeSignalWithMockAI, type SignalIssueCategory } from "@/lib/signal-ai";
+import {
+	computeAverageSentiment,
+	computeHealth,
+	type SignalMetricInput,
+} from "@/lib/utils/signal-metrics";
 import { Project, TeamMember } from "@/lib/types/project";
 
-type ProjectMetrics = {
-	health: number;
-	healthStatus: Project["healthStatus"];
-	pulseDescription: string;
-};
-
-function computeHealth(averageSentiment: number | null): ProjectMetrics {
-	const normalizedSentiment = Math.round(clamp(averageSentiment ?? 50, 0, 100));
-	let healthStatus: Project["healthStatus"];
-	let pulseDescription: string;
-
-	if (normalizedSentiment >= 75) {
-		healthStatus = "Healthy";
-		pulseDescription = "High psychological safety. Team is thriving and showing strong ownership.";
-	} else if (normalizedSentiment >= 50) {
-		healthStatus = "Stable";
-		pulseDescription =
-			"Balanced team dynamics. Communication is steady but room for more proactive engagement.";
-	} else if (normalizedSentiment >= 35) {
-		healthStatus = "Stable"; // Still stable but on the edge
-		pulseDescription = "Sentiment is softening. Monitor for potential blockers or team fatigue.";
-	} else {
-		healthStatus = "At Risk";
-		pulseDescription =
-			"Low psychological safety detected. Immediate attention to team concerns recommended.";
-	}
-
-	return {
-		health: normalizedSentiment,
-		healthStatus,
-		pulseDescription,
-	};
-}
 
 function isSignalIssueCategory(value: unknown): value is SignalIssueCategory {
 	return (
@@ -167,11 +139,14 @@ export async function getDashboardProjects(): Promise<Project[]> {
 		details?: string | null;
 		sentiment_score?: number | null;
 		ai_issue_category?: SignalIssueCategory | null;
+		concern_status?: string | null;
 	}[] = [];
 	try {
 		const { data } = await supabase
 			.from("signals")
-			.select("project_id, category, title, details, sentiment_score, ai_issue_category");
+			.select(
+				"project_id, category, title, details, sentiment_score, ai_issue_category, concern_status",
+			);
 		signals = data ?? [];
 	} catch {
 		// If signals table isn't present yet, still return projects.
@@ -211,9 +186,13 @@ export async function getDashboardProjects(): Promise<Project[]> {
 			},
 		};
 
-		if (s.category === "concern") current.concernsCount += 1;
+		if (s.category === "concern" && s.concern_status !== "closed")
+			current.concernsCount += 1;
 		if (s.category === "achievement") current.achievementsCount += 1;
 		if (s.category === "appreciation") current.kudosCount += 1;
+
+		// We still calculate sentiment and issues for ALL signals to keep distribution accurate,
+		// but the Pulse calculation elsewhere will use computeAverageSentiment which filters them.
 		const analyzed = analyzeSignalWithMockAI(s);
 		const sentiment =
 			typeof s.sentiment_score === "number" ? s.sentiment_score : analyzed.sentiment;
@@ -224,6 +203,15 @@ export async function getDashboardProjects(): Promise<Project[]> {
 		current.sentimentCount += 1;
 		current.issueCounts[issueCategory] += 1;
 		metricsByProjectId.set(s.project_id, current);
+	}
+
+	// Pulse metrics for dashboard cards (re-calculate excluding closed concerns)
+	const signalsByProject = new Map<string, SignalMetricInput[]>();
+	for (const s of signals) {
+		if (!s.project_id) continue;
+		const list = signalsByProject.get(s.project_id) ?? [];
+		list.push(s as SignalMetricInput);
+		signalsByProject.set(s.project_id, list);
 	}
 
 	// The client ProjectCard expects additional UI fields.
@@ -247,8 +235,7 @@ export async function getDashboardProjects(): Promise<Project[]> {
 				others: 0,
 			},
 		};
-		const averageSentiment =
-			metrics.sentimentCount > 0 ? metrics.sentimentTotal / metrics.sentimentCount : null;
+		const averageSentiment = computeAverageSentiment(signalsByProject.get(p.id) ?? []);
 		const healthMetrics = computeHealth(averageSentiment);
 		return {
 			id: p.id,
@@ -270,18 +257,19 @@ export async function getDashboardProjects(): Promise<Project[]> {
 export async function getProjectDetail(projectId: string): Promise<{
 	project: Project | null;
 	activities: ActivityItem[];
+	isSquadLead: boolean;
 }> {
 	const supabase = await createClient();
 
 	// 1) Project record
 	const { data: projectRow } = await supabase
 		.from("projects")
-		.select("id, name, description")
+		.select("id, name, description, squad_lead_employee_id")
 		.eq("id", projectId)
 		.maybeSingle();
 
 	if (!projectRow) {
-		return { project: null, activities: [] };
+		return { project: null, activities: [], isSquadLead: false };
 	}
 
 	// 2) Team members from employees assigned to the project
@@ -351,7 +339,7 @@ export async function getProjectDetail(projectId: string): Promise<{
 	const { data: signals } = await supabase
 		.from("signals")
 		.select(
-			"id, project_id, author_employee_id, is_anonymous, category, title, details, created_at, is_public, sentiment_score, ai_issue_category",
+			"*, signal_likes(count), signal_replies(id, content, created_at, employees(id, full_name, role_id))",
 		)
 		.eq("project_id", projectId)
 		.order("created_at", { ascending: false });
@@ -361,8 +349,6 @@ export async function getProjectDetail(projectId: string): Promise<{
 	let concernsCount = 0;
 	let achievementsCount = 0;
 	let kudosCount = 0;
-	let sentimentTotal = 0;
-	let sentimentCount = 0;
 	const issueCounts: Record<SignalIssueCategory, number> = {
 		"Burnout Alert": 0,
 		"Scope Creep": 0,
@@ -375,20 +361,18 @@ export async function getProjectDetail(projectId: string): Promise<{
 		others: 0,
 	};
 	for (const s of safeSignals) {
-		if (s.category === "concern") concernsCount += 1;
+		if (s.category === "concern" && s.concern_status !== "closed") concernsCount += 1;
 		if (s.category === "achievement") achievementsCount += 1;
 		if (s.category === "appreciation") kudosCount += 1;
+
 		const analyzed = analyzeSignalWithMockAI(s);
-		const sentiment =
-			typeof s.sentiment_score === "number" ? s.sentiment_score : analyzed.sentiment;
-		const issueCategory = isSignalIssueCategory(s.ai_issue_category)
+		const issueCategory = (isSignalIssueCategory(s.ai_issue_category)
 			? s.ai_issue_category
-			: analyzed.issueCategory;
-		sentimentTotal += sentiment;
-		sentimentCount += 1;
+			: analyzed.issueCategory) as SignalIssueCategory;
 		issueCounts[issueCategory] += 1;
 	}
-	const averageSentiment = sentimentCount > 0 ? sentimentTotal / sentimentCount : null;
+
+	const averageSentiment = computeAverageSentiment(safeSignals as SignalMetricInput[]);
 	const healthMetrics = computeHealth(averageSentiment);
 	const project: Project = {
 		id: projectRow.id,
@@ -409,13 +393,19 @@ export async function getProjectDetail(projectId: string): Promise<{
 
 	// Collect ALL unique employee IDs that might need avatars (signal authors + reply authors)
 	let allAvatarEmployeeIds = [...authorIds];
-	let repliesData: { author_employee_id: string | null }[] = [];
+	let repliesData: { id: string; signal_id: string; author_employee_id: string | null; content: string; created_at: string }[] = [];
 	if (signalIds.length > 0) {
 		const { data: replies } = await supabase
 			.from("signal_replies")
-			.select("author_employee_id")
+			.select("id, signal_id, author_employee_id, content, created_at")
 			.in("signal_id", signalIds);
-		repliesData = replies ?? [];
+		repliesData = (replies ?? []) as { 
+      id: string; 
+      signal_id: string; 
+      author_employee_id: string | null; 
+      content: string; 
+      created_at: string; 
+    }[];
 		const replyAuthorIds = repliesData.map(r => r.author_employee_id).filter(Boolean);
 		allAvatarEmployeeIds = Array.from(new Set([...allAvatarEmployeeIds, ...replyAuthorIds]));
 	}
@@ -452,6 +442,10 @@ export async function getProjectDetail(projectId: string): Promise<{
 	}
 
 	const currentEmployeeId = await getCurrentEmployeeId(supabase);
+	const isSquadLead =
+		!!currentEmployeeId &&
+		!!projectRow.squad_lead_employee_id &&
+		projectRow.squad_lead_employee_id === currentEmployeeId;
 
 	let likesBySignal = new Map<string, number>();
 	const likedSignalIds = new Set<string>();
@@ -473,34 +467,11 @@ export async function getProjectDetail(projectId: string): Promise<{
 		}
 		likesBySignal = likeCountMap;
 
-		const { data: replies } = await supabase
-			.from("signal_replies")
-			.select("id, signal_id, author_employee_id, content, created_at")
-			.in("signal_id", signalIds)
-			.order("created_at", { ascending: true });
-
-		const replyAuthorIds = Array.from(
-			new Set((replies ?? []).map(r => r.author_employee_id).filter(Boolean)),
-		);
-		let replyAuthorById = new Map<string, { full_name: string; email: string }>();
-		if (replyAuthorIds.length > 0) {
-			const { data: replyAuthors } = await supabase
-				.from("employees")
-				.select("id, full_name, email")
-				.in("id", replyAuthorIds);
-
-			replyAuthorById = new Map(
-				(replyAuthors ?? [])
-					.filter((a): a is { id: string; full_name: string; email: string } => Boolean(a?.id))
-					.map(a => [a.id, { full_name: a.full_name, email: a.email }]),
-			);
-		}
-
 		const groupedReplies = new Map<string, NonNullable<ActivityItem["replies"]>>();
-		for (const reply of replies ?? []) {
+		for (const reply of repliesData) {
 			if (!reply?.signal_id || !reply?.id || !reply?.author_employee_id) continue;
 
-			const replyAuthor = replyAuthorById.get(reply.author_employee_id);
+			const replyAuthor = authorById.get(reply.author_employee_id);
 			const replyUserName = replyAuthor?.full_name ?? "Unknown";
 			const replyUserAvatar =
 				(replyAuthor?.email ? emailToAvatar.get(replyAuthor.email) : null) || null;
@@ -543,8 +514,12 @@ export async function getProjectDetail(projectId: string): Promise<{
 			isLiked: likedSignalIds.has(s.id),
 			isPublic: s.is_public ?? true,
 			replies: repliesBySignal.get(s.id) ?? [],
+			concernStatus:
+				s.category === "concern" ? (s.concern_status as ActivityItem["concernStatus"]) : null,
+			achievementPoints:
+				s.category === "achievement" ? (s.achievement_points as number | null) : null,
 		};
 	});
 
-	return { project, activities };
+	return { project, activities, isSquadLead };
 }

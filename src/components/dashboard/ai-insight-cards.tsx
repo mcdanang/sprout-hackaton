@@ -1,5 +1,6 @@
 // src/components/dashboard/ai-insight-cards.tsx
 import { type AiInsightCard } from "@/app/actions/ai-insights";
+import { FormattedContent } from "@/components/shared/formatted-content";
 import { cn } from "@/lib/utils";
 import { Flash, WarningTriangle, CheckCircle, InfoCircle } from "iconoir-react";
 
@@ -81,7 +82,10 @@ export function AiInsightCards({ insights, generatedAt }: AiInsightCardsProps) {
                 {card.projectName && (
                   <p className="text-xs text-muted-foreground font-medium">{card.projectName}</p>
                 )}
-                <p className="text-sm text-muted-foreground leading-relaxed">{card.body}</p>
+                <FormattedContent
+                  content={card.body}
+                  className="text-sm text-muted-foreground leading-relaxed"
+                />
               </div>
 
               {card.actionLabel && (

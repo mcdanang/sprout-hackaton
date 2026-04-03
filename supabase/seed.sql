@@ -47,7 +47,8 @@ insert into public.projects (name, description, status) values
   ('QINERJA', 'QINERJA project', 'Development'),
   ('LABAMU', 'LABAMU project', 'Development'),
   ('EDOTCO', 'EDOTCO project', 'Development'),
-  ('ALODOKTER', 'ALODOKTER project', 'Development')
+  ('ALODOKTER', 'Alodokter project', 'Development'),
+  ('Hackathon Signal', 'Internal hackathon project for building the Sprout ownership signal platform.', 'Development')
 on conflict (name) do nothing;
 
 -- Roles
@@ -125,11 +126,11 @@ insert into public.employees (full_name, email, job_position, organization_id, r
   ('Fakhrul Muhammad Rijal',                      'fakhrul.rijal@sprout.co.id',           'Backend Engineer',                     (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
   ('Teddy Adji Pangestu',                         'teddy.adji@sprout.co.id',              'Frontend Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
   ('Gaizka Valencia',                             'gaizka.valencia@sprout.co.id',         'Jr. Software Engineer',                (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
-  ('Fian Febry Ispianto',                         'fian.febry@sprout.co.id',              'Frontend Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Fian Febry Ispianto',                         'fian.febry@sprout.co.id',              'Frontend Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'SQUAD LEAD')),
   ('Al Fatih Abdurrahman Syah',                   'al.fatih@sprout.co.id',                'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
   ('Mahar Prasetio',                              'mahar.prasetio@sprout.co.id',          'Sr. Fullstack Engineer',               (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
   ('Irwin Pratajaya',                             'irwin.pratajaya@sprout.co.id',         'Sr. Software Engineer',                (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
-  ('Muhamad Danang Priambodo',                    'muhamad.danang@sprout.co.id',          'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Muhamad Danang Priambodo',                    'muhamad.danang@sprout.co.id',          'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'TOP MANAGEMENT')),
   ('Rizky Maulita Putri',                         'rizky.maulita@sprout.co.id',           'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
   ('Ryan Apratama',                               'ryan.apratama@sprout.co.id',           'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
   ('Marcellus Denta Widyapramana',                'marcellus.denta@sprout.co.id',         'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
@@ -206,7 +207,9 @@ inner join (
     ('yusuf.farhan@sprout.co.id', 'JAPFA'),
     ('herjuno.pangestu@sprout.co.id', 'BOUCHON'),
     ('ahmad.dhiya@sprout.co.id', 'QINERJA'),
-    ('harun.arasyid@sprout.co.id', 'BOUCHON')
+    ('harun.arasyid@sprout.co.id', 'BOUCHON'),
+    ('fian.febry@sprout.co.id', 'Hackathon Signal'),
+    ('eldaa.warapsari@sprout.co.id', 'Hackathon Signal')
 ) as v(email, project_name)
   on e.email = v.email
 inner join public.projects p on p.name = v.project_name;
@@ -263,6 +266,12 @@ set squad_lead_employee_id = (
 )
 where name = 'ALODOKTER';
 
+update public.projects
+set squad_lead_employee_id = (
+  select id from public.employees where email = 'fian.febry@sprout.co.id' limit 1
+)
+where name = 'Hackathon Signal';
+
 -- ============================================================
 -- SEED SIGNALS (for simulation / dashboards)
 -- ============================================================
@@ -277,7 +286,8 @@ insert into public.signals (
   is_public,
   ai_issue_category,
   sentiment_score,
-  concern_status
+  concern_status,
+  achievement_points
 ) values
   -- SPROUT
   (
@@ -291,6 +301,7 @@ insert into public.signals (
   , 'Process Bottleneck'
   , 35
   , 'open'
+  , null
   ),
   (
     (select id from public.employees where full_name = 'Marlon P V M Keintjem' limit 1)
@@ -303,6 +314,7 @@ insert into public.signals (
   , null
   , 95
   , null
+  , 5
   ),
   (
     (select id from public.employees where full_name = 'Egg Arnold Sebastian' limit 1)
@@ -314,6 +326,7 @@ insert into public.signals (
   , true
   , 'Professional Growth'
   , 88
+  , null
   , null
   ),
   (
@@ -327,6 +340,7 @@ insert into public.signals (
   , null
   , 92
   , null
+  , null
   ),
   (
     (select id from public.employees where full_name = 'Sukardi' limit 1)
@@ -338,6 +352,7 @@ insert into public.signals (
   , true
   , 'Process Bottleneck'
   , 85
+  , null
   , null
   ),
 
@@ -353,6 +368,7 @@ insert into public.signals (
   , 'Scope Creep'
   , 28
   , 'in_progress'
+  , null
   ),
   (
     (select id from public.employees where full_name = 'Briyan Benget Alfonsius' limit 1)
@@ -365,6 +381,7 @@ insert into public.signals (
   , 'Technical Debt'
   , 42
   , 'open'
+  , null
   ),
   (
     (select id from public.employees where full_name = 'Alistair Tody' limit 1)
@@ -377,6 +394,7 @@ insert into public.signals (
   , 'Professional Growth'
   , 94
   , null
+  , 6
   ),
   (
     (select id from public.employees where full_name = 'Vania Aribowo' limit 1)
@@ -388,6 +406,7 @@ insert into public.signals (
   , true
   , 'Communication Gap'
   , 89
+  , null
   , null
   ),
 
@@ -403,6 +422,7 @@ insert into public.signals (
   , 'Process Bottleneck'
   , 91
   , null
+  , null
   ),
   (
     (select id from public.employees where full_name = 'Lamhot Pardamean Siahaan' limit 1)
@@ -415,6 +435,7 @@ insert into public.signals (
   , 'Technical Debt'
   , 32
   , 'open'
+  , null
   ),
   (
     (select id from public.employees where full_name = 'Sanny Martin' limit 1)
@@ -426,6 +447,7 @@ insert into public.signals (
   , true
   , 'Communication Gap'
   , 87
+  , null
   , null
   ),
 
@@ -441,6 +463,7 @@ insert into public.signals (
   , 'Scope Creep'
   , 22
   , 'in_progress'
+  , null
   ),
   (
     (select id from public.employees where full_name = 'Lamhot Pardamean Siahaan' limit 1)
@@ -453,6 +476,7 @@ insert into public.signals (
   , 'Technical Debt'
   , 38
   , 'open'
+  , null
   ),
   (
     (select id from public.employees where full_name = 'Teddy Adji Pangestu' limit 1)
@@ -464,6 +488,7 @@ insert into public.signals (
   , true
   , 'Communication Gap'
   , 96
+  , null
   , null
   ),
 
@@ -479,6 +504,7 @@ insert into public.signals (
   , 'Communication Gap'
   , 88
   , null
+  , null
   ),
   (
     (select id from public.employees where full_name = 'Bimo Prayogo Muhammad' limit 1)
@@ -490,6 +516,7 @@ insert into public.signals (
   , true
   , 'Office Environment'
   , 92
+  , null
   , null
   ),
   (
@@ -503,6 +530,7 @@ insert into public.signals (
   , 'Technical Debt'
   , 90
   , null
+  , null
   ),
   (
     (select id from public.employees where full_name = 'Devi Rahmawati' limit 1)
@@ -515,6 +543,7 @@ insert into public.signals (
   , 'Process Bottleneck'
   , 41
   , 'open'
+  , null
   ),
   (
     (select id from public.employees where full_name = 'Marcellus Denta Widyapramana' limit 1)
@@ -526,6 +555,7 @@ insert into public.signals (
   , true
   , null
   , 93
+  , null
   , null
   ),
 
@@ -541,6 +571,7 @@ insert into public.signals (
     , 'Communication Gap'
     , 89
     , null
+    , null
   ),
   (
     (select id from public.employees where full_name = 'Fian Febry Ispianto' limit 1)
@@ -553,6 +584,7 @@ insert into public.signals (
     , 'Technical Debt'
     , 45
     , 'open'
+    , null
   ),
 
   -- JAPFA
@@ -567,6 +599,7 @@ insert into public.signals (
     , 'Communication Gap'
     , 32
     , 'closed'
+    , null
   ),
   (
     (select id from public.employees where full_name = 'Darren Ekaseptian' limit 1)
@@ -578,6 +611,7 @@ insert into public.signals (
     , true
     , 'Office Environment'
     , 91
+    , null
     , null
   ),
 
@@ -593,6 +627,7 @@ insert into public.signals (
     , 'Communication Gap'
     , 86
     , null
+    , null
   ),
 
   -- SPECTRA
@@ -606,6 +641,7 @@ insert into public.signals (
     , true
     , 'Process Bottleneck'
     , 94
+    , null
     , null
   ),
 
@@ -621,6 +657,7 @@ insert into public.signals (
     , 'Process Bottleneck'
     , 38
     , 'in_progress'
+    , null
   ),
 
   -- LABAMU
@@ -635,6 +672,7 @@ insert into public.signals (
     , 'Professional Growth'
     , 92
     , null
+    , null
   ),
   (
     (select id from public.employees where full_name = 'David Santoso' limit 1)
@@ -647,6 +685,7 @@ insert into public.signals (
     , 'Technical Debt'
     , 40
     , 'open'
+    , null
   ),
 
   -- EDOTCO
@@ -660,6 +699,7 @@ insert into public.signals (
     , true
     , 'others'
     , 95
+    , null
     , null
   ),
 
@@ -675,6 +715,35 @@ insert into public.signals (
     , 'Burnout Alert'
     , 15
     , 'open'
+    , null
+  ),
+
+  -- Hackathon Signal
+  (
+    (select id from public.employees where email = 'eldaa.warapsari@sprout.co.id' limit 1)
+  , false
+  , 'concern'
+  , 'Hackathon Signal - Unclear Sprint Goals'
+  , 'Sprint goals have been shifting mid-cycle without proper alignment. The team needs clearer scope definition at the start of each sprint to avoid rework and confusion.'
+  , (select id from public.projects where name = 'Hackathon Signal' limit 1)
+  , true
+  , 'Scope Creep'
+  , 30
+  , 'open'
+  , null
+  ),
+  (
+    (select id from public.employees where email = 'eldaa.warapsari@sprout.co.id' limit 1)
+  , false
+  , 'achievement'
+  , 'Hackathon Signal - Feature Delivery on Time'
+  , 'Successfully delivered the ownership signal submission flow ahead of schedule. Clear requirements and tight collaboration between product and engineering made this possible.'
+  , (select id from public.projects where name = 'Hackathon Signal' limit 1)
+  , true
+  , 'Professional Growth'
+  , 88
+  , null
+  , null
   )
 ;
 
@@ -784,3 +853,9 @@ select s.id, 'all', null, null from public.signals s where s.title = 'EDOTCO - D
 
 insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
 select s.id, 'all', null, null from public.signals s where s.title = 'ALODOKTER - Resource Constraints';
+
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'Hackathon Signal - Unclear Sprint Goals';
+
+insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
+select s.id, 'all', null, null from public.signals s where s.title = 'Hackathon Signal - Feature Delivery on Time';

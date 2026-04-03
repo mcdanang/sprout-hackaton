@@ -30,9 +30,11 @@ function SignalSkeleton() {
 interface Props {
 	activities: ActivityItem[];
 	projectName: string;
+	isSquadLead: boolean;
+	onResolve?: (activityId: string) => void;
 }
 
-export function ActivityFeed({ activities, projectName }: Props) {
+export function ActivityFeed({ activities, projectName, isSquadLead, onResolve }: Props) {
 	const t = useTranslations("ProjectDetail");
 	const [activityItems, setActivityItems] = useState<ActivityItem[]>(activities);
 	const [visibleCount, setVisibleCount] = useState(5);
@@ -53,6 +55,27 @@ export function ActivityFeed({ activities, projectName }: Props) {
 			setIsLoading(false);
 		}, 800);
 	};
+
+	// Handle direct navigation to a specific signal via hash
+	useEffect(() => {
+		if (typeof window !== "undefined" && window.location.hash) {
+			const hashId = window.location.hash.replace("#signal-", "");
+			const targetIndex = activityItems.findIndex(a => a.id === hashId);
+			if (targetIndex !== -1) {
+				if (targetIndex >= visibleCount) {
+					setVisibleCount(targetIndex + 1);
+				}
+				
+				// Wait for DOM to update after potentially expanding the list
+				setTimeout(() => {
+					const element = document.getElementById(`signal-${hashId}`);
+					if (element) {
+						element.scrollIntoView({ behavior: "smooth", block: "start" });
+					}
+				}, 100);
+			}
+		}
+	}, [activityItems, visibleCount]);
 
 	useEffect(() => {
 		const observer = new IntersectionObserver(
@@ -99,7 +122,9 @@ export function ActivityFeed({ activities, projectName }: Props) {
 							key={activity.id}
 							activity={activity}
 							index={index}
+							isSquadLead={isSquadLead}
 							onReplyCreated={handleReplyCreated}
+							onResolve={onResolve}
 						/>
 					))}
 

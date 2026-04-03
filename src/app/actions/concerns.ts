@@ -10,7 +10,7 @@ import {
 } from "@/lib/signal-ai";
 import { concernFormSchema } from "@/lib/validations/concern";
 
-import { type ConcernActionState, type MyConcernItem, type MyConcernReply } from "./concerns.types";
+import { type ConcernActionState, type MyConcernItem, type MyConcernReply, type TeamConcernItem } from "./concerns.types";
 
 async function resolveEmployeeId(supabase: Awaited<ReturnType<typeof createClient>>): Promise<{
 	id: string;
@@ -73,7 +73,7 @@ export async function getMyConcerns(): Promise<MyConcernItem[]> {
 
 	const { data: signalRows, error: sigErr } = await supabase
 		.from("signals")
-		.select("id, details, ai_issue_category, created_at, is_anonymous, concern_status")
+		.select("id, details, ai_issue_category, created_at, is_anonymous, concern_status, project_id")
 		.eq("author_employee_id", employee.id)
 		.eq("category", "concern")
 		.order("created_at", { ascending: false });
@@ -207,6 +207,7 @@ export async function getMyConcerns(): Promise<MyConcernItem[]> {
 			isAnonymous: Boolean(s.is_anonymous),
 			targetLabel: buildTargetLabel(s.id),
 			status,
+			projectId: (s as { project_id?: string | null }).project_id ?? null,
 			replies,
 		});
 	}
@@ -345,4 +346,200 @@ export async function updateConcernStatus(
 
   revalidatePath("/");
   return { ok: true, message: "Status updated." };
+}
+
+export async function getTeamConcerns(): Promise<TeamConcernItem[] | null> {
+  const supabase = await createClient();
+  const emp = await getEffectiveEmployeeRow(supabase);
+  if (!emp?.role_id) return null;
+
+  const { data: role } = await supabase
+    .from("roles")
+    .select("name")
+    .eq("id", emp.role_id)
+    .maybeSingle();
+
+  const roleName = role?.name;
+
+  // STAFF (or unknown role) → no team tab at all
+  if (!roleName || roleName === "STAFF") return null;
+
+  // Determine scope: null = all projects (TOP MANAGEMENT), string[] = led projects (SQUAD LEAD)
+  let projectFilter: string[] | null = null;
+  const projectNameById = new Map<string, string>();
+
+  if (roleName === "TOP MANAGEMENT") {
+    // projectFilter stays null → no project_id filter on the signal query
+    const { data: allProjects } = await supabase.from("projects").select("id, name");
+    for (const p of allProjects ?? []) projectNameById.set(p.id, p.name);
+  } else {
+    // SQUAD LEAD: find projects where they are the squad lead
+    // emp.id = employees.id (Supabase UUID) — NOT Clerk auth_id
+    const { data: ledProjects, error: ledErr } = await supabase
+      .from("projects")
+      .select("id, name")
+      .eq("squad_lead_employee_id", emp.id);
+
+    console.log("[getTeamConcerns] emp.id:", emp.id, "emp.full_name:", emp.full_name, "roleName:", roleName);
+    console.log("[getTeamConcerns] ledProjects:", ledProjects, "ledErr:", ledErr);
+
+    // Even if no led projects → return [] (tab still shows with empty state)
+    projectFilter = (ledProjects ?? []).map(p => p.id);
+    for (const p of ledProjects ?? []) projectNameById.set(p.id, p.name);
+
+    // No led projects → short-circuit with empty list (skip signal query)
+    if (projectFilter.length === 0) return [];
+  }
+
+  let signalQuery = supabase
+    .from("signals")
+    .select(
+      "id, details, ai_issue_category, created_at, is_anonymous, concern_status, project_id, author_employee_id",
+    )
+    .eq("category", "concern")
+    .order("created_at", { ascending: false });
+
+  if (projectFilter !== null) {
+    signalQuery = signalQuery.in("project_id", projectFilter);
+  }
+
+  const { data: signalRows, error: sigErr } = await signalQuery;
+  if (sigErr || !signalRows?.length) return [];
+
+  const signalIds = signalRows.map(s => s.id);
+  const authorIds = Array.from(
+    new Set(signalRows.map(s => s.author_employee_id).filter(Boolean) as string[]),
+  );
+
+  const [{ data: targetRows }, { data: replyRows }, { data: authorEmps }] = await Promise.all([
+    supabase
+      .from("signal_targets")
+      .select("signal_id, target_type, target_role_id, target_employee_id, target_organization_id")
+      .in("signal_id", signalIds),
+    supabase
+      .from("signal_replies")
+      .select("id, signal_id, author_employee_id, content, created_at")
+      .in("signal_id", signalIds)
+      .order("created_at", { ascending: true }),
+    authorIds.length
+      ? supabase.from("employees").select("id, full_name, role_id").in("id", authorIds)
+      : Promise.resolve({ data: [] as { id: string; full_name: string; role_id: string | null }[] }),
+  ]);
+
+  const roleIds = Array.from(
+    new Set((targetRows ?? []).map(t => t.target_role_id).filter(Boolean) as string[]),
+  );
+  const orgIds = Array.from(
+    new Set((targetRows ?? []).map(t => t.target_organization_id).filter(Boolean) as string[]),
+  );
+  const replyEmpIds = Array.from(
+    new Set((replyRows ?? []).map(r => r.author_employee_id).filter(Boolean) as string[]),
+  );
+
+  const [{ data: roles }, { data: orgs }, { data: replyEmps }] = await Promise.all([
+    roleIds.length
+      ? supabase.from("roles").select("id, name").in("id", roleIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    orgIds.length
+      ? supabase.from("organizations").select("id, name").in("id", orgIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    replyEmpIds.length
+      ? supabase.from("employees").select("id, full_name, role_id").in("id", replyEmpIds)
+      : Promise.resolve({ data: [] as { id: string; full_name: string; role_id: string | null }[] }),
+  ]);
+
+  // Resolve role names for reply authors
+  const allReplyRoleIds = Array.from(
+    new Set((replyEmps ?? []).map(e => e.role_id).filter(Boolean) as string[]),
+  );
+  const { data: replyRoles } = allReplyRoleIds.length
+    ? await supabase.from("roles").select("id, name").in("id", allReplyRoleIds)
+    : { data: [] as { id: string; name: string }[] };
+
+  const roleById = new Map((roles ?? []).map(r => [r.id, r.name]));
+  const orgById = new Map((orgs ?? []).map(o => [o.id, o.name]));
+  const replyRoleNameById = new Map((replyRoles ?? []).map(r => [r.id, r.name]));
+
+  const replyEmpById = new Map(
+    (replyEmps ?? []).map(e => [
+      e.id,
+      {
+        full_name: e.full_name,
+        roleName: e.role_id ? (replyRoleNameById.get(e.role_id) ?? null) : null,
+      },
+    ]),
+  );
+
+  const authorById = new Map((authorEmps ?? []).map(e => [e.id, e.full_name]));
+
+  const targetsBySignal = new Map<string, typeof targetRows>();
+  for (const t of targetRows ?? []) {
+    if (!t.signal_id) continue;
+    const list = targetsBySignal.get(t.signal_id) ?? [];
+    list.push(t);
+    targetsBySignal.set(t.signal_id, list);
+  }
+
+  const repliesBySignal = new Map<string, typeof replyRows>();
+  for (const r of replyRows ?? []) {
+    if (!r.signal_id) continue;
+    const list = repliesBySignal.get(r.signal_id) ?? [];
+    list.push(r);
+    repliesBySignal.set(r.signal_id, list);
+  }
+
+  function buildTargetLabel(signalId: string): string {
+    const targets = targetsBySignal.get(signalId) ?? [];
+    const t = targets[0];
+    if (!t) return "Visible to team";
+    if (t.target_type === "all") return "Visible to everyone";
+    if (t.target_type === "role" && t.target_role_id) {
+      const roleName = roleById.get(t.target_role_id) ?? "Role";
+      if (roleName === "TOP MANAGEMENT") return "To Management";
+      return `To Role: ${roleName}`;
+    }
+    if (t.target_type === "employee" && t.target_employee_id) {
+      return `To Specific Person`;
+    }
+    if (t.target_type === "organization" && t.target_organization_id) {
+      const name = orgById.get(t.target_organization_id) ?? "Division";
+      return `To Division: ${name}`;
+    }
+    return "Visible to team";
+  }
+
+  const result: TeamConcernItem[] = [];
+
+  for (const s of signalRows) {
+    const repliesRaw = repliesBySignal.get(s.id) ?? [];
+    const replyCount = repliesRaw.length;
+    const status = deriveDisplayStatus(s.concern_status, replyCount);
+
+    const replies: MyConcernReply[] = repliesRaw.map(r => {
+      const author = replyEmpById.get(r.author_employee_id);
+      return {
+        id: r.id,
+        content: r.content ?? "",
+        createdAt: new Date(r.created_at).toISOString(),
+        authorName: author?.full_name ?? "Unknown",
+        roleName: author?.roleName ?? null,
+      };
+    });
+
+    result.push({
+      id: s.id,
+      details: s.details ?? "",
+      issueCategory: s.ai_issue_category ?? "others",
+      createdAt: new Date(s.created_at).toISOString(),
+      isAnonymous: Boolean(s.is_anonymous),
+      targetLabel: buildTargetLabel(s.id),
+      status,
+      projectId: s.project_id ?? null,
+      projectName: s.project_id ? (projectNameById.get(s.project_id) ?? null) : null,
+      authorName: authorById.get(s.author_employee_id) ?? null,
+      replies,
+    });
+  }
+
+  return result;
 }

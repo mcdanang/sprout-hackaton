@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     messages: [
       {
         role: "system",
-        content: `You are Sprout AI, a team health assistant. Answer questions using ONLY the signal data context provided. Be concise and actionable. Context:\n\n${context}`,
+        content: `You are Signal AI, a team health assistant. Answer questions using ONLY the signal data context provided. Be concise and actionable. Context:\n\n${context}`,
       },
       { role: "user", content: message },
     ],

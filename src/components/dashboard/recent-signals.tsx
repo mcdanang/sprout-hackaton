@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
+import { FormattedContent } from "@/components/shared/formatted-content";
 import { History } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
@@ -76,9 +77,10 @@ export async function RecentSignals() {
                     })}
                   </span>
                 </div>
-                <p className="line-clamp-2 text-sm font-bold leading-snug group-hover:text-primary transition-colors">
-                  {item.title}
-                </p>
+                <FormattedContent
+                  content={item.title}
+                  className="line-clamp-2 text-sm font-bold leading-snug group-hover:text-primary transition-colors"
+                />
               </div>
             ))}
           </div>

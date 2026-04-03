@@ -14,21 +14,22 @@
 
 ## Success Metrics
 
-| Metric | Target |
-|--------|--------|
-| AI insight cards load on dashboard | < 3s on first load |
-| Role-aware content | Employee sees personal nudges; TOP MANAGEMENT sees project risk cards |
-| Predictions are data-backed | Every insight references real DB data (count of signals, sentiment trend) |
-| Management can act | `concern_status` changes from insight card without leaving the page |
-| Chat answers are grounded | AI chat only answers using signals context passed in the prompt |
-| Achievements page renders | Shows received appreciations/achievements with count |
-| No TypeScript errors | `npx tsc --noEmit` passes |
+| Metric                             | Target                                                                    |
+| ---------------------------------- | ------------------------------------------------------------------------- |
+| AI insight cards load on dashboard | < 3s on first load                                                        |
+| Role-aware content                 | Employee sees personal nudges; TOP MANAGEMENT sees project risk cards     |
+| Predictions are data-backed        | Every insight references real DB data (count of signals, sentiment trend) |
+| Management can act                 | `concern_status` changes from insight card without leaving the page       |
+| Chat answers are grounded          | AI chat only answers using signals context passed in the prompt           |
+| Achievements page renders          | Shows received appreciations/achievements with count                      |
+| No TypeScript errors               | `npx tsc --noEmit` passes                                                 |
 
 ---
 
 ## Task 1: Install OpenAI SDK
 
 **Files:**
+
 - Modify: `package.json`
 
 **Step 1: Install the SDK**
@@ -40,6 +41,7 @@ npm install openai
 **Step 2: Add env variable**
 
 Add to `.env.local`:
+
 ```
 OPENAI_API_KEY=sk-...
 ```
@@ -62,6 +64,7 @@ git commit -m "feat: install openai sdk"
 ## Task 2: Create AI Client Utility
 
 **Files:**
+
 - Create: `src/lib/ai-client.ts`
 
 **Step 1: Write the file**
@@ -96,6 +99,7 @@ git commit -m "feat: add OpenAI client singleton"
 This is needed everywhere we need to know if the logged-in user is TOP MANAGEMENT.
 
 **Files:**
+
 - Create: `src/lib/get-current-employee.ts`
 
 **Step 1: Write the file**
@@ -144,7 +148,10 @@ export async function getCurrentEmployee(): Promise<CurrentEmployee | null> {
 
   const [{ data: role }, { data: links }] = await Promise.all([
     supabase.from("roles").select("name").eq("id", emp.role_id).maybeSingle(),
-    supabase.from("employee_projects").select("project_id").eq("employee_id", emp.id),
+    supabase
+      .from("employee_projects")
+      .select("project_id")
+      .eq("employee_id", emp.id),
   ]);
 
   return {
@@ -152,7 +159,7 @@ export async function getCurrentEmployee(): Promise<CurrentEmployee | null> {
     fullName: emp.full_name,
     roleName: role?.name ?? "",
     isTopManagement: role?.name === "TOP MANAGEMENT",
-    projectIds: (links ?? []).map(l => l.project_id),
+    projectIds: (links ?? []).map((l) => l.project_id),
   };
 }
 ```
@@ -177,6 +184,7 @@ git commit -m "feat: add getCurrentEmployee utility with role detection"
 This is the core AI action. It queries DB signals, builds a prompt, calls Claude, and returns structured insights.
 
 **Files:**
+
 - Create: `src/app/actions/ai-insights.ts`
 
 **Step 1: Write the action**
@@ -214,10 +222,12 @@ export async function getAiInsights(): Promise<AiInsightsResult> {
 
   const { data: signals } = await supabase
     .from("signals")
-    .select(`
+    .select(
+      `
       id, category, ai_issue_category, sentiment_score, concern_status, created_at,
       project:projects(id, name)
-    `)
+    `,
+    )
     .gte("created_at", since)
     .order("created_at", { ascending: false })
     .limit(100);
@@ -247,8 +257,9 @@ Here is a summary of recent team signals (last 30 days):
 
 ${summary}
 
-${employee.isTopManagement
-  ? `Return a JSON array of 3-5 insight cards. Each card:
+${
+  employee.isTopManagement
+    ? `Return a JSON array of 3-5 insight cards. Each card:
 {
   "level": "critical" | "warning" | "positive",
   "title": "short title (max 8 words)",
@@ -257,12 +268,13 @@ ${employee.isTopManagement
   "actionLabel": "short CTA like 'Address Now' if critical, else omit",
   "actionProjectId": "project id if actionLabel present, else omit"
 }`
-  : `Return a JSON array of 2-3 nudge cards. Each card:
+    : `Return a JSON array of 2-3 nudge cards. Each card:
 {
   "level": "nudge" | "positive",
   "title": "short friendly title (max 8 words)",
   "body": "1-2 sentence personal insight or encouragement"
-}`}
+}`
+}
 
 Respond with ONLY the JSON array, no markdown, no explanation.
 `;
@@ -306,7 +318,8 @@ function buildSignalSummary(signals: any[], isManagement: boolean): string {
   for (const s of signals) {
     const proj = s.project as { id: string; name: string } | null;
     if (proj?.id) {
-      if (!byProject.has(proj.id)) byProject.set(proj.id, { name: proj.name, signals: [] });
+      if (!byProject.has(proj.id))
+        byProject.set(proj.id, { name: proj.name, signals: [] });
       byProject.get(proj.id)!.signals.push(s);
     } else {
       noProject.push(s);
@@ -315,26 +328,35 @@ function buildSignalSummary(signals: any[], isManagement: boolean): string {
 
   const lines: string[] = [];
   lines.push(`Total signals (last 30 days): ${signals.length}`);
-  lines.push(`Concerns: ${signals.filter(s => s.category === "concern").length}`);
-  lines.push(`Achievements: ${signals.filter(s => s.category === "achievement").length}`);
-  lines.push(`Appreciations: ${signals.filter(s => s.category === "appreciation").length}`);
+  lines.push(
+    `Concerns: ${signals.filter((s) => s.category === "concern").length}`,
+  );
+  lines.push(
+    `Achievements: ${signals.filter((s) => s.category === "achievement").length}`,
+  );
+  lines.push(
+    `Appreciations: ${signals.filter((s) => s.category === "appreciation").length}`,
+  );
   lines.push("");
 
   for (const [, proj] of byProject) {
-    const concerns = proj.signals.filter(s => s.category === "concern");
-    const avgSentiment = proj.signals
-      .map(s => s.sentiment_score ?? 50)
-      .reduce((a, b) => a + b, 0) / proj.signals.length;
+    const concerns = proj.signals.filter((s) => s.category === "concern");
+    const avgSentiment =
+      proj.signals
+        .map((s) => s.sentiment_score ?? 50)
+        .reduce((a, b) => a + b, 0) / proj.signals.length;
 
     const categories = proj.signals
-      .map(s => s.ai_issue_category)
+      .map((s) => s.ai_issue_category)
       .filter(Boolean)
       .reduce((acc: Record<string, number>, cat: string) => {
         acc[cat] = (acc[cat] ?? 0) + 1;
         return acc;
       }, {});
 
-    const openConcerns = concerns.filter(s => s.concern_status === "open").length;
+    const openConcerns = concerns.filter(
+      (s) => s.concern_status === "open",
+    ).length;
 
     lines.push(`Project: ${proj.name}`);
     lines.push(`  Total signals: ${proj.signals.length}`);
@@ -366,6 +388,7 @@ git commit -m "feat: add getAiInsights server action with OpenAI integration"
 ## Task 5: Create AI Insight Cards Component
 
 **Files:**
+
 - Create: `src/components/dashboard/ai-insight-cards.tsx`
 
 **Step 1: Write the component**
@@ -425,7 +448,11 @@ export function AiInsightCards({ insights, generatedAt }: AiInsightCardsProps) {
           </span>
         </div>
         <span className="text-xs text-muted-foreground">
-          Updated {new Date(generatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          Updated{" "}
+          {new Date(generatedAt).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
         </span>
       </div>
 
@@ -439,22 +466,35 @@ export function AiInsightCards({ insights, generatedAt }: AiInsightCardsProps) {
               key={i}
               className={cn(
                 "rounded-2xl border p-5 space-y-3 transition-shadow hover:shadow-md",
-                cfg.bg
+                cfg.bg,
               )}
             >
               <div className="flex items-start justify-between gap-2">
-                <Icon className={cn("h-5 w-5 mt-0.5 shrink-0", cfg.iconColor)} />
-                <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", cfg.badge)}>
+                <Icon
+                  className={cn("h-5 w-5 mt-0.5 shrink-0", cfg.iconColor)}
+                />
+                <span
+                  className={cn(
+                    "text-xs font-semibold px-2 py-0.5 rounded-full",
+                    cfg.badge,
+                  )}
+                >
                   {cfg.label}
                 </span>
               </div>
 
               <div className="space-y-1">
-                <p className="font-semibold text-sm text-foreground">{card.title}</p>
+                <p className="font-semibold text-sm text-foreground">
+                  {card.title}
+                </p>
                 {card.projectName && (
-                  <p className="text-xs text-muted-foreground font-medium">{card.projectName}</p>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    {card.projectName}
+                  </p>
                 )}
-                <p className="text-sm text-muted-foreground leading-relaxed">{card.body}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {card.body}
+                </p>
               </div>
 
               {card.actionLabel && (
@@ -489,6 +529,7 @@ git commit -m "feat: add AiInsightCards component"
 ## Task 6: Wire AI Insight Cards to Dashboard Home Page
 
 **Files:**
+
 - Modify: `src/app/[locale]/dashboard/page.tsx`
 
 **Step 1: Convert page to async server component and add AI cards**
@@ -527,13 +568,18 @@ export default async function DashboardPage() {
       </div>
 
       {/* AI Insight Cards — role-aware, data from Claude */}
-      <AiInsightCards insights={insights.insights} generatedAt={insights.generatedAt} />
+      <AiInsightCards
+        insights={insights.insights}
+        generatedAt={insights.generatedAt}
+      />
 
       {/* AI Sanctuary Quote Card */}
-      <div className={cn(
-        "relative overflow-hidden rounded-[32px] p-10 md:p-14",
-        "bg-[#FFFBEB] border border-[#FEF3C7] shadow-sm"
-      )}>
+      <div
+        className={cn(
+          "relative overflow-hidden rounded-[32px] p-10 md:p-14",
+          "bg-[#FFFBEB] border border-[#FEF3C7] shadow-sm",
+        )}
+      >
         <Quote className="h-10 w-10 text-text-primary mb-8" />
         <div className="space-y-8">
           <p className="font-plus-jakarta text-[32px] md:text-[40px] font-medium leading-tight tracking-tight text-brand-primary">
@@ -583,6 +629,7 @@ git commit -m "feat: add role-aware AI insight cards to dashboard home"
 Management needs to act on concerns from insight cards.
 
 **Files:**
+
 - Modify: `src/app/actions/concerns.ts`
 
 **Step 1: Add the action at the end of `src/app/actions/concerns.ts`**
@@ -627,6 +674,7 @@ git commit -m "feat: add updateConcernStatus server action"
 ## Task 8: Build AI Assistant Page — Insight Cards + Chat
 
 **Files:**
+
 - Modify: `src/app/[locale]/dashboard/ai-assistant/page.tsx`
 - Create: `src/app/api/ai-chat/route.ts`
 - Create: `src/components/dashboard/ai-chat.tsx`
@@ -638,7 +686,7 @@ git commit -m "feat: add updateConcernStatus server action"
 import { openai } from "@/lib/ai-client";
 
 export async function POST(req: Request) {
-  const { message, context } = await req.json() as {
+  const { message, context } = (await req.json()) as {
     message: string;
     context: string;
   };
@@ -650,7 +698,7 @@ export async function POST(req: Request) {
     messages: [
       {
         role: "system",
-        content: `You are Sprout AI, a team health assistant. Answer questions using ONLY the signal data context provided. Be concise and actionable. Context:\n\n${context}`,
+        content: `You are Signal AI, a team health assistant. Answer questions using ONLY the signal data context provided. Be concise and actionable. Context:\n\n${context}`,
       },
       { role: "user", content: message },
     ],
@@ -706,7 +754,7 @@ export function AiChat({ context }: AiChatProps) {
     if (!trimmed || loading) return;
 
     setInput("");
-    setMessages(prev => [...prev, { role: "user", content: trimmed }]);
+    setMessages((prev) => [...prev, { role: "user", content: trimmed }]);
     setLoading(true);
 
     const res = await fetch("/api/ai-chat", {
@@ -724,15 +772,18 @@ export function AiChat({ context }: AiChatProps) {
     const decoder = new TextDecoder();
     let accumulated = "";
 
-    setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       accumulated += decoder.decode(value, { stream: true });
-      setMessages(prev => {
+      setMessages((prev) => {
         const updated = [...prev];
-        updated[updated.length - 1] = { role: "assistant", content: accumulated };
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content: accumulated,
+        };
         return updated;
       });
     }
@@ -748,7 +799,8 @@ export function AiChat({ context }: AiChatProps) {
           <div className="flex flex-col items-center justify-center h-full text-center gap-3">
             <Flash className="h-10 w-10 text-amber-400" />
             <p className="text-sm text-muted-foreground max-w-xs">
-              Ask me anything about your team's signals. e.g. "Which project has the most burnout risk?"
+              Ask me anything about your team's signals. e.g. "Which project has
+              the most burnout risk?"
             </p>
           </div>
         )}
@@ -759,7 +811,7 @@ export function AiChat({ context }: AiChatProps) {
               "max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed",
               m.role === "user"
                 ? "ml-auto bg-primary text-primary-foreground"
-                : "mr-auto bg-muted text-foreground"
+                : "mr-auto bg-muted text-foreground",
             )}
           >
             {m.content || <span className="animate-pulse">...</span>}
@@ -774,8 +826,8 @@ export function AiChat({ context }: AiChatProps) {
           className="flex-1 rounded-xl border bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30"
           placeholder="Ask about your team..."
           value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && send()}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && send()}
           disabled={loading}
         />
         <button
@@ -813,7 +865,9 @@ async function buildChatContext(): Promise<string> {
 
   const { data: signals } = await supabase
     .from("signals")
-    .select("category, ai_issue_category, sentiment_score, concern_status, project:projects(name)")
+    .select(
+      "category, ai_issue_category, sentiment_score, concern_status, project:projects(name)",
+    )
     .gte("created_at", since)
     .limit(100);
 
@@ -822,7 +876,7 @@ async function buildChatContext(): Promise<string> {
   const lines = [
     `Role: ${employee.isTopManagement ? "Top Management" : "Employee"}`,
     `Signals last 30 days: ${signals.length}`,
-    `Concerns: ${signals.filter(s => s.category === "concern").length}`,
+    `Concerns: ${signals.filter((s) => s.category === "concern").length}`,
     `Avg sentiment: ${Math.round(signals.reduce((a, s) => a + (s.sentiment_score ?? 50), 0) / signals.length)}/100`,
   ];
 
@@ -840,7 +894,9 @@ export default async function AiAssistantPage() {
       <section className="flex flex-col gap-2">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Flash className="h-4 w-4" />
-          <span className="text-sm font-medium uppercase tracking-wider">AI Assistant</span>
+          <span className="text-sm font-medium uppercase tracking-wider">
+            AI Assistant
+          </span>
         </div>
         <h1 className="text-4xl font-extrabold tracking-tight">AI Assistant</h1>
         <p className="max-w-2xl text-lg text-muted-foreground">
@@ -849,11 +905,14 @@ export default async function AiAssistantPage() {
       </section>
 
       {/* Full insight cards */}
-      <AiInsightCards insights={insightsResult.insights} generatedAt={insightsResult.generatedAt} />
+      <AiInsightCards
+        insights={insightsResult.insights}
+        generatedAt={insightsResult.generatedAt}
+      />
 
       {/* Chat */}
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Ask Sprout AI</h2>
+        <h2 className="text-lg font-semibold">Ask Signal AI</h2>
         <AiChat context={chatContext} />
       </section>
     </div>
@@ -884,6 +943,7 @@ git commit -m "feat: build AI assistant page with insight cards and streaming ch
 Shows appreciation and achievement signals received by the current employee.
 
 **Files:**
+
 - Create: `src/app/actions/achievements.ts`
 - Modify: `src/app/[locale]/dashboard/achievements/page.tsx`
 
@@ -920,29 +980,33 @@ export async function getMyAchievements(): Promise<AchievementItem[]> {
     .eq("target_type", "employee")
     .eq("target_employee_id", employee.id);
 
-  const signalIds = (targets ?? []).map(t => t.signal_id);
+  const signalIds = (targets ?? []).map((t) => t.signal_id);
 
   if (!signalIds.length) return [];
 
   const { data: signals } = await supabase
     .from("signals")
-    .select(`
+    .select(
+      `
       id, category, title, details, created_at, is_anonymous,
       author:employees!author_employee_id(full_name),
       project:projects(name)
-    `)
+    `,
+    )
     .in("id", signalIds)
     .in("category", ["achievement", "appreciation"])
     .order("created_at", { ascending: false });
 
-  return (signals ?? []).map(s => ({
+  return (signals ?? []).map((s) => ({
     id: s.id,
     category: s.category as "achievement" | "appreciation",
     title: s.title,
     details: s.details,
     createdAt: new Date(s.created_at).toISOString(),
     isAnonymous: Boolean(s.is_anonymous),
-    authorName: s.is_anonymous ? "Anonymous" : ((s.author as any)?.full_name ?? "Unknown"),
+    authorName: s.is_anonymous
+      ? "Anonymous"
+      : ((s.author as any)?.full_name ?? "Unknown"),
     projectName: (s.project as any)?.name ?? null,
   }));
 }
@@ -959,8 +1023,16 @@ import { getMyAchievements } from "@/app/actions/achievements";
 import { cn } from "@/lib/utils";
 
 const categoryConfig = {
-  achievement: { label: "Achievement", color: "bg-amber-100 text-amber-700", icon: Medal },
-  appreciation: { label: "Appreciation", color: "bg-purple-100 text-purple-700", icon: Star },
+  achievement: {
+    label: "Achievement",
+    color: "bg-amber-100 text-amber-700",
+    icon: Medal,
+  },
+  appreciation: {
+    label: "Appreciation",
+    color: "bg-purple-100 text-purple-700",
+    icon: Star,
+  },
 };
 
 export default async function AchievementsPage() {
@@ -971,18 +1043,25 @@ export default async function AchievementsPage() {
       <section className="flex flex-col gap-2">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Star className="h-4 w-4" />
-          <span className="text-sm font-medium uppercase tracking-wider">My Achievements</span>
+          <span className="text-sm font-medium uppercase tracking-wider">
+            My Achievements
+          </span>
         </div>
-        <h1 className="text-4xl font-extrabold tracking-tight">My Achievements</h1>
+        <h1 className="text-4xl font-extrabold tracking-tight">
+          My Achievements
+        </h1>
         <p className="max-w-2xl text-lg text-muted-foreground">
-          Recognitions and appreciation signals you have received from your peers.
+          Recognitions and appreciation signals you have received from your
+          peers.
         </p>
       </section>
 
       {achievements.length === 0 ? (
         <div className="rounded-xl border border-dashed p-20 flex flex-col items-center justify-center text-center bg-background/50">
           <Star className="h-12 w-12 text-muted-foreground/30 mb-4" />
-          <h3 className="text-lg font-semibold text-muted-foreground">No achievements yet</h3>
+          <h3 className="text-lg font-semibold text-muted-foreground">
+            No achievements yet
+          </h3>
           <p className="text-sm text-muted-foreground/60 max-w-xs">
             When teammates recognize your work, it will appear here.
           </p>
@@ -990,10 +1069,11 @@ export default async function AchievementsPage() {
       ) : (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            {achievements.length} recognition{achievements.length !== 1 ? "s" : ""} received
+            {achievements.length} recognition
+            {achievements.length !== 1 ? "s" : ""} received
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {achievements.map(item => {
+            {achievements.map((item) => {
               const cfg = categoryConfig[item.category];
               const Icon = cfg.icon;
               return (
@@ -1003,20 +1083,29 @@ export default async function AchievementsPage() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <Icon className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
-                    <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", cfg.color)}>
+                    <span
+                      className={cn(
+                        "text-xs font-semibold px-2 py-0.5 rounded-full",
+                        cfg.color,
+                      )}
+                    >
                       {cfg.label}
                     </span>
                   </div>
                   <div className="space-y-1">
                     <p className="font-semibold text-sm">{item.title}</p>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{item.details}</p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {item.details}
+                    </p>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>From: {item.authorName}</span>
                     <span>{new Date(item.createdAt).toLocaleDateString()}</span>
                   </div>
                   {item.projectName && (
-                    <span className="text-xs bg-muted px-2 py-0.5 rounded-full">{item.projectName}</span>
+                    <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
+                      {item.projectName}
+                    </span>
                   )}
                 </div>
               );
@@ -1047,6 +1136,7 @@ git commit -m "feat: build achievements page with received recognitions"
 ## Task 10: Final Polish & Loading States
 
 **Files:**
+
 - Create: `src/app/[locale]/dashboard/loading.tsx` (optional Suspense fallback)
 
 **Step 1: Add a simple loading skeleton for dashboard pages**
@@ -1062,7 +1152,7 @@ export default function DashboardLoading() {
         <div className="h-5 w-64 bg-muted rounded" />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {[1, 2, 3].map(i => (
+        {[1, 2, 3].map((i) => (
           <div key={i} className="rounded-2xl border p-5 h-32 bg-muted" />
         ))}
       </div>
@@ -1107,10 +1197,10 @@ Before demo day, verify each item manually:
 
 ## Day-by-Day Schedule (5 days)
 
-| Day | Tasks | Outcome |
-|-----|-------|---------|
-| Day 1 | Tasks 1–3 | SDK installed, AI client, role utility |
-| Day 2 | Tasks 4–5 | `getAiInsights` action + cards component |
-| Day 3 | Task 6 | AI cards live on dashboard home (demo-able) |
-| Day 4 | Tasks 7–8 | AI Assistant page fully working with chat |
+| Day   | Tasks      | Outcome                                         |
+| ----- | ---------- | ----------------------------------------------- |
+| Day 1 | Tasks 1–3  | SDK installed, AI client, role utility          |
+| Day 2 | Tasks 4–5  | `getAiInsights` action + cards component        |
+| Day 3 | Task 6     | AI cards live on dashboard home (demo-able)     |
+| Day 4 | Tasks 7–8  | AI Assistant page fully working with chat       |
 | Day 5 | Tasks 9–10 | Achievements page + polish + build verification |
