@@ -1,121 +1,187 @@
 {
-  "Landing": {
-    "title": "Speak Up and Recognize Positive Ownership",
-    "description": "A safe internal platform for employees to raise concerns early and acknowledge peers who show ownership. Improve transparency, trust, and accountability within your team.",
-    "getStarted": "Get Started",
-    "goDashboard": "Go to Dashboard",
-    "learnMore": "Learn More",
-    "badge": "Project Sprout Ownership",
-    "features": {
-      "safe": {
-        "title": "Safe & Anonymous",
-        "description": "Submit concerns without fear. Optional anonymity ensures every voice is heard."
-      },
-      "peer": {
-        "title": "Peer Recognition",
-        "description": "Highlight excellent performance and ownership. Build a culture of appreciation."
-      },
-      "rapid": {
-        "title": "Rapid Feedback",
-        "description": "Get internal signals directly to decision makers to resolve blockers fast."
-      }
-    }
-  },
-  "Dashboard": {
-    "title": "Team Dashboard",
-    "welcome": "Welcome back, {name}",
-    "subtitle": "Your personal sanctuary for team clarity, focus, and connection.",
-    "quote": {
-      "text": "Psychological safety is the bridge between individual talent and collective genius.",
-      "author": "SIGNAL SANCTUARY AI"
-    },
-    "overview": "Overview",
-    "nav": {
-      "dashboard": "Dashboard",
-      "projects": "Projects",
-      "myConcern": "My Concern",
-      "myAchievement": "My Achievement",
-      "privateFeedback": "Private Feedback",
-      "aiAssistant": "AI Assistant"
-    },
-    "concerns": {
-      "eyebrow": "My Concern",
-      "title": "My Concern",
-      "subtitle": "View and track the concerns you've submitted.",
-      "submitCta": "Submit Concern",
-      "emptyTitle": "No concerns yet",
-      "emptyHint": "When you submit a concern, it will appear here with status and any replies.",
-      "statusOpen": "Open",
-      "statusInProgress": "In Progress",
-      "statusClosed": "Closed",
-      "submittedAnonymous": "Anonymous",
-      "repliesCount": "Replies ({count})",
-      "modalTitle": "Submit a Concern",
-      "closeModal": "Close",
-      "categoryLabel": "Concern category",
-      "categoryPlaceholder": "Select a category",
-      "visibilityLabel": "Who can see this concern?",
-      "visibilityManagement": "To Management",
-      "visibilityDivision": "To Division",
-      "visibilityPerson": "To Specific Person",
-      "divisionLabel": "Division",
-      "divisionPlaceholder": "Select a division",
-      "personLabel": "Person",
-      "personPlaceholder": "Select a person",
-      "descriptionLabel": "Description",
-      "descriptionPlaceholder": "Describe the concern in detail...",
-      "anonymousLabel": "Submit anonymously",
-      "anonymousHint": "Your identity will be protected.",
-      "cancel": "Cancel",
-      "submit": "Submit Concern",
-      "submitting": "Submitting..."
-    }
-  },
-  "Unauthorized": {
-    "title": "Access Denied",
-    "description": "You are trying to access a protected area. Please sign in to continue or return to the landing page.",
-    "signIn": "Sign In Now",
-    "backHome": "Back to Home"
-  },
-  "Form": {
-    "title": "Speak Up or Recognize a Peer",
-    "type": "Signal Type",
-    "typeConcern": "Concern / Risk",
-    "typeRecognition": "Recognition / Positive Ownership",
-    "titleLabel": "Title",
-    "titlePlaceholder": "Example: Blocker in API dependency",
-    "detailsLabel": "Details",
-    "detailsPlaceholder": "Add enough context so others can take action.",
-    "anonymous": "Submit anonymously",
-    "submit": "Submit Signal",
-    "submitting": "Submitting...",
-    "success": "Signal submitted successfully.",
-    "error": "Please fix the errors in the form.",
-    "unauthorized": "Unauthorized. Please sign in to submit a signal.",
-    "failed": "Submission failed"
-  },
-  "Recent": {
-    "title": "Recent Signals",
-    "empty": "No signals yet."
-  },
-  "Common": {
-    "signIn": "Sign In",
-    "dashboard": "Dashboard",
-    "anonymous": "Anonymous"
-  },
-  "Projects": {
-    "label": "Team Projects",
-    "title": "Ongoing Projects",
-    "subtitle": "Track and manage your team's tactical and strategic ownership initiatives."
-  },
-  "ProjectDetail": {
-    "back": "Back to Projects",
-    "overview": "Project Overview",
-    "squad": "Squad Hub",
-    "activity": "Project Feed",
-    "noActivity": "No recent activity recorded.",
-    "healthLabel": "Team Pulse",
-    "concernsLabel": "Active Concerns",
-    "achievementsLabel": "Key Achievements"
-  }
+	"AccountSwitch": {
+		"personaLabel": "View app as",
+		"hint": "Demo mode. Your Teams sign-in is unchanged. Clear to use your own account.",
+		"management": "Management (Arnold)",
+		"deliveryLead": "Delivery lead (Reynaldo)",
+		"staff": "Staff",
+		"useSignedInUser": "My account (Teams)",
+		"loginHint": "Optional: choose whose data to load after you sign in, then use Sign in with Teams.",
+		"loginSaved": "Saved — sign in with Teams to continue."
+	},
+	"Landing": {
+		"title": "Speak Up and Recognize Positive Ownership",
+		"description": "A safe internal platform for employees to raise concerns early and acknowledge peers who show ownership. Improve transparency, trust, and accountability within your team.",
+		"getStarted": "Get Started",
+		"goDashboard": "Go to Dashboard",
+		"learnMore": "Learn More",
+		"badge": "Project Sprout Ownership",
+		"features": {
+			"safe": {
+				"title": "Safe & Anonymous",
+				"description": "Submit concerns without fear. Optional anonymity ensures every voice is heard."
+			},
+			"peer": {
+				"title": "Peer Recognition",
+				"description": "Highlight excellent performance and ownership. Build a culture of appreciation."
+			},
+			"rapid": {
+				"title": "Rapid Feedback",
+				"description": "Get internal signals directly to decision makers to resolve blockers fast."
+			}
+		}
+	},
+	"Dashboard": {
+		"title": "Team Dashboard",
+		"welcome": "Welcome back, {name}",
+		"subtitle": "Your personal sanctuary for team clarity, focus, and connection.",
+		"quote": {
+			"text": "Psychological safety is the bridge between individual talent and collective genius.",
+			"author": "SIGNAL SANCTUARY AI"
+		},
+		"overview": "Overview",
+		"nav": {
+			"dashboard": "Dashboard",
+			"projects": "Projects",
+			"myConcern": "My Concern",
+			"myAchievement": "My Achievement",
+			"privateFeedback": "Private Feedback",
+			"aiAssistant": "AI Assistant"
+		},
+		"concerns": {
+			"eyebrow": "My Concern",
+			"title": "My Concern",
+			"subtitle": "View and track the concerns you've submitted.",
+			"submitCta": "Submit Concern",
+			"emptyTitle": "No concerns yet",
+			"emptyHint": "When you submit a concern, it will appear here with status and any replies.",
+			"statusOpen": "Open",
+			"statusInProgress": "In Progress",
+			"statusClosed": "Closed",
+			"submittedAnonymous": "Anonymous",
+			"repliesCount": "Replies ({count})",
+			"modalTitle": "Submit a Concern",
+			"closeModal": "Close",
+			"categoryLabel": "Concern category",
+			"categoryPlaceholder": "Select a category",
+			"visibilityLabel": "Who can see this concern?",
+			"visibilityManagement": "To Management",
+			"visibilityDivision": "To Division",
+			"visibilityPerson": "To Specific Person",
+			"divisionLabel": "Division",
+			"divisionPlaceholder": "Select a division",
+			"personLabel": "Person",
+			"personPlaceholder": "Select a person",
+			"descriptionLabel": "Description",
+			"descriptionPlaceholder": "Describe the concern in detail...",
+			"anonymousLabel": "Submit anonymously",
+			"anonymousHint": "Your identity will be protected.",
+			"cancel": "Cancel",
+			"submit": "Submit Concern",
+			"submitting": "Submitting..."
+		},
+		"staff": {
+			"eyebrow": "Your workspace",
+			"subtitle": "Track your personal signals and what’s happening on your team projects.",
+			"rangeNote": "Metrics use the last 30 days.",
+			"metricConcerns": "Concerns submitted",
+			"metricRecognition": "Recognition shared",
+			"metricProjects": "Projects you’re on",
+			"recognitionHint": "Achievements + appreciation you posted",
+			"categoryTitle": "Your signals by type",
+			"catConcern": "Concerns",
+			"catAchievement": "Achievements",
+			"catAppreciation": "Appreciation",
+			"sentimentTitle": "Team sentiment by project",
+			"sentimentEmpty": "No signals on your projects in this window yet.",
+			"signalsCount": "{count} signals",
+			"raiseTitle": "Need to flag something?",
+			"raiseCta": "Raise a concern",
+			"ctaHint": "Opens My Concern with the full form.",
+			"concernsTitle": "My concerns",
+			"viewAll": "View all",
+			"tabAll": "All",
+			"tabPending": "Open",
+			"tabInProgress": "In progress",
+			"tabResolved": "Closed",
+			"noConcerns": "No concerns in this filter.",
+			"teamTitle": "Team activity",
+			"teamEmpty": "No recent signals on your shared projects.",
+			"activityPostedConcern": "posted a concern",
+			"activityPostedAchievement": "shared an achievement",
+			"activityPostedAppreciation": "shared appreciation",
+			"activityPostedSignal": "posted a signal"
+		},
+		"management": {
+			"eyebrow": "Executive overview",
+			"subtitle": "View global trends and signals across squads and projects.",
+			"rangeNote": "KPI trends compare the last 30 days to the previous 30 days.",
+			"kpiConcerns": "Total concerns",
+			"kpiAchievements": "Total achievements",
+			"kpiSquads": "Active squads",
+			"kpiSquadsHint": "Projects that have at least one assigned team member",
+			"kpiResolved": "Resolved concerns",
+			"trendUp": "Increase vs prior period",
+			"trendDown": "Decrease vs prior period",
+			"sentimentTitle": "Concern themes (distribution)",
+			"sentimentHint": "Share of concerns by issue category in the last 30 days (when categorized).",
+			"sentimentEmpty": "No categorized concerns in this period.",
+			"leaderboardTitle": "Recognition leaderboard",
+			"leaderboardHint": "Points = achievements + appreciation posts in the last 30 days.",
+			"leaderboardEmpty": "No recognition activity in this period.",
+			"ptsLabel": "pts",
+			"healthTitle": "Project health summary",
+			"healthHint": "Average signal sentiment per project (last 30 days). Healthy ≥ 75, watchlist 50–74, critical below 50. Projects with no signals in the window are counted as watchlist.",
+			"healthHealthy": "Healthy",
+			"healthWarning": "Watchlist",
+			"healthCritical": "Critical"
+		}
+	},
+	"Unauthorized": {
+		"title": "Access Denied",
+		"description": "You are trying to access a protected area. Please sign in to continue or return to the landing page.",
+		"signIn": "Sign In Now",
+		"backHome": "Back to Home"
+	},
+	"Form": {
+		"title": "Speak Up or Recognize a Peer",
+		"type": "Signal Type",
+		"typeConcern": "Concern / Risk",
+		"typeRecognition": "Recognition / Positive Ownership",
+		"titleLabel": "Title",
+		"titlePlaceholder": "Example: Blocker in API dependency",
+		"detailsLabel": "Details",
+		"detailsPlaceholder": "Add enough context so others can take action.",
+		"anonymous": "Submit anonymously",
+		"submit": "Submit Signal",
+		"submitting": "Submitting...",
+		"success": "Signal submitted successfully.",
+		"error": "Please fix the errors in the form.",
+		"unauthorized": "Unauthorized. Please sign in to submit a signal.",
+		"failed": "Submission failed"
+	},
+	"Recent": {
+		"title": "Recent Signals",
+		"empty": "No signals yet."
+	},
+	"Common": {
+		"signIn": "Sign In",
+		"dashboard": "Dashboard",
+		"anonymous": "Anonymous"
+	},
+	"Projects": {
+		"label": "Team Projects",
+		"title": "Ongoing Projects",
+		"subtitle": "Track and manage your team's tactical and strategic ownership initiatives."
+	},
+	"ProjectDetail": {
+		"back": "Back to Projects",
+		"overview": "Project Overview",
+		"squad": "Squad Hub",
+		"activity": "Project Feed",
+		"noActivity": "No recent activity recorded.",
+		"healthLabel": "Team Pulse",
+		"concernsLabel": "Active Concerns",
+		"achievementsLabel": "Key Achievements"
+	}
 }

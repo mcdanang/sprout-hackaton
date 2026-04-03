@@ -1,121 +1,187 @@
 {
-  "Landing": {
-    "title": "Bicara dan Akui Kepemilikan Positif",
-    "description": "Platform internal yang aman bagi karyawan untuk menyampaikan kekhawatiran lebih awal dan mengakui rekan kerja yang menunjukkan rasa memiliki. Tingkatkan transparansi, kepercayaan, dan akuntabilitas dalam tim Anda.",
-    "getStarted": "Mulai Sekarang",
-    "goDashboard": "Ke Dashboard",
-    "learnMore": "Pelajari Lebih Lanjut",
-    "badge": "Project Sprout Ownership",
-    "features": {
-      "safe": {
-        "title": "Aman & Anonim",
-        "description": "Sampaikan kekhawatiran tanpa rasa takut. Anonimitas opsional memastikan setiap suara didengar."
-      },
-      "peer": {
-        "title": "Pengakuan Rekan",
-        "description": "Soroti kinerja dan rasa memiliki yang luar biasa. Bangun budaya apresiasi."
-      },
-      "rapid": {
-        "title": "Umpan Balik Cepat",
-        "description": "Dapatkan sinyal internal langsung ke pengambil keputusan untuk menyelesaikan hambatan dengan cepat."
-      }
-    }
-  },
-  "Dashboard": {
-    "title": "Dashboard Tim",
-    "welcome": "Selamat datang kembali, {name}",
-    "subtitle": "Tempat perlindungan pribadi Anda untuk kejelasan, fokus, dan koneksi tim.",
-    "quote": {
-      "text": "Keamanan psikologis adalah jembatan antara bakat individu dan kegeniusan kolektif.",
-      "author": "SIGNAL SANCTUARY AI"
-    },
-    "overview": "Ikhtisar",
-    "nav": {
-      "dashboard": "Dashboard",
-      "projects": "Proyek",
-      "myConcern": "Keluhan Saya",
-      "myAchievement": "Pencapaian Saya",
-      "privateFeedback": "Umpan Balik Privat",
-      "aiAssistant": "Asisten AI"
-    },
-    "concerns": {
-      "eyebrow": "Keluhan Saya",
-      "title": "Keluhan Saya",
-      "subtitle": "Lihat dan pantau keluhan yang Anda kirim.",
-      "submitCta": "Kirim Keluhan",
-      "emptyTitle": "Belum ada keluhan",
-      "emptyHint": "Setelah Anda mengirim keluhan, keluhan akan muncul di sini beserta status dan balasan.",
-      "statusOpen": "Terbuka",
-      "statusInProgress": "Diproses",
-      "statusClosed": "Selesai",
-      "submittedAnonymous": "Anonim",
-      "repliesCount": "Balasan ({count})",
-      "modalTitle": "Kirim Keluhan",
-      "closeModal": "Tutup",
-      "categoryLabel": "Kategori keluhan",
-      "categoryPlaceholder": "Pilih kategori",
-      "visibilityLabel": "Siapa yang dapat melihat keluhan ini?",
-      "visibilityManagement": "Ke manajemen",
-      "visibilityDivision": "Ke divisi",
-      "visibilityPerson": "Ke orang tertentu",
-      "divisionLabel": "Divisi",
-      "divisionPlaceholder": "Pilih divisi",
-      "personLabel": "Orang",
-      "personPlaceholder": "Pilih orang",
-      "descriptionLabel": "Deskripsi",
-      "descriptionPlaceholder": "Jelaskan keluhan secara detail...",
-      "anonymousLabel": "Kirim secara anonim",
-      "anonymousHint": "Identitas Anda akan dilindungi.",
-      "cancel": "Batal",
-      "submit": "Kirim Keluhan",
-      "submitting": "Mengirim..."
-    }
-  },
-  "Unauthorized": {
-    "title": "Akses Ditolak",
-    "description": "Anda mencoba mengakses area yang dilindungi. Silakan masuk untuk melanjutkan atau kembali ke halaman utama.",
-    "signIn": "Masuk Sekarang",
-    "backHome": "Kembali ke Beranda"
-  },
-  "Form": {
-    "title": "Bicara atau Akui Rekan",
-    "type": "Jenis Sinyal",
-    "typeConcern": "Kekhawatiran / Risiko",
-    "typeRecognition": "Pengakuan / Kepemilikan Positif",
-    "titleLabel": "Judul",
-    "titlePlaceholder": "Contoh: Hambatan dalam dependensi API",
-    "detailsLabel": "Detail",
-    "detailsPlaceholder": "Berikan konteks yang cukup agar orang lain dapat mengambil tindakan.",
-    "anonymous": "Kirim sebagai anonim",
-    "submit": "Kirim Sinyal",
-    "submitting": "Mengirim...",
-    "success": "Sinyal berhasil dikirim.",
-    "error": "Harap perbaiki kesalahan pada formulir.",
-    "unauthorized": "Tidak sah. Silakan masuk untuk mengirim sinyal.",
-    "failed": "Pengiriman gagal"
-  },
-  "Recent": {
-    "title": "Sinyal Terbaru",
-    "empty": "Belum ada sinyal."
-  },
-  "Common": {
-    "signIn": "Masuk",
-    "dashboard": "Dashboard",
-    "anonymous": "Anonim"
-  },
-  "Projects": {
-    "label": "Proyek Tim",
-    "title": "Proyek Berjalan",
-    "subtitle": "Pantau dan kelola inisiatif kepemilikan taktis dan strategis tim Anda."
-  },
-  "ProjectDetail": {
-    "back": "Kembali ke Proyek",
-    "overview": "Ikhtisar Proyek",
-    "squad": "Pusat Squad",
-    "activity": "Project Feed",
-    "noActivity": "Belum ada aktivitas terbaru yang tercatat.",
-    "healthLabel": "Denyut Tim",
-    "concernsLabel": "Masalah Aktif",
-    "achievementsLabel": "Pencapaian Utama"
-  }
+	"AccountSwitch": {
+		"personaLabel": "Lihat aplikasi sebagai",
+		"hint": "Mode demo. Masuk Teams Anda tidak berubah. Kosongkan untuk akun Anda sendiri.",
+		"management": "Manajemen (Arnold)",
+		"deliveryLead": "Delivery lead (Reynaldo)",
+		"staff": "Staf",
+		"useSignedInUser": "Akun saya (Teams)",
+		"loginHint": "Opsional: pilih data siapa yang dimuat setelah masuk, lalu gunakan Sign in with Teams.",
+		"loginSaved": "Disimpan — lanjutkan masuk dengan Teams."
+	},
+	"Landing": {
+		"title": "Bicara dan Akui Kepemilikan Positif",
+		"description": "Platform internal yang aman bagi karyawan untuk menyampaikan kekhawatiran lebih awal dan mengakui rekan kerja yang menunjukkan rasa memiliki. Tingkatkan transparansi, kepercayaan, dan akuntabilitas dalam tim Anda.",
+		"getStarted": "Mulai Sekarang",
+		"goDashboard": "Ke Dashboard",
+		"learnMore": "Pelajari Lebih Lanjut",
+		"badge": "Project Sprout Ownership",
+		"features": {
+			"safe": {
+				"title": "Aman & Anonim",
+				"description": "Sampaikan kekhawatiran tanpa rasa takut. Anonimitas opsional memastikan setiap suara didengar."
+			},
+			"peer": {
+				"title": "Pengakuan Rekan",
+				"description": "Soroti kinerja dan rasa memiliki yang luar biasa. Bangun budaya apresiasi."
+			},
+			"rapid": {
+				"title": "Umpan Balik Cepat",
+				"description": "Dapatkan sinyal internal langsung ke pengambil keputusan untuk menyelesaikan hambatan dengan cepat."
+			}
+		}
+	},
+	"Dashboard": {
+		"title": "Dashboard Tim",
+		"welcome": "Selamat datang kembali, {name}",
+		"subtitle": "Tempat perlindungan pribadi Anda untuk kejelasan, fokus, dan koneksi tim.",
+		"quote": {
+			"text": "Keamanan psikologis adalah jembatan antara bakat individu dan kegeniusan kolektif.",
+			"author": "SIGNAL SANCTUARY AI"
+		},
+		"overview": "Ikhtisar",
+		"nav": {
+			"dashboard": "Dashboard",
+			"projects": "Proyek",
+			"myConcern": "Keluhan Saya",
+			"myAchievement": "Pencapaian Saya",
+			"privateFeedback": "Umpan Balik Privat",
+			"aiAssistant": "Asisten AI"
+		},
+		"concerns": {
+			"eyebrow": "Keluhan Saya",
+			"title": "Keluhan Saya",
+			"subtitle": "Lihat dan pantau keluhan yang Anda kirim.",
+			"submitCta": "Kirim Keluhan",
+			"emptyTitle": "Belum ada keluhan",
+			"emptyHint": "Setelah Anda mengirim keluhan, keluhan akan muncul di sini beserta status dan balasan.",
+			"statusOpen": "Terbuka",
+			"statusInProgress": "Diproses",
+			"statusClosed": "Selesai",
+			"submittedAnonymous": "Anonim",
+			"repliesCount": "Balasan ({count})",
+			"modalTitle": "Kirim Keluhan",
+			"closeModal": "Tutup",
+			"categoryLabel": "Kategori keluhan",
+			"categoryPlaceholder": "Pilih kategori",
+			"visibilityLabel": "Siapa yang dapat melihat keluhan ini?",
+			"visibilityManagement": "Ke manajemen",
+			"visibilityDivision": "Ke divisi",
+			"visibilityPerson": "Ke orang tertentu",
+			"divisionLabel": "Divisi",
+			"divisionPlaceholder": "Pilih divisi",
+			"personLabel": "Orang",
+			"personPlaceholder": "Pilih orang",
+			"descriptionLabel": "Deskripsi",
+			"descriptionPlaceholder": "Jelaskan keluhan secara detail...",
+			"anonymousLabel": "Kirim secara anonim",
+			"anonymousHint": "Identitas Anda akan dilindungi.",
+			"cancel": "Batal",
+			"submit": "Kirim Keluhan",
+			"submitting": "Mengirim..."
+		},
+		"staff": {
+			"eyebrow": "Ruang kerja Anda",
+			"subtitle": "Pantau sinyal pribadi dan aktivitas di proyek tim Anda.",
+			"rangeNote": "Metrik memakai 30 hari terakhir.",
+			"metricConcerns": "Keluhan dikirim",
+			"metricRecognition": "Apresiasi dibagikan",
+			"metricProjects": "Proyek Anda",
+			"recognitionHint": "Pencapaian + apresiasi yang Anda posting",
+			"categoryTitle": "Sinyal Anda menurut jenis",
+			"catConcern": "Keluhan",
+			"catAchievement": "Pencapaian",
+			"catAppreciation": "Apresiasi",
+			"sentimentTitle": "Sentimen tim per proyek",
+			"sentimentEmpty": "Belum ada sinyal di proyek Anda dalam periode ini.",
+			"signalsCount": "{count} sinyal",
+			"raiseTitle": "Perlu menandai sesuatu?",
+			"raiseCta": "Ajukan keluhan",
+			"ctaHint": "Membuka halaman Keluhan Saya dengan formulir lengkap.",
+			"concernsTitle": "Keluhan saya",
+			"viewAll": "Lihat semua",
+			"tabAll": "Semua",
+			"tabPending": "Terbuka",
+			"tabInProgress": "Diproses",
+			"tabResolved": "Selesai",
+			"noConcerns": "Tidak ada keluhan untuk filter ini.",
+			"teamTitle": "Aktivitas tim",
+			"teamEmpty": "Belum ada sinyal terbaru di proyek bersama Anda.",
+			"activityPostedConcern": "mengirim keluhan",
+			"activityPostedAchievement": "membagikan pencapaian",
+			"activityPostedAppreciation": "membagikan apresiasi",
+			"activityPostedSignal": "mengirim sinyal"
+		},
+		"management": {
+			"eyebrow": "Ringkasan eksekutif",
+			"subtitle": "Tren global dan sinyal di seluruh squad dan proyek.",
+			"rangeNote": "Tren KPI membandingkan 30 hari terakhir dengan 30 hari sebelumnya.",
+			"kpiConcerns": "Total keluhan",
+			"kpiAchievements": "Total pencapaian",
+			"kpiSquads": "Squad aktif",
+			"kpiSquadsHint": "Proyek yang memiliki minimal satu anggota tim",
+			"kpiResolved": "Keluhan terselesaikan",
+			"trendUp": "Naik vs periode sebelumnya",
+			"trendDown": "Turun vs periode sebelumnya",
+			"sentimentTitle": "Tema keluhan (distribusi)",
+			"sentimentHint": "Porsi keluhan per kategori isu dalam 30 hari terakhir (jika terklasifikasi).",
+			"sentimentEmpty": "Belum ada keluhan terklasifikasi dalam periode ini.",
+			"leaderboardTitle": "Papan peringkat apresiasi",
+			"leaderboardHint": "Poin = posting pencapaian + apresiasi dalam 30 hari terakhir.",
+			"leaderboardEmpty": "Belum ada aktivitas apresiasi dalam periode ini.",
+			"ptsLabel": "poin",
+			"healthTitle": "Ringkasan kesehatan proyek",
+			"healthHint": "Rata-rata sentimen sinyal per proyek (30 hari). Sehat ≥ 75, pantau 50–74, kritis di bawah 50. Proyek tanpa sinyal dihitung sebagai pantau.",
+			"healthHealthy": "Sehat",
+			"healthWarning": "Pantau",
+			"healthCritical": "Kritis"
+		}
+	},
+	"Unauthorized": {
+		"title": "Akses Ditolak",
+		"description": "Anda mencoba mengakses area yang dilindungi. Silakan masuk untuk melanjutkan atau kembali ke halaman utama.",
+		"signIn": "Masuk Sekarang",
+		"backHome": "Kembali ke Beranda"
+	},
+	"Form": {
+		"title": "Bicara atau Akui Rekan",
+		"type": "Jenis Sinyal",
+		"typeConcern": "Kekhawatiran / Risiko",
+		"typeRecognition": "Pengakuan / Kepemilikan Positif",
+		"titleLabel": "Judul",
+		"titlePlaceholder": "Contoh: Hambatan dalam dependensi API",
+		"detailsLabel": "Detail",
+		"detailsPlaceholder": "Berikan konteks yang cukup agar orang lain dapat mengambil tindakan.",
+		"anonymous": "Kirim sebagai anonim",
+		"submit": "Kirim Sinyal",
+		"submitting": "Mengirim...",
+		"success": "Sinyal berhasil dikirim.",
+		"error": "Harap perbaiki kesalahan pada formulir.",
+		"unauthorized": "Tidak sah. Silakan masuk untuk mengirim sinyal.",
+		"failed": "Pengiriman gagal"
+	},
+	"Recent": {
+		"title": "Sinyal Terbaru",
+		"empty": "Belum ada sinyal."
+	},
+	"Common": {
+		"signIn": "Masuk",
+		"dashboard": "Dashboard",
+		"anonymous": "Anonim"
+	},
+	"Projects": {
+		"label": "Proyek Tim",
+		"title": "Proyek Berjalan",
+		"subtitle": "Pantau dan kelola inisiatif kepemilikan taktis dan strategis tim Anda."
+	},
+	"ProjectDetail": {
+		"back": "Kembali ke Proyek",
+		"overview": "Ikhtisar Proyek",
+		"squad": "Pusat Squad",
+		"activity": "Project Feed",
+		"noActivity": "Belum ada aktivitas terbaru yang tercatat.",
+		"healthLabel": "Denyut Tim",
+		"concernsLabel": "Masalah Aktif",
+		"achievementsLabel": "Pencapaian Utama"
+	}
 }

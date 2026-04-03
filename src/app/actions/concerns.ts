@@ -1,9 +1,9 @@
 "use server";
 
-import { auth, currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { getEffectiveEmployeeRow } from "@/lib/effective-employee";
 import {
 	computeConcernSentimentFromIssueCategory,
 	type SignalIssueCategory,
@@ -16,37 +16,16 @@ async function resolveEmployeeId(supabase: Awaited<ReturnType<typeof createClien
 	id: string;
 	project_ids: string[];
 } | null> {
-	const { userId } = await auth();
-	if (!userId) return null;
-
-	let { data: employee, error: empError } = await supabase
-		.from("employees")
-		.select("id")
-		.eq("auth_id", userId)
-		.maybeSingle();
-
-	if (empError || !employee) {
-		const user = await currentUser();
-		const email = user?.emailAddresses?.[0]?.emailAddress;
-		if (email) {
-			const { data: byEmail } = await supabase
-				.from("employees")
-				.select("id")
-				.eq("email", email)
-				.maybeSingle();
-			if (byEmail) employee = byEmail;
-		}
-	}
-
-	if (!employee) return null;
+	const emp = await getEffectiveEmployeeRow(supabase);
+	if (!emp) return null;
 
 	const { data: links } = await supabase
 		.from("employee_projects")
 		.select("project_id")
-		.eq("employee_id", employee.id);
+		.eq("employee_id", emp.id);
 
 	const project_ids = (links ?? []).map(l => l.project_id);
-	return { id: employee.id, project_ids };
+	return { id: emp.id, project_ids };
 }
 
 function deriveTitleFromDetails(details: string): string {
@@ -98,8 +77,6 @@ export async function getMyConcerns(): Promise<MyConcernItem[]> {
 		.eq("author_employee_id", employee.id)
 		.eq("category", "concern")
 		.order("created_at", { ascending: false });
-
-	console.log({ signalRows });
 
 	if (sigErr || !signalRows?.length) return [];
 

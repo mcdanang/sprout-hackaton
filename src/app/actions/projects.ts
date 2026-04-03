@@ -1,7 +1,8 @@
 "use server";
 
-import { auth, currentUser, clerkClient } from "@clerk/nextjs/server";
+import { clerkClient } from "@clerk/nextjs/server";
 import { createClient } from "@/lib/supabase/server";
+import { getEffectiveEmployeeRow } from "@/lib/effective-employee";
 
 import type { ActivityItem } from "@/lib/constants/activity";
 import { analyzeSignalWithMockAI, clamp, type SignalIssueCategory } from "@/lib/signal-ai";
@@ -23,13 +24,15 @@ function computeHealth(averageSentiment: number | null): ProjectMetrics {
 		pulseDescription = "High psychological safety. Team is thriving and showing strong ownership.";
 	} else if (normalizedSentiment >= 50) {
 		healthStatus = "Stable";
-		pulseDescription = "Balanced team dynamics. Communication is steady but room for more proactive engagement.";
+		pulseDescription =
+			"Balanced team dynamics. Communication is steady but room for more proactive engagement.";
 	} else if (normalizedSentiment >= 35) {
 		healthStatus = "Stable"; // Still stable but on the edge
 		pulseDescription = "Sentiment is softening. Monitor for potential blockers or team fatigue.";
 	} else {
 		healthStatus = "At Risk";
-		pulseDescription = "Low psychological safety detected. Immediate attention to team concerns recommended.";
+		pulseDescription =
+			"Low psychological safety detected. Immediate attention to team concerns recommended.";
 	}
 
 	return {
@@ -63,38 +66,8 @@ function embedOne<T>(row: unknown): T | null {
 async function getCurrentEmployeeId(
 	supabase: Awaited<ReturnType<typeof createClient>>,
 ): Promise<string | null> {
-	const { userId } = await auth();
-	if (!userId) return null;
-
-	const user = await currentUser();
-	const primaryEmailId = user?.primaryEmailAddressId;
-	const orderedEmails: string[] = [];
-
-	if (primaryEmailId) {
-		const primary = user?.emailAddresses.find(e => e.id === primaryEmailId)?.emailAddress;
-		if (primary) orderedEmails.push(primary);
-	}
-
-	for (const e of user?.emailAddresses ?? []) {
-		if (!orderedEmails.includes(e.emailAddress)) {
-			orderedEmails.push(e.emailAddress);
-		}
-	}
-
-	for (const rawEmail of orderedEmails) {
-		const normalizedEmail = rawEmail.trim().toLowerCase();
-		if (!normalizedEmail) continue;
-
-		const { data: employee } = await supabase
-			.from("employees")
-			.select("id")
-			.ilike("email", normalizedEmail)
-			.maybeSingle();
-
-		if (employee?.id) return employee.id;
-	}
-
-	return null;
+	const emp = await getEffectiveEmployeeRow(supabase);
+	return emp?.id ?? null;
 }
 
 export async function getDashboardProjects(): Promise<Project[]> {
