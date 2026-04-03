@@ -78,7 +78,12 @@
 			"anonymousHint": "Your identity will be protected.",
 			"cancel": "Cancel",
 			"submit": "Submit Concern",
-			"submitting": "Submitting..."
+			"submitting": "Submitting...",
+			"tabMyConcerns": "My Concerns",
+			"tabTeamConcerns": "Team Concerns",
+			"teamEmptyTitle": "No concerns yet",
+			"teamEmptyHint": "Concerns submitted by your project team will appear here.",
+			"projectTag": "Project"
 		},
 		"staff": {
 			"eyebrow": "Your workspace",

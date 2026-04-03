@@ -1,10 +1,16 @@
-import { getMyConcerns } from "@/app/actions/concerns";
+import { getMyConcerns, getTeamConcerns } from "@/app/actions/concerns";
 import { MyConcernsClient } from "@/components/dashboard/my-concerns-client";
 
 export default async function ConcernsPage() {
-	const concerns = await getMyConcerns();
+  const [myConcerns, teamConcerns] = await Promise.all([
+    getMyConcerns(),
+    getTeamConcerns(),
+  ]);
 
-	return (
-		<MyConcernsClient initialConcerns={concerns} />
-	);
+  return (
+    <MyConcernsClient
+      initialConcerns={myConcerns}
+      initialTeamConcerns={teamConcerns}
+    />
+  );
 }

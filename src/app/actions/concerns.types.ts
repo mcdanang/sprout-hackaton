@@ -28,3 +28,8 @@ export type MyConcernItem = {
 	projectId: string | null;
 	replies: MyConcernReply[];
 };
+
+export type TeamConcernItem = MyConcernItem & {
+	projectName: string | null;
+	authorName: string | null; // always resolved, even when is_anonymous = true
+};
