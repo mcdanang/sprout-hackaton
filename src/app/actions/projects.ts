@@ -270,18 +270,19 @@ export async function getDashboardProjects(): Promise<Project[]> {
 export async function getProjectDetail(projectId: string): Promise<{
 	project: Project | null;
 	activities: ActivityItem[];
+	isSquadLead: boolean;
 }> {
 	const supabase = await createClient();
 
 	// 1) Project record
 	const { data: projectRow } = await supabase
 		.from("projects")
-		.select("id, name, description")
+		.select("id, name, description, squad_lead_employee_id")
 		.eq("id", projectId)
 		.maybeSingle();
 
 	if (!projectRow) {
-		return { project: null, activities: [] };
+		return { project: null, activities: [], isSquadLead: false };
 	}
 
 	// 2) Team members from employees assigned to the project
@@ -351,7 +352,7 @@ export async function getProjectDetail(projectId: string): Promise<{
 	const { data: signals } = await supabase
 		.from("signals")
 		.select(
-			"id, project_id, author_employee_id, is_anonymous, category, title, details, created_at, is_public, sentiment_score, ai_issue_category",
+			"id, project_id, author_employee_id, is_anonymous, category, title, details, created_at, is_public, sentiment_score, ai_issue_category, concern_status",
 		)
 		.eq("project_id", projectId)
 		.order("created_at", { ascending: false });
@@ -375,7 +376,7 @@ export async function getProjectDetail(projectId: string): Promise<{
 		others: 0,
 	};
 	for (const s of safeSignals) {
-		if (s.category === "concern") concernsCount += 1;
+		if (s.category === "concern" && s.concern_status !== "closed") concernsCount += 1;
 		if (s.category === "achievement") achievementsCount += 1;
 		if (s.category === "appreciation") kudosCount += 1;
 		const analyzed = analyzeSignalWithMockAI(s);
@@ -452,6 +453,10 @@ export async function getProjectDetail(projectId: string): Promise<{
 	}
 
 	const currentEmployeeId = await getCurrentEmployeeId(supabase);
+	const isSquadLead =
+		!!currentEmployeeId &&
+		!!projectRow.squad_lead_employee_id &&
+		projectRow.squad_lead_employee_id === currentEmployeeId;
 
 	let likesBySignal = new Map<string, number>();
 	const likedSignalIds = new Set<string>();
@@ -543,8 +548,16 @@ export async function getProjectDetail(projectId: string): Promise<{
 			isLiked: likedSignalIds.has(s.id),
 			isPublic: s.is_public ?? true,
 			replies: repliesBySignal.get(s.id) ?? [],
+			concernStatus:
+				s.category === "concern"
+					? ((s as { concern_status?: string | null }).concern_status as
+							| "open"
+							| "in_progress"
+							| "closed"
+							| null ?? null)
+					: null,
 		};
 	});
 
-	return { project, activities };
+	return { project, activities, isSquadLead };
 }

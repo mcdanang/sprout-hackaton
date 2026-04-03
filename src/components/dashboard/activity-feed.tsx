@@ -30,9 +30,11 @@ function SignalSkeleton() {
 interface Props {
 	activities: ActivityItem[];
 	projectName: string;
+	isSquadLead: boolean;
+	onResolve?: (activityId: string) => void;
 }
 
-export function ActivityFeed({ activities, projectName }: Props) {
+export function ActivityFeed({ activities, projectName, isSquadLead, onResolve }: Props) {
 	const t = useTranslations("ProjectDetail");
 	const [activityItems, setActivityItems] = useState<ActivityItem[]>(activities);
 	const [visibleCount, setVisibleCount] = useState(5);
@@ -120,7 +122,9 @@ export function ActivityFeed({ activities, projectName }: Props) {
 							key={activity.id}
 							activity={activity}
 							index={index}
+							isSquadLead={isSquadLead}
 							onReplyCreated={handleReplyCreated}
+							onResolve={onResolve}
 						/>
 					))}
 

@@ -20,6 +20,7 @@ export interface ActivityItem {
 	isLiked: boolean;
 	isPublic: boolean;
 	replies?: ReplyItem[];
+	concernStatus?: "open" | "in_progress" | "closed" | null; // only populated for type === "concern"
 }
 
 export const DUMMY_ACTIVITIES: ActivityItem[] = [

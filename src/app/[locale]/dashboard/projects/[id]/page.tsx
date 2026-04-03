@@ -10,7 +10,7 @@ export default async function ProjectDetailPage({
 	params: Promise<{ locale: string; id: string }>;
 }) {
 	const { id, locale } = await params;
-	const { project, activities } = await getProjectDetail(id);
+	const { project, activities, isSquadLead } = await getProjectDetail(id);
 	if (!project) {
 		const t = await getTranslations("ProjectDetail");
 		return (
@@ -26,5 +26,11 @@ export default async function ProjectDetailPage({
 		);
 	}
 
-	return <ProjectDetailClient project={project} activities={activities} />;
+	return (
+		<ProjectDetailClient
+			project={project}
+			activities={activities}
+			isSquadLead={isSquadLead}
+		/>
+	);
 }

@@ -26,14 +26,16 @@ export interface TeamMember {
 interface Props {
 	project: Project;
 	activities: ActivityItem[];
+	isSquadLead: boolean;
 }
 
-export function ProjectDetailClient({ project, activities }: Props) {
+export function ProjectDetailClient({ project, activities, isSquadLead }: Props) {
 	const router = useRouter();
 	const t = useTranslations("ProjectDetail");
 	const [scrolled, setScrolled] = useState(false);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [isMounted, setIsMounted] = useState(false);
+	const [concernsCount, setConcernsCount] = useState(project.concernsCount);
 	const sentinelRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -51,6 +53,10 @@ export function ProjectDetailClient({ project, activities }: Props) {
 			observer.disconnect();
 		};
 	}, []);
+
+	const handleResolve = () => {
+		setConcernsCount(prev => Math.max(0, prev - 1));
+	};
 
 	return (
 		<div className="max-w-5xl mx-auto space-y-10 pb-20 animate-in fade-in duration-700">
@@ -203,7 +209,7 @@ export function ProjectDetailClient({ project, activities }: Props) {
 							{t("concernsLabel")}
 						</span>
 						<p className="text-3xl font-bold font-plus-jakarta text-brand-primary group-hover:text-red-600 transition-colors">
-							{project.concernsCount}
+							{concernsCount}
 						</p>
 					</div>
 					<div className="p-3 rounded-2xl bg-red-50 text-red-500 group-hover:bg-red-500 group-hover:text-white transition-all">
@@ -241,7 +247,12 @@ export function ProjectDetailClient({ project, activities }: Props) {
 			</div>
 
 			{/* Project Feed */}
-			<ActivityFeed activities={activities} projectName={project.name} />
+			<ActivityFeed
+				activities={activities}
+				projectName={project.name}
+				isSquadLead={isSquadLead}
+				onResolve={handleResolve}
+			/>
 
 			{/* Mobile FAB */}
 			<button

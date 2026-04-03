@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Heart, Clock, Lock, User, Loader2 } from "lucide-react";
+import { Heart, Clock, Lock, User, Loader2, CheckCheck, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type ActivityItem } from "@/lib/constants/activity";
 import { activityTypeStyles } from "@/lib/constants/project-ui";
@@ -10,21 +10,25 @@ import { getRelativeTime } from "@/lib/utils/time";
 import { FormattedContent } from "@/components/shared/formatted-content";
 import { ReplyItem } from "./reply-item";
 import { ReplyInput } from "./reply-input";
-import { createSignalReply, toggleSignalLike } from "@/app/actions/signal-interactions";
+import { createSignalReply, toggleSignalLike, resolveConcern } from "@/app/actions/signal-interactions";
 
 interface Props {
   activity: ActivityItem;
   index: number;
+  isSquadLead: boolean;
   onReplyCreated?: (params: {
     activityId: string;
     reply: NonNullable<ActivityItem["replies"]>[number];
   }) => void;
+  onResolve?: (activityId: string) => void;
 }
 
-export function ActivityCard({ activity, index, onReplyCreated }: Props) {
+export function ActivityCard({ activity, index, isSquadLead, onReplyCreated, onResolve }: Props) {
   const [isReplying, setIsReplying] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isLikeLoading, setIsLikeLoading] = useState(false);
+  const [concernStatus, setConcernStatus] = useState(activity.concernStatus ?? null);
+  const [isResolving, setIsResolving] = useState(false);
 
   const [likesCount, setLikesCount] = useState(activity.likesCount);
   const [isLiked, setIsLiked] = useState(activity.isLiked);
@@ -34,7 +38,8 @@ export function ActivityCard({ activity, index, onReplyCreated }: Props) {
     setLikesCount(activity.likesCount);
     setIsLiked(activity.isLiked);
     setReplies(activity.replies ?? []);
-  }, [activity.id, activity.likesCount, activity.isLiked, activity.replies]);
+    setConcernStatus(activity.concernStatus ?? null);
+  }, [activity.id, activity.likesCount, activity.isLiked, activity.replies, activity.concernStatus]);
 
   const Style = activityTypeStyles[activity.type as Exclude<ActivityItem["type"], "status">];
   const Icon = Style.icon;
@@ -61,20 +66,45 @@ export function ActivityCard({ activity, index, onReplyCreated }: Props) {
     }
   };
 
+  const handleResolve = async () => {
+    if (isResolving || concernStatus === "closed") return;
+    setIsResolving(true);
+    try {
+      await resolveConcern(activity.id);
+      setConcernStatus("closed");
+      onResolve?.(activity.id);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsResolving(false);
+    }
+  };
+
   return (
     <div
       id={`signal-${activity.id}`}
       className={cn(
-        "group relative bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-brand-primary/10 animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both scroll-mt-32",
-        !activity.isPublic && "border-l-4 border-l-slate-200"
+        "group relative rounded-[24px] p-6 border shadow-sm transition-all hover:shadow-md hover:border-brand-primary/10 animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both scroll-mt-32",
+        concernStatus === "closed"
+          ? "bg-emerald-50/30 border-slate-100 border-l-4 border-l-emerald-400"
+          : "bg-white border-slate-100",
+        !activity.isPublic && concernStatus !== "closed" && "border-l-4 border-l-slate-200"
       )}
       style={{ animationDelay: `${(index % 5) * 100}ms` }}
     >
       <div className="flex gap-5">
         {/* Signal type icon */}
         <div className="shrink-0">
-          <div className={cn("h-12 w-12 rounded-full flex items-center justify-center transition-transform group-hover:scale-110", Style.bgColor, Style.color)}>
-            <Icon className="h-6 w-6" />
+          <div className={cn(
+            "h-12 w-12 rounded-full flex items-center justify-center transition-transform group-hover:scale-110",
+            activity.type === "concern" && concernStatus === "closed"
+              ? "bg-emerald-50 text-emerald-500"
+              : cn(Style.bgColor, Style.color)
+          )}>
+            {activity.type === "concern" && concernStatus === "closed"
+              ? <CheckCircle2 className="h-6 w-6" />
+              : <Icon className="h-6 w-6" />
+            }
           </div>
         </div>
 
@@ -92,6 +122,12 @@ export function ActivityCard({ activity, index, onReplyCreated }: Props) {
               <span className="font-plus-jakarta text-sm font-bold text-brand-primary">{activity.userName}</span>
             </div>
             <div className="flex items-center gap-2 text-slate-600 shrink-0">
+              {concernStatus === "closed" && activity.type === "concern" && (
+                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider">
+                  <CheckCircle2 className="h-2.5 w-2.5" />
+                  Resolved
+                </span>
+              )}
               {!activity.isPublic && (
                 <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
                   <Lock className="h-2.5 w-2.5" />
@@ -169,6 +205,21 @@ export function ActivityCard({ activity, index, onReplyCreated }: Props) {
               </svg>
               <span className="font-plus-jakarta text-xs font-bold">Reply</span>
             </button>
+
+            {activity.type === "concern" && isSquadLead && replies.length > 0 && concernStatus !== "closed" && (
+              <button
+                onClick={handleResolve}
+                disabled={isResolving}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50/50 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-300 transition-all group/resolve disabled:opacity-50"
+              >
+                {isResolving ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <CheckCheck className="h-3.5 w-3.5 transition-transform group-hover/resolve:scale-110" />
+                )}
+                <span className="font-plus-jakarta text-xs font-bold">Resolve</span>
+              </button>
+            )}
           </div>
 
           {/* Threaded replies */}

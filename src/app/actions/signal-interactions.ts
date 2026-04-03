@@ -175,3 +175,43 @@ export async function createSignalReply(params: { signalId: string; content: str
 		timestamp: new Date(createdReply.created_at).toISOString(),
 	};
 }
+
+export async function resolveConcern(signalId: string): Promise<{ ok: boolean }> {
+	const supabase = await createClient();
+	const employee = await getCurrentEmployee(supabase);
+	if (!employee) throw new Error("Unauthorized");
+
+	const roleName = await getRoleName({ supabase, roleId: employee.role_id });
+	if (roleName !== "SQUAD LEAD")
+		throw new Error("Unauthorized: only squad leads can resolve concerns");
+
+	// Verify the signal is a concern in a project this squad lead owns
+	const { data: signalRow } = await supabase
+		.from("signals")
+		.select("id, category, project_id, concern_status")
+		.eq("id", signalId)
+		.maybeSingle();
+
+	if (!signalRow) throw new Error("Signal not found");
+	if (signalRow.category !== "concern") throw new Error("Only concerns can be resolved");
+	if (signalRow.concern_status === "closed") return { ok: true }; // already closed, idempotent
+
+	// Verify this squad lead owns the project
+	const { data: projectRow } = await supabase
+		.from("projects")
+		.select("id")
+		.eq("id", signalRow.project_id)
+		.eq("squad_lead_employee_id", employee.id)
+		.maybeSingle();
+
+	if (!projectRow) throw new Error("Unauthorized: not the squad lead of this project");
+
+	const { error } = await supabase
+		.from("signals")
+		.update({ concern_status: "closed" })
+		.eq("id", signalId);
+
+	if (error) throw new Error(error.message);
+
+	return { ok: true };
+}
