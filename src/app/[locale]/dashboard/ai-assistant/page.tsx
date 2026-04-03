@@ -37,22 +37,29 @@ export default async function AiAssistantPage() {
   ]);
 
   return (
-    <div className="max-w-5xl mx-auto flex flex-col gap-8">
-      <section className="flex flex-col gap-2">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Flash className="h-4 w-4" />
-          <span className="text-sm font-medium uppercase tracking-wider">AI Assistant</span>
+    <div className="max-w-6xl mx-auto flex flex-col gap-10 pb-10">
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center gap-2.5 text-brand font-bold">
+          <div className="p-1.5 rounded-lg bg-brand/10">
+            <Flash className="h-5 w-5" />
+          </div>
+          <span className="text-sm uppercase tracking-[0.2em]">Intelligence</span>
         </div>
-        <h1 className="text-4xl font-extrabold tracking-tight">AI Assistant</h1>
-        <p className="max-w-2xl text-lg text-muted-foreground">
-          Smart insights and predictions based on your team&apos;s signals.
+        <h1 className="text-5xl font-black tracking-tight text-brand-primary">AI Assistant</h1>
+        <p className="max-w-2xl text-xl text-muted-foreground leading-relaxed">
+          Predictive insights and real-time analysis powered by Signal AI.
         </p>
       </section>
 
       <AiInsightCards insights={insightsResult.insights} generatedAt={insightsResult.generatedAt} />
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Ask Sprout AI</h2>
+      <section className="grid grid-cols-1 gap-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-brand-primary tracking-tight">Ask Intelligence</h2>
+          <div className="px-3 py-1 rounded-full bg-brand/10 border border-brand/20 text-[10px] font-bold text-brand uppercase tracking-wider">
+            Experimental
+          </div>
+        </div>
         <AiChat context={chatContext} />
       </section>
     </div>

@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import createMiddleware from 'next-intl/middleware';
+import { NextResponse } from 'next/server';
 import { routing } from './i18n/routing';
 
 const intlMiddleware = createMiddleware(routing);
@@ -13,8 +14,9 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
-  // Step 1: Handle i18n
-  const response = intlMiddleware(request);
+  // Step 1: Handle i18n (skip for API routes)
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api/');
+  const response = isApiRoute ? null : intlMiddleware(request);
 
   // Step 2: Handle Auth
   const { userId } = await auth();
@@ -26,7 +28,7 @@ export default clerkMiddleware(async (auth, request) => {
     return Response.redirect(unauthorizedUrl);
   }
 
-  return response;
+  return response ?? NextResponse.next();
 });
 
 export const config = {
