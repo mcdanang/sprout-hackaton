@@ -8,6 +8,9 @@ export interface SignalMetricInput {
 	concern_status?: string | null;
 	title?: string | null;
 	details?: string | null;
+	author_employee_id?: string | null;
+	achievement_points?: number | null;
+	squadLabel?: string | null;
 }
 
 /**

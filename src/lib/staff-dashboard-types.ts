@@ -1,3 +1,5 @@
+import type { SentimentSlice } from "./management-dashboard-types";
+
 export type StaffCategoryBreakdown = {
 	concern: number;
 	achievement: number;
@@ -26,6 +28,12 @@ export type StaffDashboardSnapshot = {
 	categoryBreakdown30d: StaffCategoryBreakdown;
 	projectSentiments: StaffProjectSentiment[];
 	teamActivity: StaffTeamActivityItem[];
+	sentimentSlices: SentimentSlice[];
+	concernStatusCount: {
+		open: number;
+		inProgress: number;
+		closed: number;
+	};
 };
 
 export const EMPTY_STAFF_DASHBOARD: StaffDashboardSnapshot = {
@@ -33,4 +41,6 @@ export const EMPTY_STAFF_DASHBOARD: StaffDashboardSnapshot = {
 	categoryBreakdown30d: { concern: 0, achievement: 0, appreciation: 0 },
 	projectSentiments: [],
 	teamActivity: [],
+	sentimentSlices: [],
+	concernStatusCount: { open: 0, inProgress: 0, closed: 0 },
 };

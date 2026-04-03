@@ -36,8 +36,12 @@
 		"welcome": "Welcome back, {name}",
 		"subtitle": "Your personal sanctuary for team clarity, focus, and connection.",
 		"quote": {
-			"text": "Psychological safety is the bridge between individual talent and collective genius.",
 			"author": "SIGNAL SANCTUARY AI"
+		},
+		"roleSwitcher": {
+			"individual": "Individual View",
+			"squadLead": "Squad Lead View",
+			"management": "Management View"
 		},
 		"overview": "Overview",
 		"nav": {
@@ -140,6 +144,23 @@
 			"healthHealthy": "Healthy",
 			"healthWarning": "Watchlist",
 			"healthCritical": "Critical"
+		},
+		"squadLead": {
+			"eyebrow": "Project leadership",
+			"subtitle": "Monitor and manage the health and sentiment of the squads you lead.",
+			"rangeNote": "Metrics use the last 30 days.",
+			"kpiProjects": "Projects led",
+			"kpiSignals": "Total signals",
+			"kpiConcerns": "Open concerns",
+			"kpiSentiment": "Avg sentiment",
+			"sentimentTitle": "Squad sentiment by project",
+			"sentimentHint": "Average sentiment per project you lead.",
+			"issueTitle": "Issue breakdown",
+			"issueHint": "Distribution of concern categories for your squads.",
+			"statusTitle": "Concern status",
+			"statusHint": "Current state of concerns in your squads.",
+			"leaderboardTitle": "Top contributors",
+			"leaderboardHint": "Members with highest recognition points in your squads."
 		}
 	},
 	"Unauthorized": {
