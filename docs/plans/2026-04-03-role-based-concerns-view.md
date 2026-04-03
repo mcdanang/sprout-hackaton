@@ -4,7 +4,7 @@
 
 **Goal:** Add a "Team Concerns" tab to `/dashboard/concerns` that shows delivery leads all concerns from their projects, and shows top management all concerns across every project — with a project badge on each card.
 
-**Architecture:** Gate logic lives in a new `getTeamConcerns()` server action (returns `null` if the user has no team access, `TeamConcernItem[]` otherwise). The page calls both `getMyConcerns()` and `getTeamConcerns()` in parallel, then passes results to the client. The client adds tabs only when `teamConcerns !== null`.
+**Architecture:** Gate logic lives in a new `getTeamConcerns()` server action. Returns `null` only for `STAFF` role (no team tab). Returns `TeamConcernItem[]` (possibly empty) for `SQUAD LEAD` and `TOP MANAGEMENT`. The page calls both actions in parallel, passes results to the client. Client renders tabs only when `teamConcerns !== null`. `SQUAD LEAD` scope = projects where `squad_lead_employee_id = employees.id` (Supabase UUID, not Clerk `auth_id`). `TOP MANAGEMENT` scope = all projects.
 
 **Tech Stack:** Next.js 16 App Router, TypeScript, Supabase JS client, next-intl, Tailwind CSS 4, shadcn/ui.
 
@@ -20,6 +20,7 @@ Before touching any file, read these so you understand existing patterns:
 - `src/lib/effective-employee.ts` — `getEffectiveEmployeeRow()` returns `{ id, full_name, role_id }`
 - `messages/en.json` + `messages/id.json` — i18n keys live under `Dashboard.concerns`
 - `supabase/init.sql` — `projects.squad_lead_employee_id` column (how delivery lead is detected)
+- `supabase/seed.sql` — Role names in DB are exactly: `TOP MANAGEMENT`, `SQUAD LEAD`, `STAFF`. Reynaldo (`reynaldo.damara@sprout.co.id`) has role `SQUAD LEAD` and is `squad_lead_employee_id` of project `BOUCHON`. Azki (`azki.darmawan@sprout.co.id`) has role `TOP MANAGEMENT`.
 
 ---
 
@@ -65,7 +66,12 @@ git commit -m "feat(concerns): add TeamConcernItem type for role-based view"
 
 This function has three phases:
 
-**Phase A — Role gate (returns `null` if no access):**
+**Phase A — Role gate (returns `null` only for STAFF):**
+
+> **IMPORTANT — `emp.id` vs Clerk `auth_id`:**
+> `getEffectiveEmployeeRow()` returns the `employees` row where `id` is the **Supabase UUID** (`employees.id`).
+> This is NOT the Clerk `userId` (that lives in `employees.auth_id`).
+> `projects.squad_lead_employee_id` is a FK to `employees.id`, so **always use `emp.id`** in the filter.
 
 ```ts
 export async function getTeamConcerns(): Promise<TeamConcernItem[] | null> {
@@ -79,25 +85,33 @@ export async function getTeamConcerns(): Promise<TeamConcernItem[] | null> {
     .eq("id", emp.role_id)
     .maybeSingle();
 
-  // Determine scope: null = all projects (top management), string[] = specific projects (delivery lead)
+  const roleName = role?.name;
+
+  // STAFF (or unknown role) → no team tab at all
+  if (!roleName || roleName === "STAFF") return null;
+
+  // Determine scope: null = all projects (TOP MANAGEMENT), string[] = led projects (SQUAD LEAD)
   let projectFilter: string[] | null = null;
   let projectNameById = new Map<string, string>();
 
-  if (role?.name === "TOP MANAGEMENT") {
-    // projectFilter stays null → no project_id filter on the query
+  if (roleName === "TOP MANAGEMENT") {
+    // projectFilter stays null → no project_id filter on the signal query
     const { data: allProjects } = await supabase.from("projects").select("id, name");
     for (const p of allProjects ?? []) projectNameById.set(p.id, p.name);
   } else {
-    // Check if squad lead of any project
+    // SQUAD LEAD: find projects where they are the squad lead
+    // emp.id = employees.id (Supabase UUID) — NOT Clerk auth_id
     const { data: ledProjects } = await supabase
       .from("projects")
       .select("id, name")
       .eq("squad_lead_employee_id", emp.id);
 
-    if (!ledProjects?.length) return null; // not a lead — no team tab
+    // Even if no led projects → return [] (tab still shows with empty state)
+    projectFilter = (ledProjects ?? []).map(p => p.id);
+    for (const p of ledProjects ?? []) projectNameById.set(p.id, p.name);
 
-    projectFilter = ledProjects.map(p => p.id);
-    for (const p of ledProjects) projectNameById.set(p.id, p.name);
+    // No led projects → short-circuit with empty list (skip signal query)
+    if (projectFilter.length === 0) return [];
   }
 ```
 

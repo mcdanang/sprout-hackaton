@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/routing";
 import { ChatLines } from "iconoir-react";
 import { AlertCircle, ArrowRight, CheckCircle2, Clock, User } from "lucide-react";
 
-import { type MyConcernItem, type TeamConcernItem } from "@/app/actions/concerns.types";
+import { type MyConcernItem, type MyConcernReply, type TeamConcernItem } from "@/app/actions/concerns.types";
 import { cn } from "@/lib/utils";
 import { FormattedContent } from "@/components/shared/formatted-content";
 
@@ -259,16 +259,8 @@ function TeamConcernCard({ item }: { item: TeamConcernItem }) {
 
 export function MyConcernsClient({ initialConcerns, initialTeamConcerns }: Props) {
   const t = useTranslations("Dashboard.concerns");
-  const hasTeamTab = Array.isArray(initialTeamConcerns);
+  const hasTeamTab = initialTeamConcerns !== null;
   const [activeTab, setActiveTab] = useState<"my" | "team">("my");
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    const frameId = requestAnimationFrame(() => {
-      setMounted(true);
-    });
-    return () => cancelAnimationFrame(frameId);
-  }, []);
 
   return (
     <div className="max-w-5xl mx-auto space-y-12 pb-20">
@@ -286,7 +278,7 @@ export function MyConcernsClient({ initialConcerns, initialTeamConcerns }: Props
         </div>
       </div>
 
-      {mounted && hasTeamTab ? (
+      {hasTeamTab ? (
         <div className="flex gap-1 rounded-2xl bg-slate-100 p-1 w-fit">
           <button
             type="button"
@@ -315,7 +307,7 @@ export function MyConcernsClient({ initialConcerns, initialTeamConcerns }: Props
         </div>
       ) : null}
 
-      {(!mounted || activeTab === "my" || !hasTeamTab) ? (
+      {activeTab === "my" || !hasTeamTab ? (
         initialConcerns.length === 0 ? (
           <div className="mt-4 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white/50 px-6 py-20 text-center">
             <ChatLines className="mb-4 h-12 w-12 text-slate-300" />
@@ -339,7 +331,7 @@ export function MyConcernsClient({ initialConcerns, initialTeamConcerns }: Props
         )
       ) : null}
 
-      {mounted && activeTab === "team" && hasTeamTab ? (
+      {activeTab === "team" && hasTeamTab ? (
         !initialTeamConcerns?.length ? (
           <div className="mt-4 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white/50 px-6 py-20 text-center">
             <ChatLines className="mb-4 h-12 w-12 text-slate-300" />

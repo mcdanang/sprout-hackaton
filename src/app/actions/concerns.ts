@@ -359,30 +359,36 @@ export async function getTeamConcerns(): Promise<TeamConcernItem[] | null> {
     .eq("id", emp.role_id)
     .maybeSingle();
 
-  // Determine scope: null = all projects (top management), string[] = specific projects (delivery lead)
+  const roleName = role?.name;
+
+  // STAFF (or unknown role) → no team tab at all
+  if (!roleName || roleName === "STAFF") return null;
+
+  // Determine scope: null = all projects (TOP MANAGEMENT), string[] = led projects (SQUAD LEAD)
   let projectFilter: string[] | null = null;
   const projectNameById = new Map<string, string>();
 
-  const roleName = role?.name?.toUpperCase();
-
   if (roleName === "TOP MANAGEMENT") {
-    // projectFilter stays null → no project_id filter on the query
+    // projectFilter stays null → no project_id filter on the signal query
     const { data: allProjects } = await supabase.from("projects").select("id, name");
     for (const p of allProjects ?? []) projectNameById.set(p.id, p.name);
-  } else if (roleName === "SQUAD LEAD") {
-    // Check if squad lead of any project
-    const { data: ledProjects } = await supabase
+  } else {
+    // SQUAD LEAD: find projects where they are the squad lead
+    // emp.id = employees.id (Supabase UUID) — NOT Clerk auth_id
+    const { data: ledProjects, error: ledErr } = await supabase
       .from("projects")
       .select("id, name")
       .eq("squad_lead_employee_id", emp.id);
 
-    if (!ledProjects?.length) return null; // not a lead of any project
+    console.log("[getTeamConcerns] emp.id:", emp.id, "emp.full_name:", emp.full_name, "roleName:", roleName);
+    console.log("[getTeamConcerns] ledProjects:", ledProjects, "ledErr:", ledErr);
 
-    projectFilter = ledProjects.map(p => p.id);
-    for (const p of ledProjects) projectNameById.set(p.id, p.name);
-  } else {
-    // All other roles (STAFF, undefined, etc.) have no team access
-    return null;
+    // Even if no led projects → return [] (tab still shows with empty state)
+    projectFilter = (ledProjects ?? []).map(p => p.id);
+    for (const p of ledProjects ?? []) projectNameById.set(p.id, p.name);
+
+    // No led projects → short-circuit with empty list (skip signal query)
+    if (projectFilter.length === 0) return [];
   }
 
   let signalQuery = supabase

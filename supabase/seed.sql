@@ -47,7 +47,8 @@ insert into public.projects (name, description, status) values
   ('QINERJA', 'QINERJA project', 'Development'),
   ('LABAMU', 'LABAMU project', 'Development'),
   ('EDOTCO', 'EDOTCO project', 'Development'),
-  ('ALODOKTER', 'ALODOKTER project', 'Development')
+  ('ALODOKTER', 'Alodokter project', 'Development'),
+  ('Hackathon Signal', 'Testing project for Fian', 'Development')
 on conflict (name) do nothing;
 
 -- Roles
@@ -125,11 +126,11 @@ insert into public.employees (full_name, email, job_position, organization_id, r
   ('Fakhrul Muhammad Rijal',                      'fakhrul.rijal@sprout.co.id',           'Backend Engineer',                     (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
   ('Teddy Adji Pangestu',                         'teddy.adji@sprout.co.id',              'Frontend Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
   ('Gaizka Valencia',                             'gaizka.valencia@sprout.co.id',         'Jr. Software Engineer',                (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
-  ('Fian Febry Ispianto',                         'fian.febry@sprout.co.id',              'Frontend Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Fian Febry Ispianto',                         'fian.febry@sprout.co.id',              'Frontend Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'SQUAD LEAD')),
   ('Al Fatih Abdurrahman Syah',                   'al.fatih@sprout.co.id',                'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
   ('Mahar Prasetio',                              'mahar.prasetio@sprout.co.id',          'Sr. Fullstack Engineer',               (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
   ('Irwin Pratajaya',                             'irwin.pratajaya@sprout.co.id',         'Sr. Software Engineer',                (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
-  ('Muhamad Danang Priambodo',                    'muhamad.danang@sprout.co.id',          'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
+  ('Muhamad Danang Priambodo',                    'muhamad.danang@sprout.co.id',          'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'TOP MANAGEMENT')),
   ('Rizky Maulita Putri',                         'rizky.maulita@sprout.co.id',           'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
   ('Ryan Apratama',                               'ryan.apratama@sprout.co.id',           'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
   ('Marcellus Denta Widyapramana',                'marcellus.denta@sprout.co.id',         'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
@@ -206,7 +207,9 @@ inner join (
     ('yusuf.farhan@sprout.co.id', 'JAPFA'),
     ('herjuno.pangestu@sprout.co.id', 'BOUCHON'),
     ('ahmad.dhiya@sprout.co.id', 'QINERJA'),
-    ('harun.arasyid@sprout.co.id', 'BOUCHON')
+    ('harun.arasyid@sprout.co.id', 'BOUCHON'),
+    ('fian.febry@sprout.co.id', 'Hackathon Signal'),
+    ('eldaa.warapsari@sprout.co.id', 'Hackathon Signal')
 ) as v(email, project_name)
   on e.email = v.email
 inner join public.projects p on p.name = v.project_name;
@@ -262,6 +265,12 @@ set squad_lead_employee_id = (
   select id from public.employees where full_name = 'Faisal Ariyanto' limit 1
 )
 where name = 'ALODOKTER';
+
+update public.projects
+set squad_lead_employee_id = (
+  select id from public.employees where email = 'fian.febry@sprout.co.id' limit 1
+)
+where name = 'Hackathon Signal';
 
 -- ============================================================
 -- SEED SIGNALS (for simulation / dashboards)
@@ -675,6 +684,20 @@ insert into public.signals (
     , 'Burnout Alert'
     , 15
     , 'open'
+  ),
+
+  -- Hackathon Signal
+  (
+    (select id from public.employees where email = 'eldaa.warapsari@sprout.co.id' limit 1)
+  , false
+  , 'concern'
+  , 'Hackathon Signal - Unclear Sprint Goals'
+  , 'Sprint goals have been shifting mid-cycle without proper alignment. The team needs clearer scope definition at the start of each sprint to avoid rework and confusion.'
+  , (select id from public.projects where name = 'Hackathon Signal' limit 1)
+  , true
+  , 'Scope Creep'
+  , 30
+  , 'open'
   )
 ;
 
