@@ -33,7 +33,9 @@ export function computeAverageSentiment(signals: SignalMetricInput[]): number | 
 		sentimentCount += 1;
 	}
 
-	return sentimentCount > 0 ? sentimentTotal / sentimentCount : null;
+	if (sentimentCount === 0) return null;
+	const avg = sentimentTotal / sentimentCount;
+	return Math.round(avg * 10) / 10;
 }
 
 export interface ProjectHealthMetrics {

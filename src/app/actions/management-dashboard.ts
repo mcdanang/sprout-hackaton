@@ -213,7 +213,7 @@ export async function getManagementDashboardSnapshot(): Promise<ManagementDashbo
 	if (projectIds.length) {
 		const { data } = await supabase
 			.from("signals")
-			.select("project_id, category, sentiment_score, concern_status, created_at")
+			.select("project_id, category, sentiment_score, concern_status, ai_issue_category, created_at")
 			.in("project_id", projectIds)
 			.gte("created_at", currentStart);
 		sentimentRows = (data ?? []) as (SignalMetricInput & { created_at: string })[];

@@ -34,6 +34,7 @@ export type StaffDashboardSnapshot = {
 		inProgress: number;
 		closed: number;
 	};
+	totalContributionPoints: number;
 };
 
 export const EMPTY_STAFF_DASHBOARD: StaffDashboardSnapshot = {
@@ -43,4 +44,5 @@ export const EMPTY_STAFF_DASHBOARD: StaffDashboardSnapshot = {
 	teamActivity: [],
 	sentimentSlices: [],
 	concernStatusCount: { open: 0, inProgress: 0, closed: 0 },
+	totalContributionPoints: 0,
 };

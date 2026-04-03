@@ -119,7 +119,12 @@
 			"activityPostedConcern": "posted a concern",
 			"activityPostedAchievement": "shared an achievement",
 			"activityPostedAppreciation": "shared appreciation",
-			"activityPostedSignal": "posted a signal"
+			"activityPostedSignal": "posted a signal",
+			"pointsTitle": "Your Contribution Points",
+			"pointsMotivation": "Keep up the great work! 🚀",
+			"pointsTooltip": "Points are earned from Squad Lead ratings on your achievements.",
+			"inspirationTitle": "Daily Inspiration",
+			"shareTeam": "Share with Team"
 		},
 		"management": {
 			"eyebrow": "Executive overview",

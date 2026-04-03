@@ -20,8 +20,13 @@ function firstNameFromFullName(fullName: string): string {
 	return trimmed.split(/\s+/)[0] ?? "there";
 }
 
-export default async function DashboardPage(props: { searchParams: Promise<{ view?: string }> }) {
+export default async function DashboardPage(props: { 
+	params: Promise<{ locale: string }>;
+	searchParams: Promise<{ view?: string }> 
+}) {
+	const params = await props.params;
 	const searchParams = await props.searchParams;
+	const locale = params.locale;
 	const user = await currentUser();
 	const persona = await getAccountPersonaFromCookie();
 	const employee = await getCurrentEmployee();
@@ -87,6 +92,7 @@ export default async function DashboardPage(props: { searchParams: Promise<{ vie
 				snapshot={snapshot ?? EMPTY_STAFF_DASHBOARD}
 				concerns={concerns}
 				insights={insights}
+				locale={locale}
 			/>
 		);
 	}

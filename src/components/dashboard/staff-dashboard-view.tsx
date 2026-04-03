@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { WarningTriangle } from "iconoir-react";
-import { AlertCircle, Trophy, Heart, Activity } from "lucide-react";
+import { AlertCircle, Trophy, Heart, Activity, Info } from "lucide-react";
 
 import type { MyConcernItem } from "@/app/actions/concerns.types";
 import type { AiInsightsResult } from "@/app/actions/ai-insights";
@@ -14,6 +14,7 @@ import {
 	SentimentPie, 
 	SentimentBar 
 } from "@/components/dashboard/dashboard-widgets";
+import { StaffInspirationCard } from "./staff-inspiration-card";
 
 function formatRelative(iso: string): string {
 	const d = new Date(iso);
@@ -69,11 +70,13 @@ export async function StaffDashboardView({
 	snapshot,
 	concerns,
 	insights,
+	locale,
 }: {
 	firstName: string;
 	snapshot: StaffDashboardSnapshot;
 	concerns: MyConcernItem[];
 	insights: AiInsightsResult;
+	locale?: string;
 }) {
 	const t = await getTranslations("Dashboard.staff");
 	const tw = await getTranslations("Dashboard");
@@ -92,6 +95,54 @@ export async function StaffDashboardView({
 				</h1>
 				<p className="font-plus-jakarta text-lg text-[#3F484A]">{t("subtitle")}</p>
 				<p className="text-xs text-slate-400">{t("rangeNote")}</p>
+			</div>
+
+			<div className="grid gap-6 md:grid-cols-2">
+				{/* Contribution Points Card */}
+				<div className="group relative overflow-hidden rounded-3xl bg-[#E25C3D] p-8 shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+					<div className="absolute top-0 right-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-white/10 blur-3xl transition-transform duration-500 group-hover:scale-110" />
+					<div className="absolute bottom-0 left-0 -ml-16 -mb-16 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+					
+					<div className="relative flex justify-between">
+						<div className="space-y-1">
+							<h3 className="font-plus-jakarta text-sm font-extrabold uppercase tracking-[0.15em] text-white/80">
+								{t("pointsTitle")}
+							</h3>
+						</div>
+						<div className="group/info relative">
+							<Info className="h-5 w-5 text-white/50 hover:text-white transition-colors cursor-help" />
+							<div className="invisible group-hover/info:visible absolute right-0 top-6 w-48 rounded-xl bg-black/80 p-3 text-[11px] font-medium leading-relaxed text-white backdrop-blur-sm z-10 shadow-2xl">
+								{t("pointsTooltip")}
+							</div>
+						</div>
+					</div>
+
+					<div className="relative mt-6 flex items-baseline gap-3">
+						<span className="font-plus-jakarta text-7xl font-black tracking-tighter text-white">
+							{snapshot.totalContributionPoints}
+						</span>
+						<span className="font-plus-jakarta text-sm font-bold text-white/70 uppercase tracking-widest">{tw("management.ptsLabel")}</span>
+					</div>
+
+					<div className="relative mt-8 flex flex-wrap items-center gap-3">
+						<div className="rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold text-white backdrop-blur-md">
+							Rank #12
+						</div>
+						<div className="rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold text-white backdrop-blur-md">
+							8 Badges
+						</div>
+						<p className="ml-auto text-xs font-medium text-white/90 italic">
+							{t("pointsMotivation")}
+						</p>
+					</div>
+				</div>
+
+				{/* Daily Inspiration Card */}
+				<StaffInspirationCard 
+					title={t("inspirationTitle")} 
+					shareLabel={t("shareTeam")} 
+					locale={locale} 
+				/>
 			</div>
 
 			<div className="grid gap-4 lg:grid-cols-12">
