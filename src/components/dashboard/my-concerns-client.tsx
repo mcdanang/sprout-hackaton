@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { Link } from "@/i18n/routing";
 import { ChatLines } from "iconoir-react";
 import { AlertCircle, ArrowRight, CheckCircle2, Clock, User } from "lucide-react";
 
@@ -59,7 +60,10 @@ function ConcernCard({ item }: { item: MyConcernItem }) {
 	const [open, setOpen] = useState(false);
 
 	return (
-		<article className="group relative bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-1 overflow-hidden">
+		<article className={cn(
+			"group relative bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-1 overflow-hidden",
+			item.projectId && "cursor-pointer"
+		)}>
 			{/* Background Glow Effect on Hover */}
 			<div className="absolute -inset-1 bg-linear-to-r from-brand-primary/0 via-brand-primary/5 to-brand-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-2xl pointer-events-none" />
 
@@ -177,7 +181,13 @@ export function MyConcernsClient({ initialConcerns }: Props) {
 				<ul className="space-y-4">
 					{initialConcerns.map(item => (
 						<li key={item.id}>
-							<ConcernCard item={item} />
+							{item.projectId ? (
+								<Link href={`/dashboard/projects/${item.projectId}#signal-${item.id}`}>
+									<ConcernCard item={item} />
+								</Link>
+							) : (
+								<ConcernCard item={item} />
+							)}
 						</li>
 					))}
 				</ul>

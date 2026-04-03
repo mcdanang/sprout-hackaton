@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { WarningTriangle } from "iconoir-react";
+import { AlertCircle, Trophy, Heart } from "lucide-react";
 
 import type { MyConcernItem } from "@/app/actions/concerns.types";
 import type { AiInsightsResult } from "@/app/actions/ai-insights";
@@ -46,6 +47,35 @@ function activityVerb(category: string, t: (k: string) => string): string {
 	if (category === "achievement") return t("activityPostedAchievement");
 	if (category === "appreciation") return t("activityPostedAppreciation");
 	return t("activityPostedSignal");
+}
+
+function ActivityIcon({ category }: { category: string }) {
+	if (category === "concern") {
+		return (
+			<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500">
+				<AlertCircle className="h-5 w-5" />
+			</div>
+		);
+	}
+	if (category === "achievement") {
+		return (
+			<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-500">
+				<Trophy className="h-5 w-5" />
+			</div>
+		);
+	}
+	if (category === "appreciation") {
+		return (
+			<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pink-50 text-pink-500">
+				<Heart className="h-5 w-5 fill-pink-500/10" />
+			</div>
+		);
+	}
+	return (
+		<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
+			<AlertCircle className="h-5 w-5" />
+		</div>
+	);
 }
 
 export async function StaffDashboardView({
@@ -190,33 +220,40 @@ export async function StaffDashboardView({
 					<p className="mt-4 text-sm text-slate-500">{t("teamEmpty")}</p>
 				) : (
 					<ul className="mt-4 space-y-4">
-						{snapshot.teamActivity.map(item => (
-							<li key={item.id} className="flex gap-3 border-b border-slate-100 pb-4 last:border-0 last:pb-0">
-								<div className="mt-0.5 h-9 w-9 shrink-0 rounded-full bg-[#FFFBEB] text-center text-lg leading-9">
-									{item.category === "concern" ? "!" : item.category === "achievement" ? "★" : "♥"}
-								</div>
-								<div className="min-w-0 flex-1">
-									<p className="text-sm text-slate-800">
-										<span className="font-semibold text-brand-primary">{item.authorName}</span>{" "}
-										{activityVerb(item.category, t)}
-									</p>
-									<FormattedContent
-										content={item.title}
-										className="mt-0.5 line-clamp-2 font-medium text-slate-900"
-									/>
-									{item.preview ? (
+						{snapshot.teamActivity.map(item => {
+							const isRedundant =
+								item.preview &&
+								(item.title.toLowerCase().includes(item.preview.toLowerCase()) ||
+									item.preview.toLowerCase().includes(item.title.toLowerCase()));
+
+							return (
+								<li
+									key={item.id}
+									className="flex gap-3 border-b border-slate-100 pb-4 last:border-0 last:pb-0"
+								>
+									<ActivityIcon category={item.category} />
+									<div className="min-w-0 flex-1 space-y-1">
+										<p className="font-plus-jakarta text-[11px] font-extrabold uppercase tracking-[0.15em] text-slate-400">
+											{item.authorName} {activityVerb(item.category, t)}
+										</p>
 										<FormattedContent
-											content={item.preview}
-											className="mt-1 line-clamp-2 text-xs text-slate-500"
+											content={item.title}
+											className="line-clamp-2 font-plus-jakarta text-base font-bold tracking-tight text-brand-primary"
 										/>
-									) : null}
-									<div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-400">
-										{item.projectName ? <span>{item.projectName}</span> : null}
-										<span>{formatRelative(item.createdAt)}</span>
+										{item.preview && !isRedundant ? (
+											<FormattedContent
+												content={item.preview}
+												className="line-clamp-2 font-plus-jakarta text-sm font-medium leading-relaxed text-slate-500"
+											/>
+										) : null}
+										<div className="flex flex-wrap gap-x-3 gap-y-1 font-plus-jakarta text-[11px] font-bold text-slate-400">
+											{item.projectName ? <span>{item.projectName}</span> : null}
+											<span>{formatRelative(item.createdAt)}</span>
+										</div>
 									</div>
-								</div>
-							</li>
-						))}
+								</li>
+							);
+						})}
 					</ul>
 				)}
 			</div>

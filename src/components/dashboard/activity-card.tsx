@@ -63,8 +63,9 @@ export function ActivityCard({ activity, index, onReplyCreated }: Props) {
 
   return (
     <div
+      id={`signal-${activity.id}`}
       className={cn(
-        "group relative bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-brand-primary/10 animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both",
+        "group relative bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-brand-primary/10 animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both scroll-mt-32",
         !activity.isPublic && "border-l-4 border-l-slate-200"
       )}
       style={{ animationDelay: `${(index % 5) * 100}ms` }}

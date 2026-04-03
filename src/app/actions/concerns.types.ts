@@ -25,5 +25,6 @@ export type MyConcernItem = {
 	isAnonymous: boolean;
 	targetLabel: string;
 	status: "open" | "in_progress" | "closed";
+	projectId: string | null;
 	replies: MyConcernReply[];
 };

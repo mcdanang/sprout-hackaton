@@ -54,6 +54,27 @@ export function ActivityFeed({ activities, projectName }: Props) {
 		}, 800);
 	};
 
+	// Handle direct navigation to a specific signal via hash
+	useEffect(() => {
+		if (typeof window !== "undefined" && window.location.hash) {
+			const hashId = window.location.hash.replace("#signal-", "");
+			const targetIndex = activityItems.findIndex(a => a.id === hashId);
+			if (targetIndex !== -1) {
+				if (targetIndex >= visibleCount) {
+					setVisibleCount(targetIndex + 1);
+				}
+				
+				// Wait for DOM to update after potentially expanding the list
+				setTimeout(() => {
+					const element = document.getElementById(`signal-${hashId}`);
+					if (element) {
+						element.scrollIntoView({ behavior: "smooth", block: "start" });
+					}
+				}, 100);
+			}
+		}
+	}, [activityItems, visibleCount]);
+
 	useEffect(() => {
 		const observer = new IntersectionObserver(
 			entries => {

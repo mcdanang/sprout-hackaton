@@ -73,7 +73,7 @@ export async function getMyConcerns(): Promise<MyConcernItem[]> {
 
 	const { data: signalRows, error: sigErr } = await supabase
 		.from("signals")
-		.select("id, details, ai_issue_category, created_at, is_anonymous, concern_status")
+		.select("id, details, ai_issue_category, created_at, is_anonymous, concern_status, project_id")
 		.eq("author_employee_id", employee.id)
 		.eq("category", "concern")
 		.order("created_at", { ascending: false });
@@ -207,6 +207,7 @@ export async function getMyConcerns(): Promise<MyConcernItem[]> {
 			isAnonymous: Boolean(s.is_anonymous),
 			targetLabel: buildTargetLabel(s.id),
 			status,
+			projectId: (s as { project_id?: string | null }).project_id ?? null,
 			replies,
 		});
 	}
