@@ -111,6 +111,30 @@
 			"activityPostedAchievement": "shared an achievement",
 			"activityPostedAppreciation": "shared appreciation",
 			"activityPostedSignal": "posted a signal"
+		},
+		"management": {
+			"eyebrow": "Executive overview",
+			"subtitle": "View global trends and signals across squads and projects.",
+			"rangeNote": "KPI trends compare the last 30 days to the previous 30 days.",
+			"kpiConcerns": "Total concerns",
+			"kpiAchievements": "Total achievements",
+			"kpiSquads": "Active squads",
+			"kpiSquadsHint": "Projects that have at least one assigned team member",
+			"kpiResolved": "Resolved concerns",
+			"trendUp": "Increase vs prior period",
+			"trendDown": "Decrease vs prior period",
+			"sentimentTitle": "Concern themes (distribution)",
+			"sentimentHint": "Share of concerns by issue category in the last 30 days (when categorized).",
+			"sentimentEmpty": "No categorized concerns in this period.",
+			"leaderboardTitle": "Recognition leaderboard",
+			"leaderboardHint": "Points = achievements + appreciation posts in the last 30 days.",
+			"leaderboardEmpty": "No recognition activity in this period.",
+			"ptsLabel": "pts",
+			"healthTitle": "Project health summary",
+			"healthHint": "Average signal sentiment per project (last 30 days). Healthy ≥ 75, watchlist 50–74, critical below 50. Projects with no signals in the window are counted as watchlist.",
+			"healthHealthy": "Healthy",
+			"healthWarning": "Watchlist",
+			"healthCritical": "Critical"
 		}
 	},
 	"Unauthorized": {

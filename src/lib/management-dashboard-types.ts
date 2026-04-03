@@ -1,0 +1,41 @@
+export type ManagementKpiTrend = {
+	current: number;
+	previous: number;
+	pctChange: number | null;
+};
+
+export type ManagementKpis = {
+	concerns: ManagementKpiTrend;
+	achievements: ManagementKpiTrend;
+	activeProjects: number;
+	resolvedConcerns: ManagementKpiTrend;
+};
+
+export type SentimentSlice = {
+	key: string;
+	label: string;
+	count: number;
+	pct: number;
+	color: string;
+};
+
+export type LeaderboardRow = {
+	rank: number;
+	employeeId: string;
+	fullName: string;
+	squadLabel: string;
+	points: number;
+};
+
+export type ProjectHealthBucket = {
+	healthy: number;
+	warning: number;
+	critical: number;
+};
+
+export type ManagementDashboardSnapshot = {
+	kpis: ManagementKpis;
+	sentimentSlices: SentimentSlice[];
+	leaderboard: LeaderboardRow[];
+	projectHealth: ProjectHealthBucket;
+};

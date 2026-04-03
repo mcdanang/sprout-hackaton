@@ -5,10 +5,12 @@ import { Quote } from "iconoir-react";
 
 import { getAiInsights } from "@/app/actions/ai-insights";
 import { getMyConcerns } from "@/app/actions/concerns";
+import { getManagementDashboardSnapshot } from "@/app/actions/management-dashboard";
 import { getStaffDashboardSnapshot } from "@/app/actions/staff-dashboard";
-import { EMPTY_STAFF_DASHBOARD } from "@/lib/staff-dashboard-types";
+import { ManagementDashboardView } from "@/components/dashboard/management-dashboard-view";
 import { AiInsightCards } from "@/components/dashboard/ai-insight-cards";
 import { StaffDashboardView } from "@/components/dashboard/staff-dashboard-view";
+import { EMPTY_STAFF_DASHBOARD } from "@/lib/staff-dashboard-types";
 import { cn } from "@/lib/utils";
 import { getAccountPersonaFromCookie } from "@/lib/effective-employee";
 import { getCurrentEmployee } from "@/lib/get-current-employee";
@@ -30,9 +32,24 @@ export default async function DashboardPage() {
 		firstName = firstNameFromFullName(employee.fullName);
 	}
 
+	const isTopManagement = employee?.roleName === "TOP MANAGEMENT";
 	const isStaff = employee?.roleName === "STAFF";
+	const isDeliveryLead = employee?.roleName === "SQUAD LEAD";
 
-	if (isStaff) {
+	if (isTopManagement) {
+		const [snapshot, insights] = await Promise.all([
+			getManagementDashboardSnapshot(),
+			getAiInsights(),
+		]);
+
+		if (snapshot) {
+			return (
+				<ManagementDashboardView firstName={firstName} snapshot={snapshot} insights={insights} />
+			);
+		}
+	}
+
+	if (isStaff || isDeliveryLead) {
 		const [snapshot, concerns, insights] = await Promise.all([
 			getStaffDashboardSnapshot(),
 			getMyConcerns(),

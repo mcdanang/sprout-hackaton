@@ -111,6 +111,30 @@
 			"activityPostedAchievement": "membagikan pencapaian",
 			"activityPostedAppreciation": "membagikan apresiasi",
 			"activityPostedSignal": "mengirim sinyal"
+		},
+		"management": {
+			"eyebrow": "Ringkasan eksekutif",
+			"subtitle": "Tren global dan sinyal di seluruh squad dan proyek.",
+			"rangeNote": "Tren KPI membandingkan 30 hari terakhir dengan 30 hari sebelumnya.",
+			"kpiConcerns": "Total keluhan",
+			"kpiAchievements": "Total pencapaian",
+			"kpiSquads": "Squad aktif",
+			"kpiSquadsHint": "Proyek yang memiliki minimal satu anggota tim",
+			"kpiResolved": "Keluhan terselesaikan",
+			"trendUp": "Naik vs periode sebelumnya",
+			"trendDown": "Turun vs periode sebelumnya",
+			"sentimentTitle": "Tema keluhan (distribusi)",
+			"sentimentHint": "Porsi keluhan per kategori isu dalam 30 hari terakhir (jika terklasifikasi).",
+			"sentimentEmpty": "Belum ada keluhan terklasifikasi dalam periode ini.",
+			"leaderboardTitle": "Papan peringkat apresiasi",
+			"leaderboardHint": "Poin = posting pencapaian + apresiasi dalam 30 hari terakhir.",
+			"leaderboardEmpty": "Belum ada aktivitas apresiasi dalam periode ini.",
+			"ptsLabel": "poin",
+			"healthTitle": "Ringkasan kesehatan proyek",
+			"healthHint": "Rata-rata sentimen sinyal per proyek (30 hari). Sehat ≥ 75, pantau 50–74, kritis di bawah 50. Proyek tanpa sinyal dihitung sebagai pantau.",
+			"healthHealthy": "Sehat",
+			"healthWarning": "Pantau",
+			"healthCritical": "Kritis"
 		}
 	},
 	"Unauthorized": {
