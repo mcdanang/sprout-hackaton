@@ -10,6 +10,7 @@ import {
 	Trend, 
 	rankBadgeClass,
 } from "@/components/dashboard/dashboard-widgets";
+import { PulseChart, ActivityChart } from "@/components/dashboard/dashboard-charts";
 
 export async function ManagementDashboardView({
 	firstName,
@@ -140,6 +141,15 @@ export async function ManagementDashboardView({
 							</span>
 						</li>
 					</ul>
+				</div>
+			</div>
+
+			<div className="grid gap-6 lg:grid-cols-2">
+				<div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+					<PulseChart data={snapshot.pulseTrend} title={t("pulseTrendTitle")} />
+				</div>
+				<div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+					<ActivityChart data={snapshot.engagementTrend} title={t("engagementTrendTitle")} />
 				</div>
 			</div>
 

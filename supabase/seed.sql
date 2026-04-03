@@ -126,7 +126,7 @@ insert into public.employees (full_name, email, job_position, organization_id, r
   ('Fakhrul Muhammad Rijal',                      'fakhrul.rijal@sprout.co.id',           'Backend Engineer',                     (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
   ('Teddy Adji Pangestu',                         'teddy.adji@sprout.co.id',              'Frontend Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
   ('Gaizka Valencia',                             'gaizka.valencia@sprout.co.id',         'Jr. Software Engineer',                (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
-  ('Fian Febry Ispianto',                         'fian.febry@sprout.co.id',              'Frontend Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'SQUAD LEAD')),
+  ('Fian Febry Ispianto',                         'fian.febry@sprout.co.id',              'Frontend Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'TOP MANAGEMENT')),
   ('Al Fatih Abdurrahman Syah',                   'al.fatih@sprout.co.id',                'Software Engineer',                    (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
   ('Mahar Prasetio',                              'mahar.prasetio@sprout.co.id',          'Sr. Fullstack Engineer',               (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
   ('Irwin Pratajaya',                             'irwin.pratajaya@sprout.co.id',         'Sr. Software Engineer',                (select id from public.organizations where name = 'Tech'), (select id from public.roles where name = 'STAFF')),
@@ -859,3 +859,112 @@ select s.id, 'all', null, null from public.signals s where s.title = 'Hackathon 
 
 insert into public.signal_targets (signal_id, target_type, target_role_id, target_employee_id)
 select s.id, 'all', null, null from public.signals s where s.title = 'Hackathon Signal - Feature Delivery on Time';
+
+-- ============================================================
+-- ALIVE DASHBOARD SEEDING (30d History & Gamification)
+-- Targets: fian.febry@sprout.co.id and trending sections
+-- ============================================================
+
+DO $$
+DECLARE
+  fian_id uuid;
+  bouchon_id uuid;
+  hackathon_id uuid;
+  japfa_id uuid;
+  i INTEGER;
+  score INTEGER;
+  cat TEXT;
+  status TEXT;
+  issue_cat TEXT;
+BEGIN
+  -- 1. Identify Target IDs
+  SELECT id INTO fian_id FROM public.employees WHERE email = 'fian.febry@sprout.co.id' LIMIT 1;
+  SELECT id INTO bouchon_id FROM public.projects WHERE name = 'BOUCHON' LIMIT 1;
+  SELECT id INTO hackathon_id FROM public.projects WHERE name = 'Hackathon Signal' LIMIT 1;
+  SELECT id INTO japfa_id FROM public.projects WHERE name = 'JAPFA' LIMIT 1;
+
+  IF fian_id IS NULL THEN
+    RAISE NOTICE 'Fian Febry not found.';
+    RETURN;
+  END IF;
+
+  -- 2. Contribution Points (Achievements for Fian)
+  FOR i IN 1..135 LOOP
+    INSERT INTO public.signals (
+      author_employee_id, is_anonymous, category, title, details, project_id,
+      is_public, sentiment_score, concern_status, created_at
+    ) VALUES (
+      fian_id, false, 'achievement',
+      'High-Impact Delivery #' || i,
+      'Personal contribution towards ' || (CASE WHEN i%2=0 THEN 'frontend optimization' ELSE 'state architecture' END) || '. Consistent results.',
+      CASE WHEN i%2=0 THEN bouchon_id ELSE hackathon_id END, true, 80 + (random()*20), null,
+      now() - (i || ' days')::interval
+    );
+  END LOOP;
+
+  -- 3. Trend Data (60 signals for activity volume and sentiment pulses)
+  FOR i IN 1..60 LOOP
+    -- Randomly pick category
+    IF i % 4 = 0 THEN cat := 'concern'; ELSEIF i % 4 = 1 THEN cat := 'achievement'; ELSE cat := 'appreciation'; END IF;
+    
+    -- Issue Categories for diversity
+    IF cat = 'concern' THEN
+       IF i % 6 = 0 THEN issue_cat := 'Burnout Alert'; score := 10 + (random()*20); status := 'open';
+       ELSEIF i % 6 = 1 THEN issue_cat := 'Scope Creep'; score := 30 + (random()*20); status := 'in_progress';
+       ELSEIF i % 6 = 2 THEN issue_cat := 'Process Bottleneck'; score := 40 + (random()*20); status := 'open';
+       ELSEIF i % 6 = 3 THEN issue_cat := 'Technical Debt'; score := 50 + (random()*20); status := 'closed';
+       ELSEIF i % 6 = 4 THEN issue_cat := 'Professional Growth'; score := 80 + (random()*10); status := 'closed';
+       ELSE issue_cat := 'Communication Gap'; score := 60 + (random()*20); status := 'open';
+       END IF;
+    ELSE
+       issue_cat := NULL;
+       score := 70 + (random()*30);
+       status := NULL;
+    END IF;
+
+    INSERT INTO public.signals (
+      author_employee_id, is_anonymous, category, title, details, project_id,
+      is_public, sentiment_score, concern_status, ai_issue_category, created_at
+    ) VALUES (
+      (SELECT id FROM public.employees WHERE email != 'fian.febry@sprout.co.id' OFFSET floor(random()*50) LIMIT 1),
+      (random() > 0.8), cat,
+      'Squad Pulse Data #' || i,
+      'Simulated signal for analytics verification.',
+      CASE WHEN i%3=0 THEN bouchon_id WHEN i%3=1 THEN hackathon_id ELSE japfa_id END, true, score, status,
+      issue_cat,
+      now() - (random() * 30 || ' days')::interval
+    );
+  END LOOP;
+
+  -- 4. Critical Project (Burnout Alert trigger)
+  FOR i IN 1..15 LOOP
+    INSERT INTO public.signals (
+      author_employee_id, is_anonymous, category, title, details, project_id,
+      is_public, sentiment_score, concern_status, ai_issue_category, created_at
+    ) VALUES (
+      (SELECT id FROM public.employees OFFSET floor(random()*50) LIMIT 1),
+      true, 'concern',
+      'Critical Feedback JAPFA #' || i,
+      'Struggling with unclear requirements and over-working. High burnout risk.',
+      japfa_id, true, 5 + (random()*20), 'open', 'Burnout Alert',
+      now() - (random() * 10 || ' days')::interval
+    );
+  END LOOP;
+
+  -- 5. Team Activity Feed (Appreciations to Fian)
+  FOR i IN 1..10 LOOP
+    INSERT INTO public.signals (
+      author_employee_id, is_anonymous, category, title, details, project_id,
+      is_public, sentiment_score, concern_status, created_at
+    ) VALUES (
+      (SELECT id FROM public.employees WHERE email != 'fian.febry@sprout.co.id' OFFSET floor(random()*50) LIMIT 1),
+      false, 'appreciation',
+      'Kudos for Fian #' || i,
+      'Thanks for the great work on ' || (CASE WHEN i%2=0 THEN 'the dashboard' ELSE 'Recharts integration' END) || '!',
+      hackathon_id, true, 95 + (random()*5), null,
+      now() - (i || ' hours')::interval
+    );
+  END LOOP;
+
+  RAISE NOTICE 'Alive dashboard data appended successfully.';
+END $$;

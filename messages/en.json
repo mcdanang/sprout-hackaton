@@ -119,7 +119,12 @@
 			"activityPostedConcern": "posted a concern",
 			"activityPostedAchievement": "shared an achievement",
 			"activityPostedAppreciation": "shared appreciation",
-			"activityPostedSignal": "posted a signal"
+			"activityPostedSignal": "posted a signal",
+			"pointsTitle": "Your Contribution Points",
+			"pointsMotivation": "Keep up the great work! 🚀",
+			"pointsTooltip": "Points are earned from Squad Lead ratings on your achievements.",
+			"inspirationTitle": "Daily Inspiration",
+			"shareTeam": "Share with Team"
 		},
 		"management": {
 			"eyebrow": "Executive overview",
@@ -143,7 +148,9 @@
 			"healthHint": "Average signal sentiment per project (last 30 days). Healthy ≥ 75, watchlist 50–74, critical below 50. Projects with no signals in the window are counted as watchlist.",
 			"healthHealthy": "Healthy",
 			"healthWarning": "Watchlist",
-			"healthCritical": "Critical"
+			"healthCritical": "Critical",
+			"pulseTrendTitle": "Global Sentiment Pulse (30d)",
+			"engagementTrendTitle": "Signal vs Concern Volume (30d)"
 		},
 		"squadLead": {
 			"eyebrow": "Project leadership",
@@ -160,7 +167,9 @@
 			"statusTitle": "Concern status",
 			"statusHint": "Current state of concerns in your squads.",
 			"leaderboardTitle": "Top contributors",
-			"leaderboardHint": "Members with highest recognition points in your squads."
+			"leaderboardHint": "Members with highest recognition points in your squads.",
+			"sentimentTrendTitle": "Squad Sentiment Pulse (30d)",
+			"activityTrendTitle": "Squad Activity Volume (30d)"
 		}
 	},
 	"Unauthorized": {

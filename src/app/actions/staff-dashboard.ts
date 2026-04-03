@@ -17,7 +17,7 @@ export async function getStaffDashboardSnapshot(): Promise<StaffDashboardSnapsho
 	if (!emp?.role_id) return null;
 
 	const { data: role } = await supabase.from("roles").select("name").eq("id", emp.role_id).maybeSingle();
-	if (role?.name !== "STAFF") return null;
+	if (!role) return null;
 
 	const since = new Date(Date.now() - RANGE_MS).toISOString();
 
@@ -45,6 +45,16 @@ export async function getStaffDashboardSnapshot(): Promise<StaffDashboardSnapsho
 	}
 
 	const concernsCount30d = categoryBreakdown30d.concern;
+
+	// Total Contribution Points (All time, categorized as achievements by squad leads)
+	const { data: pointData } = await supabase
+		.from("signals")
+		.select("achievement_points")
+		.eq("author_employee_id", emp.id)
+		.eq("category", "achievement")
+		.not("achievement_points", "is", null);
+
+	const totalContributionPoints = (pointData ?? []).reduce((acc, row) => acc + (row.achievement_points ?? 0), 0);
 
 	let projectSentiments: StaffProjectSentiment[] = [];
 	if (projectIds.length) {
@@ -181,5 +191,6 @@ export async function getStaffDashboardSnapshot(): Promise<StaffDashboardSnapsho
 		teamActivity,
 		sentimentSlices,
 		concernStatusCount,
+		totalContributionPoints,
 	};
 }
