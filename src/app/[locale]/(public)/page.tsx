@@ -1,3 +1,4 @@
+import { AccountSwitchLogin } from "@/components/account-switch/account-switch-login";
 import { Button } from "@/components/ui/button";
 import { SignInButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
@@ -5,12 +6,17 @@ import { Plus } from "lucide-react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 
+import { getAccountPersonaFromCookie, isAccountSwitchEnabled } from "@/lib/effective-employee";
+
 export default async function Home() {
 	const { userId } = await auth();
 
 	if (userId) {
 		redirect("/dashboard");
 	}
+
+	const accountSwitchEnabled = isAccountSwitchEnabled();
+	const accountPersona = accountSwitchEnabled ? await getAccountPersonaFromCookie() : null;
 
 	return (
 		<main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-6 py-12">
@@ -33,6 +39,9 @@ export default async function Home() {
 							</span>
 						</Button>
 					</SignInButton>
+					{accountSwitchEnabled ? (
+						<AccountSwitchLogin initialPersona={accountPersona} />
+					) : null}
 				</div>
 			</section>
 		</main>

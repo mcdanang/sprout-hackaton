@@ -18,7 +18,9 @@ import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { useState } from "react";
 import { UserButton } from "@clerk/nextjs";
+import { AccountSwitchPersona } from "@/components/account-switch/account-switch-persona";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import type { AccountPersonaId } from "@/lib/constants/account-switch";
 
 const navItems = [
 	{ href: "/dashboard", icon: ViewGrid, label: "dashboard" },
@@ -32,9 +34,16 @@ const navItems = [
 interface DashboardSidebarProps {
 	isCollapsed: boolean;
 	onToggle: () => void;
+	accountSwitchEnabled?: boolean;
+	accountPersona?: AccountPersonaId | null;
 }
 
-export function DashboardSidebar({ isCollapsed, onToggle }: DashboardSidebarProps) {
+export function DashboardSidebar({
+	isCollapsed,
+	onToggle,
+	accountSwitchEnabled = false,
+	accountPersona = null,
+}: DashboardSidebarProps) {
 	const t = useTranslations("Dashboard");
 	const pathname = usePathname();
 	const [isOpen, setIsOpen] = useState(false);
@@ -112,6 +121,11 @@ export function DashboardSidebar({ isCollapsed, onToggle }: DashboardSidebarProp
 					isCollapsed ? "px-0" : "px-2",
 				)}
 			>
+				<AccountSwitchPersona
+					accountSwitchEnabled={accountSwitchEnabled}
+					initialPersona={accountPersona}
+					isCollapsed={isCollapsed}
+				/>
 				<div
 					className={cn("flex items-center gap-4", isCollapsed ? "flex-col" : "justify-between")}
 				>
@@ -218,9 +232,16 @@ export function DashboardSidebar({ isCollapsed, onToggle }: DashboardSidebarProp
 							);
 						})}
 					</nav>
-					<div className="mt-auto border-t pt-6 flex items-center justify-between px-2">
-						<LanguageSwitcher />
-						<UserButton />
+					<div className="mt-auto border-t pt-6 px-2">
+						<AccountSwitchPersona
+							accountSwitchEnabled={accountSwitchEnabled}
+							initialPersona={accountPersona}
+							isCollapsed={false}
+						/>
+						<div className="mt-4 flex items-center justify-between">
+							<LanguageSwitcher />
+							<UserButton />
+						</div>
 					</div>
 				</div>
 			</aside>

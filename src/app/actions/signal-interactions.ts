@@ -1,47 +1,16 @@
 "use server";
 
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { createClient } from "@/lib/supabase/server";
+import { getEffectiveEmployeeRow } from "@/lib/effective-employee";
 
 async function getCurrentEmployee(supabase: Awaited<ReturnType<typeof createClient>>): Promise<{
 	id: string;
 	role_id: string;
 } | null> {
-	const { userId } = await auth();
-	if (!userId) return null;
-
-	const user = await currentUser();
-	const primaryEmailId = user?.primaryEmailAddressId;
-
-	const orderedEmails: string[] = [];
-
-	if (primaryEmailId) {
-		const primary = user?.emailAddresses.find(e => e.id === primaryEmailId)?.emailAddress;
-		if (primary) orderedEmails.push(primary);
-	}
-
-	for (const e of user?.emailAddresses ?? []) {
-		if (!orderedEmails.includes(e.emailAddress)) {
-			orderedEmails.push(e.emailAddress);
-		}
-	}
-
-	for (const rawEmail of orderedEmails) {
-		const normalizedEmail = rawEmail.trim().toLowerCase();
-		if (!normalizedEmail) continue;
-
-		const { data: byEmail } = await supabase
-			.from("employees")
-			.select("id, role_id")
-			.ilike("email", normalizedEmail)
-			.maybeSingle();
-
-		console.log({ byEmail });
-
-		if (byEmail) return byEmail;
-	}
-
-	return null;
+	const row = await getEffectiveEmployeeRow(supabase);
+	if (!row?.role_id) return null;
+	return { id: row.id, role_id: row.role_id };
 }
 
 async function getRoleName(params: {
