@@ -2,11 +2,16 @@
 import { getTranslations } from "next-intl/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { Quote } from "iconoir-react";
-import { cn } from "@/lib/utils";
+
 import { getAiInsights } from "@/app/actions/ai-insights";
+import { getMyConcerns } from "@/app/actions/concerns";
+import { getStaffDashboardSnapshot } from "@/app/actions/staff-dashboard";
+import { EMPTY_STAFF_DASHBOARD } from "@/lib/staff-dashboard-types";
 import { AiInsightCards } from "@/components/dashboard/ai-insight-cards";
-import { getCurrentEmployee } from "@/lib/get-current-employee";
+import { StaffDashboardView } from "@/components/dashboard/staff-dashboard-view";
+import { cn } from "@/lib/utils";
 import { getAccountPersonaFromCookie } from "@/lib/effective-employee";
+import { getCurrentEmployee } from "@/lib/get-current-employee";
 
 function firstNameFromFullName(fullName: string): string {
 	const trimmed = fullName.trim();
@@ -18,22 +23,36 @@ export default async function DashboardPage() {
 	const t = await getTranslations("Dashboard");
 	const user = await currentUser();
 	const persona = await getAccountPersonaFromCookie();
+	const employee = await getCurrentEmployee();
 
 	let firstName = user?.firstName || "there";
-	if (persona) {
-		const employee = await getCurrentEmployee();
-		if (employee?.fullName) {
-			firstName = firstNameFromFullName(employee.fullName);
-		}
+	if (persona && employee?.fullName) {
+		firstName = firstNameFromFullName(employee.fullName);
 	}
 
-	console.log({ persona, firstName, user });
+	const isStaff = employee?.roleName === "STAFF";
+
+	if (isStaff) {
+		const [snapshot, concerns, insights] = await Promise.all([
+			getStaffDashboardSnapshot(),
+			getMyConcerns(),
+			getAiInsights(),
+		]);
+
+		return (
+			<StaffDashboardView
+				firstName={firstName}
+				snapshot={snapshot ?? EMPTY_STAFF_DASHBOARD}
+				concerns={concerns}
+				insights={insights}
+			/>
+		);
+	}
 
 	const insights = await getAiInsights();
 
 	return (
-		<div className="max-w-5xl mx-auto space-y-12">
-			{/* Hero Section */}
+		<div className="mx-auto max-w-5xl space-y-12">
 			<div className="space-y-4">
 				<p className="font-plus-jakarta text-[12px] font-semibold leading-[16px] tracking-[1.2px] uppercase text-[#B09100]">
 					{t("title")}
@@ -46,10 +65,8 @@ export default async function DashboardPage() {
 				</p>
 			</div>
 
-			{/* AI Insight Cards — role-aware, data from OpenAI */}
 			<AiInsightCards insights={insights.insights} generatedAt={insights.generatedAt} />
 
-			{/* AI Sanctuary Quote Card */}
 			<div
 				className={cn(
 					"relative overflow-hidden rounded-[32px] p-10 md:p-14",

@@ -1,0 +1,130 @@
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { getEffectiveEmployeeRow } from "@/lib/effective-employee";
+import type {
+	StaffDashboardSnapshot,
+	StaffProjectSentiment,
+	StaffTeamActivityItem,
+} from "@/lib/staff-dashboard-types";
+
+const RANGE_MS = 30 * 24 * 60 * 60 * 1000;
+
+export async function getStaffDashboardSnapshot(): Promise<StaffDashboardSnapshot | null> {
+	const supabase = await createClient();
+	const emp = await getEffectiveEmployeeRow(supabase);
+	if (!emp?.role_id) return null;
+
+	const { data: role } = await supabase.from("roles").select("name").eq("id", emp.role_id).maybeSingle();
+	if (role?.name !== "STAFF") return null;
+
+	const since = new Date(Date.now() - RANGE_MS).toISOString();
+
+	const { data: links } = await supabase
+		.from("employee_projects")
+		.select("project_id")
+		.eq("employee_id", emp.id);
+	const projectIds = (links ?? []).map(l => l.project_id).filter(Boolean);
+
+	const { data: mySignals } = await supabase
+		.from("signals")
+		.select("category")
+		.eq("author_employee_id", emp.id)
+		.gte("created_at", since);
+
+	const categoryBreakdown30d = {
+		concern: 0,
+		achievement: 0,
+		appreciation: 0,
+	};
+	for (const s of mySignals ?? []) {
+		if (s.category === "concern") categoryBreakdown30d.concern++;
+		else if (s.category === "achievement") categoryBreakdown30d.achievement++;
+		else if (s.category === "appreciation") categoryBreakdown30d.appreciation++;
+	}
+
+	const concernsCount30d = categoryBreakdown30d.concern;
+
+	let projectSentiments: StaffProjectSentiment[] = [];
+	if (projectIds.length) {
+		const { data: projSignals } = await supabase
+			.from("signals")
+			.select("project_id, sentiment_score, projects(name)")
+			.in("project_id", projectIds)
+			.gte("created_at", since);
+
+		const counts = new Map<string, number>();
+		const scoreBuckets = new Map<string, { name: string; scores: number[] }>();
+
+		for (const row of projSignals ?? []) {
+			const pid = row.project_id;
+			if (!pid) continue;
+			const raw = row.projects as { name: string } | { name: string }[] | null | undefined;
+			const pname = Array.isArray(raw) ? raw[0]?.name : raw?.name;
+			const projectLabel = pname ?? "Project";
+			counts.set(pid, (counts.get(pid) ?? 0) + 1);
+			if (!scoreBuckets.has(pid)) scoreBuckets.set(pid, { name: projectLabel, scores: [] });
+			if (row.sentiment_score != null) {
+				scoreBuckets.get(pid)!.scores.push(row.sentiment_score);
+			}
+		}
+
+		projectSentiments = [...counts.entries()]
+			.map(([projectId, signalCount]) => {
+				const b = scoreBuckets.get(projectId);
+				const scores = b?.scores ?? [];
+				const avgSentiment = scores.length
+					? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+					: null;
+				return {
+					projectId,
+					projectName: b?.name ?? "Project",
+					avgSentiment,
+					signalCount,
+				};
+			})
+			.sort((a, b) => b.signalCount - a.signalCount);
+	}
+
+	let teamActivity: StaffTeamActivityItem[] = [];
+	if (projectIds.length) {
+		const { data: feedRows } = await supabase
+			.from("signals")
+			.select("id, category, title, details, created_at, author_employee_id, project_id")
+			.in("project_id", projectIds)
+			.order("created_at", { ascending: false })
+			.limit(25);
+
+		const authorIds = [...new Set((feedRows ?? []).map(r => r.author_employee_id))];
+		const pids = [...new Set((feedRows ?? []).map(r => r.project_id).filter(Boolean))] as string[];
+
+		const [{ data: authorEmps }, { data: projs }] = await Promise.all([
+			authorIds.length
+				? supabase.from("employees").select("id, full_name").in("id", authorIds)
+				: Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
+			pids.length
+				? supabase.from("projects").select("id, name").in("id", pids)
+				: Promise.resolve({ data: [] as { id: string; name: string }[] }),
+		]);
+
+		const authorMap = new Map((authorEmps ?? []).map(e => [e.id, e.full_name]));
+		const projMap = new Map((projs ?? []).map(p => [p.id, p.name]));
+
+		teamActivity = (feedRows ?? []).map(row => ({
+			id: row.id,
+			category: row.category,
+			title: row.title,
+			preview: (row.details ?? "").slice(0, 140),
+			authorName: authorMap.get(row.author_employee_id) ?? "Someone",
+			projectName: row.project_id ? (projMap.get(row.project_id) ?? null) : null,
+			createdAt: new Date(row.created_at).toISOString(),
+		}));
+	}
+
+	return {
+		concernsCount30d,
+		categoryBreakdown30d,
+		projectSentiments,
+		teamActivity,
+	};
+}
