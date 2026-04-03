@@ -38,4 +38,13 @@ export type ManagementDashboardSnapshot = {
 	sentimentSlices: SentimentSlice[];
 	leaderboard: LeaderboardRow[];
 	projectHealth: ProjectHealthBucket;
+	projectStatus: {
+		planning: number;
+		development: number;
+		maintenance: number;
+	};
+	burnoutAlerts: {
+		projectName: string;
+		count: number;
+	}[];
 };

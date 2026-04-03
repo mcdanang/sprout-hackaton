@@ -244,10 +244,40 @@ export async function getManagementDashboardSnapshot(): Promise<ManagementDashbo
 
 	const projectHealth = { healthy, warning, critical };
 
+	const { data: statusRows } = await supabase.from("projects").select("status");
+	const projectStatus = {
+		planning: (statusRows ?? []).filter(r => r.status === "Planning").length,
+		development: (statusRows ?? []).filter(r => r.status === "Development").length,
+		maintenance: (statusRows ?? []).filter(r => r.status === "Maintenance").length,
+	};
+
+	const burnoutCats = (sentimentRows ?? []).filter(s => s.ai_issue_category === "Burnout Alert");
+	const burnoutCounts = new Map<string, number>();
+	const projIdToName = new Map<string, string>();
+	
+	const { data: projNames } = await supabase.from("projects").select("id, name");
+	for (const p of projNames ?? []) {
+		projIdToName.set(p.id, p.name);
+	}
+
+	for (const s of burnoutCats) {
+		if (!s.project_id) continue;
+		burnoutCounts.set(s.project_id, (burnoutCounts.get(s.project_id) ?? 0) + 1);
+	}
+	const burnoutAlerts = [...burnoutCounts.entries()]
+		.map(([pid, count]) => ({
+			projectName: projIdToName.get(pid) ?? "Unknown",
+			count,
+		}))
+		.sort((a, b) => b.count - a.count)
+		.slice(0, 3);
+
 	return {
 		kpis,
 		sentimentSlices,
 		leaderboard,
 		projectHealth,
+		projectStatus,
+		burnoutAlerts,
 	};
 }

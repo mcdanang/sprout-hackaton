@@ -1,19 +1,18 @@
 // src/app/[locale]/dashboard/page.tsx
-import { getTranslations } from "next-intl/server";
 import { currentUser } from "@clerk/nextjs/server";
-import { Quote } from "iconoir-react";
-
+import { getStaffDashboardSnapshot } from "@/app/actions/staff-dashboard";
+import { ManagementDashboardView } from "@/components/dashboard/management-dashboard-view";
+import { StaffDashboardView } from "@/components/dashboard/staff-dashboard-view";
+import { EMPTY_STAFF_DASHBOARD } from "@/lib/staff-dashboard-types";
+import { getAccountPersonaFromCookie } from "@/lib/effective-employee";
+import { getCurrentEmployee } from "@/lib/get-current-employee";
+import { getSquadLeadDashboardSnapshot } from "@/app/actions/squad-lead-dashboard";
+import { SquadLeadDashboardView } from "@/components/dashboard/squad-lead-dashboard-view";
+import { DashboardRoleSwitcher, type DashboardRole } from "@/components/dashboard/dashboard-role-switcher";
 import { getAiInsights } from "@/app/actions/ai-insights";
 import { getMyConcerns } from "@/app/actions/concerns";
 import { getManagementDashboardSnapshot } from "@/app/actions/management-dashboard";
-import { getStaffDashboardSnapshot } from "@/app/actions/staff-dashboard";
-import { ManagementDashboardView } from "@/components/dashboard/management-dashboard-view";
-import { AiInsightCards } from "@/components/dashboard/ai-insight-cards";
-import { StaffDashboardView } from "@/components/dashboard/staff-dashboard-view";
-import { EMPTY_STAFF_DASHBOARD } from "@/lib/staff-dashboard-types";
-import { cn } from "@/lib/utils";
-import { getAccountPersonaFromCookie } from "@/lib/effective-employee";
-import { getCurrentEmployee } from "@/lib/get-current-employee";
+import { createClient } from "@/lib/supabase/server";
 
 function firstNameFromFullName(fullName: string): string {
 	const trimmed = fullName.trim();
@@ -21,11 +20,12 @@ function firstNameFromFullName(fullName: string): string {
 	return trimmed.split(/\s+/)[0] ?? "there";
 }
 
-export default async function DashboardPage() {
-	const t = await getTranslations("Dashboard");
+export default async function DashboardPage(props: { searchParams: Promise<{ view?: string }> }) {
+	const searchParams = await props.searchParams;
 	const user = await currentUser();
 	const persona = await getAccountPersonaFromCookie();
 	const employee = await getCurrentEmployee();
+	const supabase = await createClient();
 
 	let firstName = user?.firstName || "there";
 	if (persona && employee?.fullName) {
@@ -33,30 +33,55 @@ export default async function DashboardPage() {
 	}
 
 	const isTopManagement = employee?.roleName === "TOP MANAGEMENT";
-	const isStaff = employee?.roleName === "STAFF";
-	const isDeliveryLead = employee?.roleName === "SQUAD LEAD";
+	
+	// Complex role detection: explicit role or project lead
+	const { count: squadCount } = await supabase
+		.from("projects")
+		.select("id", { count: "exact", head: true })
+		.eq("squad_lead_employee_id", employee?.id);
+	
+	const isSquadLead = ((squadCount as number) ?? 0) > 0 || employee?.roleName === "SQUAD LEAD";
 
-	if (isTopManagement) {
-		const [snapshot, insights] = await Promise.all([
-			getManagementDashboardSnapshot(),
-			getAiInsights(),
-		]);
+	const availableRoles: DashboardRole[] = ["individual"];
+	if (isSquadLead) availableRoles.push("squad_lead");
+	if (isTopManagement) availableRoles.push("management");
 
+	const defaultView: DashboardRole = isTopManagement 
+		? "management" 
+		: isSquadLead 
+			? "squad_lead" 
+			: "individual";
+	
+	const requestedView = searchParams.view as DashboardRole;
+	const currentView = availableRoles.includes(requestedView) ? requestedView : defaultView;
+
+	const [insights, concerns] = await Promise.all([
+		getAiInsights(),
+		getMyConcerns(),
+	]);
+
+	let dashboardContent = null;
+
+	if (currentView === "management") {
+		const snapshot = await getManagementDashboardSnapshot();
 		if (snapshot) {
-			return (
+			dashboardContent = (
 				<ManagementDashboardView firstName={firstName} snapshot={snapshot} insights={insights} />
+			);
+		}
+	} else if (currentView === "squad_lead") {
+		const snapshot = await getSquadLeadDashboardSnapshot();
+		if (snapshot) {
+			dashboardContent = (
+				<SquadLeadDashboardView firstName={firstName} snapshot={snapshot} insights={insights} />
 			);
 		}
 	}
 
-	if (isStaff || isDeliveryLead) {
-		const [snapshot, concerns, insights] = await Promise.all([
-			getStaffDashboardSnapshot(),
-			getMyConcerns(),
-			getAiInsights(),
-		]);
-
-		return (
+	// Default to Staff/Individual if nothing else matched or chosen
+	if (!dashboardContent) {
+		const snapshot = await getStaffDashboardSnapshot();
+		dashboardContent = (
 			<StaffDashboardView
 				firstName={firstName}
 				snapshot={snapshot ?? EMPTY_STAFF_DASHBOARD}
@@ -66,44 +91,10 @@ export default async function DashboardPage() {
 		);
 	}
 
-	const insights = await getAiInsights();
-
 	return (
-		<div className="mx-auto max-w-5xl space-y-12">
-			<div className="space-y-4">
-				<p className="font-plus-jakarta text-[12px] font-semibold leading-[16px] tracking-[1.2px] uppercase text-[#B09100]">
-					{t("title")}
-				</p>
-				<h1 className="font-plus-jakarta text-[48px] font-bold leading-[48px] tracking-[-1.2px] text-[#191C1D]">
-					{t("welcome", { name: firstName })}
-				</h1>
-				<p className="font-plus-jakarta text-[18px] font-normal leading-[28px] text-[#3F484A] max-w-2xl">
-					{t("subtitle")}
-				</p>
-			</div>
-
-			<AiInsightCards insights={insights.insights} generatedAt={insights.generatedAt} />
-
-			<div
-				className={cn(
-					"relative overflow-hidden rounded-[32px] p-10 md:p-14",
-					"bg-[#FFFBEB] border border-[#FEF3C7] shadow-sm",
-				)}
-			>
-				<Quote className="h-10 w-10 text-text-primary mb-8" />
-				<div className="space-y-8">
-					<p className="font-plus-jakarta text-[32px] md:text-[40px] font-medium leading-tight tracking-tight text-brand-primary">
-						{t("quote.text")}
-					</p>
-					<Quote className="h-10 w-10 text-text-primary mb-8" />
-					<div className="flex items-center gap-3">
-						<div className="h-[2px] w-8 bg-primary" />
-						<span className="font-plus-jakarta text-[14px] font-bold tracking-[1.5px] uppercase text-[#3F484A]">
-							{t("quote.author")}
-						</span>
-					</div>
-				</div>
-			</div>
+		<div className="space-y-6">
+			<DashboardRoleSwitcher availableRoles={availableRoles} currentRole={currentView} />
+			{dashboardContent}
 		</div>
 	);
 }

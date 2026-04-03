@@ -36,8 +36,12 @@
 		"welcome": "Selamat datang kembali, {name}",
 		"subtitle": "Tempat perlindungan pribadi Anda untuk kejelasan, fokus, dan koneksi tim.",
 		"quote": {
-			"text": "Keamanan psikologis adalah jembatan antara bakat individu dan kegeniusan kolektif.",
 			"author": "SIGNAL SANCTUARY AI"
+		},
+		"roleSwitcher": {
+			"individual": "Tampilan Individu",
+			"squadLead": "Tampilan Squad Lead",
+			"management": "Tampilan Manajemen"
 		},
 		"overview": "Ikhtisar",
 		"nav": {
@@ -140,6 +144,23 @@
 			"healthHealthy": "Sehat",
 			"healthWarning": "Pantau",
 			"healthCritical": "Kritis"
+		},
+		"squadLead": {
+			"eyebrow": "Kepemimpinan proyek",
+			"subtitle": "Pantau dan kelola kesehatan serta sentimen squad yang Anda pimpin.",
+			"rangeNote": "Metrik memakai 30 hari terakhir.",
+			"kpiProjects": "Proyek dipimpin",
+			"kpiSignals": "Total sinyal",
+			"kpiConcerns": "Keluhan terbuka",
+			"kpiSentiment": "Rata-rata sentimen",
+			"sentimentTitle": "Sentimen squad per proyek",
+			"sentimentHint": "Rata-rata sentimen per proyek yang Anda pimpin.",
+			"issueTitle": "Distribusi isu",
+			"issueHint": "Kategori keluhan untuk squad Anda.",
+			"statusTitle": "Status keluhan",
+			"statusHint": "Kondisi keluhan saat ini di squad Anda.",
+			"leaderboardTitle": "Kontributor utama",
+			"leaderboardHint": "Anggota dengan poin pengakuan tertinggi di squad Anda."
 		}
 	},
 	"Unauthorized": {

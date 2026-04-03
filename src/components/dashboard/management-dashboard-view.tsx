@@ -1,59 +1,15 @@
 import { getTranslations } from "next-intl/server";
-import { NavArrowDown, NavArrowUp } from "iconoir-react";
+import { Flame, Layout } from "lucide-react";
 
 import type { AiInsightsResult } from "@/app/actions/ai-insights";
 import type { ManagementDashboardSnapshot } from "@/lib/management-dashboard-types";
 import { AiInsightCards } from "@/components/dashboard/ai-insight-cards";
 import { cn } from "@/lib/utils";
-
-function SentimentPie({ slices }: { slices: { pct: number; color: string }[] }) {
-	if (!slices.length) {
-		return (
-			<div className="flex h-52 w-52 items-center justify-center rounded-full border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-400" />
-		);
-	}
-	let acc = 0;
-	const parts = slices.map(s => {
-		const start = acc;
-		acc += s.pct;
-		return `${s.color} ${start}% ${acc}%`;
-	});
-	if (acc < 100) {
-		parts.push(`#f1f5f9 ${acc}% 100%`);
-	}
-	return (
-		<div
-			className="mx-auto h-52 w-52 shrink-0 rounded-full border border-slate-100 shadow-inner"
-			style={{ background: `conic-gradient(${parts.join(", ")})` }}
-		/>
-	);
-}
-
-function Trend({ pct, labelUp, labelDown }: { pct: number | null; labelUp: string; labelDown: string }) {
-	if (pct == null) {
-		return <span className="text-xs text-slate-400">—</span>;
-	}
-	const up = pct >= 0;
-	return (
-		<span
-			className={cn(
-				"inline-flex items-center gap-0.5 text-xs font-semibold",
-				up ? "text-emerald-600" : "text-rose-600",
-			)}
-		>
-			{up ? <NavArrowUp className="h-3.5 w-3.5" /> : <NavArrowDown className="h-3.5 w-3.5" />}
-			{pct === 0 ? "0%" : `${up ? "" : "−"}${Math.abs(pct)}%`}
-			<span className="sr-only">{up ? labelUp : labelDown}</span>
-		</span>
-	);
-}
-
-function rankBadgeClass(rank: number) {
-	if (rank === 1) return "bg-amber-100 text-amber-900 border-amber-200";
-	if (rank === 2) return "bg-slate-200 text-slate-800 border-slate-300";
-	if (rank === 3) return "bg-orange-100 text-orange-900 border-orange-200";
-	return "bg-slate-50 text-slate-600 border-slate-200";
-}
+import { 
+	SentimentPie, 
+	Trend, 
+	rankBadgeClass,
+} from "@/components/dashboard/dashboard-widgets";
 
 export async function ManagementDashboardView({
 	firstName,
@@ -66,10 +22,10 @@ export async function ManagementDashboardView({
 }) {
 	const t = await getTranslations("Dashboard.management");
 	const tw = await getTranslations("Dashboard");
-	const { kpis, sentimentSlices, leaderboard, projectHealth } = snapshot;
+	const { kpis, sentimentSlices, leaderboard, projectHealth, projectStatus, burnoutAlerts } = snapshot;
 
 	return (
-		<div className="mx-auto max-w-6xl space-y-10">
+		<div className="mx-auto max-w-6xl space-y-10 pb-20">
 			<div className="space-y-2">
 				<p className="font-plus-jakarta text-[12px] font-semibold uppercase leading-[16px] tracking-[1.2px] text-[#B09100]">
 					{t("eyebrow")}
@@ -136,6 +92,57 @@ export async function ManagementDashboardView({
 				<AiInsightCards insights={insights.insights} generatedAt={insights.generatedAt} />
 			) : null}
 
+			{/* Helicopter View - Lifecycle & Health */}
+			<div className="grid gap-6 lg:grid-cols-2">
+				<div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+					<div className="flex items-center gap-2 text-brand-primary mb-1">
+						<Layout className="size-5" />
+						<h2 className="font-plus-jakarta text-lg font-bold uppercase tracking-tight">Helicopter View: Lifecycle</h2>
+					</div>
+					<p className="text-sm text-slate-500 mb-6">Aggregate distribution of projects by phase.</p>
+					
+					<div className="space-y-4">
+						<div className="flex items-center justify-between p-3 rounded-2xl bg-sky-50 border border-sky-100">
+							<span className="text-sm font-semibold text-sky-900">Planning / Discovery</span>
+							<span className="text-xl font-bold tabular-nums text-sky-700">{projectStatus.planning}</span>
+						</div>
+						<div className="flex items-center justify-between p-3 rounded-2xl bg-indigo-50 border border-indigo-100">
+							<span className="text-sm font-semibold text-indigo-900">Active Development</span>
+							<span className="text-xl font-bold tabular-nums text-indigo-700">{projectStatus.development}</span>
+						</div>
+						<div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100">
+							<span className="text-sm font-semibold text-slate-900">Maintenance / Stable</span>
+							<span className="text-xl font-bold tabular-nums text-slate-700">{projectStatus.maintenance}</span>
+						</div>
+					</div>
+				</div>
+
+				<div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+					<h2 className="font-plus-jakarta text-lg font-bold text-brand-primary">{t("healthTitle")}</h2>
+					<p className="mt-1 text-sm text-slate-500">{t("healthHint")}</p>
+					<ul className="mt-6 space-y-4">
+						<li className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50/50 px-4 py-3">
+							<span className="font-medium text-emerald-900">{t("healthHealthy")}</span>
+							<span className="text-2xl font-bold tabular-nums text-emerald-800">
+								{projectHealth.healthy}
+							</span>
+						</li>
+						<li className="flex items-center justify-between rounded-2xl border border-amber-100 bg-amber-50/50 px-4 py-3">
+							<span className="font-medium text-amber-900">{t("healthWarning")}</span>
+							<span className="text-2xl font-bold tabular-nums text-amber-900">
+								{projectHealth.warning}
+							</span>
+						</li>
+						<li className="flex items-center justify-between rounded-2xl border border-rose-100 bg-rose-50/50 px-4 py-3">
+							<span className="font-medium text-rose-900">{t("healthCritical")}</span>
+							<span className="text-2xl font-bold tabular-nums text-rose-800">
+								{projectHealth.critical}
+							</span>
+						</li>
+					</ul>
+				</div>
+			</div>
+
 			<div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
 				<h2 className="font-plus-jakarta text-lg font-bold text-brand-primary">{t("sentimentTitle")}</h2>
 				<p className="mt-1 text-sm text-slate-500">{t("sentimentHint")}</p>
@@ -195,29 +202,27 @@ export async function ManagementDashboardView({
 					)}
 				</div>
 
-				<div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
-					<h2 className="font-plus-jakarta text-lg font-bold text-brand-primary">{t("healthTitle")}</h2>
-					<p className="mt-1 text-sm text-slate-500">{t("healthHint")}</p>
-					<ul className="mt-6 space-y-4">
-						<li className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50/50 px-4 py-3">
-							<span className="font-medium text-emerald-900">{t("healthHealthy")}</span>
-							<span className="text-2xl font-bold tabular-nums text-emerald-800">
-								{projectHealth.healthy}
-							</span>
-						</li>
-						<li className="flex items-center justify-between rounded-2xl border border-amber-100 bg-amber-50/50 px-4 py-3">
-							<span className="font-medium text-amber-900">{t("healthWarning")}</span>
-							<span className="text-2xl font-bold tabular-nums text-amber-900">
-								{projectHealth.warning}
-							</span>
-						</li>
-						<li className="flex items-center justify-between rounded-2xl border border-rose-100 bg-rose-50/50 px-4 py-3">
-							<span className="font-medium text-rose-900">{t("healthCritical")}</span>
-							<span className="text-2xl font-bold tabular-nums text-rose-800">
-								{projectHealth.critical}
-							</span>
-						</li>
-					</ul>
+				<div className="rounded-3xl border border-rose-100 bg-rose-50/30 p-6 shadow-sm">
+					<div className="flex items-center gap-2 text-rose-700 mb-1">
+						<Flame className="size-5" />
+						<h2 className="font-plus-jakarta text-lg font-bold uppercase tracking-tight">Burnout High-Risk Squads</h2>
+					</div>
+					<p className="text-sm text-slate-600 mb-6">Squads with the highest &quot;Burnout Alert&quot; flag frequency (30d).</p>
+					
+					{burnoutAlerts.length === 0 ? (
+						<p className="text-sm text-slate-400 py-8 text-center italic">No squads at critical risk currently.</p>
+					) : (
+						<ul className="space-y-3">
+							{burnoutAlerts.map(alert => (
+								<li key={alert.projectName} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-rose-100 shadow-sm">
+									<span className="font-bold text-slate-900">{alert.projectName}</span>
+									<div className="flex items-center gap-2 bg-rose-100 text-rose-700 px-3 py-1 rounded-full text-xs font-bold uppercase">
+										{alert.count} Flags
+									</div>
+								</li>
+							))}
+						</ul>
+					)}
 				</div>
 			</div>
 		</div>

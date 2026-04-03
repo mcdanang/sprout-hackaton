@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { WarningTriangle } from "iconoir-react";
-import { AlertCircle, Trophy, Heart } from "lucide-react";
+import { AlertCircle, Trophy, Heart, Activity } from "lucide-react";
 
 import type { MyConcernItem } from "@/app/actions/concerns.types";
 import type { AiInsightsResult } from "@/app/actions/ai-insights";
@@ -10,24 +10,10 @@ import { StaffConcernsStrip } from "@/components/dashboard/staff-concerns-strip"
 import { FormattedContent } from "@/components/shared/formatted-content";
 import { Link } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
-
-function SentimentBar({ value }: { value: number | null }) {
-	if (value == null) {
-		return <span className="text-xs text-slate-400">—</span>;
-	}
-	const w = Math.max(8, Math.min(100, value));
-	return (
-		<div className="h-2 w-full max-w-[140px] overflow-hidden rounded-full bg-slate-100">
-			<div
-				className={cn(
-					"h-full rounded-full transition-all",
-					value >= 66 ? "bg-emerald-500" : value >= 40 ? "bg-amber-500" : "bg-rose-500",
-				)}
-				style={{ width: `${w}%` }}
-			/>
-		</div>
-	);
-}
+import { 
+	SentimentPie, 
+	SentimentBar 
+} from "@/components/dashboard/dashboard-widgets";
 
 function formatRelative(iso: string): string {
 	const d = new Date(iso);
@@ -52,28 +38,28 @@ function activityVerb(category: string, t: (k: string) => string): string {
 function ActivityIcon({ category }: { category: string }) {
 	if (category === "concern") {
 		return (
-			<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500">
+			<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500 border border-red-100 shadow-sm">
 				<AlertCircle className="h-5 w-5" />
 			</div>
 		);
 	}
 	if (category === "achievement") {
 		return (
-			<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-500">
+			<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-500 border border-emerald-100 shadow-sm">
 				<Trophy className="h-5 w-5" />
 			</div>
 		);
 	}
 	if (category === "appreciation") {
 		return (
-			<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pink-50 text-pink-500">
+			<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pink-50 text-pink-500 border border-pink-100 shadow-sm">
 				<Heart className="h-5 w-5 fill-pink-500/10" />
 			</div>
 		);
 	}
 	return (
-		<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
-			<AlertCircle className="h-5 w-5" />
+		<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500 border border-slate-100 shadow-sm">
+			<Activity className="h-5 w-5" />
 		</div>
 	);
 }
@@ -96,7 +82,7 @@ export async function StaffDashboardView({
 		snapshot.categoryBreakdown30d.achievement + snapshot.categoryBreakdown30d.appreciation;
 
 	return (
-		<div className="mx-auto max-w-6xl space-y-10">
+		<div className="mx-auto max-w-6xl space-y-10 pb-20">
 			<div className="space-y-2">
 				<p className="font-plus-jakarta text-[12px] font-semibold uppercase leading-[16px] tracking-[1.2px] text-[#B09100]">
 					{t("eyebrow")}
@@ -135,15 +121,14 @@ export async function StaffDashboardView({
 					</div>
 				</div>
 
-				<div className="flex flex-col justify-center gap-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-4">
+				<div className="flex flex-col justify-center gap-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-4 transition-all duration-300 hover:shadow-md hover:border-slate-300">
 					<p className="font-plus-jakarta text-sm font-semibold text-brand-primary">{t("raiseTitle")}</p>
 					<p className="text-xs text-slate-500">{t("ctaHint")}</p>
 					<Link
 						href="/dashboard/concerns"
 						className={cn(
-							"inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#191C1D] px-4 font-plus-jakarta text-sm font-bold text-white shadow-sm transition-colors outline-none",
+							"inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-transparent bg-[#191C1D] px-4 font-plus-jakarta text-sm font-bold text-white shadow-sm transition-all outline-none",
 							"hover:bg-[#191C1D]/90 focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px",
-							"[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5",
 						)}
 					>
 						<WarningTriangle className="h-5 w-5 text-[#FFD300]" />
@@ -153,30 +138,69 @@ export async function StaffDashboardView({
 			</div>
 
 			{insights.insights.length > 0 ? (
-				<div>
-					<AiInsightCards insights={insights.insights} generatedAt={insights.generatedAt} />
-				</div>
+				<AiInsightCards insights={insights.insights} generatedAt={insights.generatedAt} />
 			) : null}
+
+			{/* Role-Based Insight Widgets */}
+			<div className="grid gap-6 lg:grid-cols-2">
+				<div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+					<h2 className="font-plus-jakarta text-lg font-bold text-brand-primary">Team Spirit breakdown</h2>
+					<p className="mt-1 text-sm text-slate-500">Distribution of concern categories across your projects.</p>
+					<div className="mt-8 flex flex-col items-center gap-8 md:flex-row md:items-start md:justify-center">
+						<SentimentPie slices={snapshot.sentimentSlices} className="size-40" />
+						<ul className="w-full space-y-2">
+							{snapshot.sentimentSlices.map(s => (
+								<li key={s.key} className="flex items-center gap-2 text-sm">
+									<span className="h-3 w-3 shrink-0 rounded-sm" style={{ backgroundColor: s.color }} />
+									<span className="text-slate-700">
+										{s.label} <span className="font-semibold tabular-nums text-slate-900 font-plus-jakarta">({s.pct}%)</span>
+									</span>
+								</li>
+							))}
+							{snapshot.sentimentSlices.length === 0 && <p className="text-sm text-slate-400 text-center italic">No categorized concerns found.</p>}
+						</ul>
+					</div>
+				</div>
+
+				<div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+					<h2 className="font-plus-jakarta text-lg font-bold text-brand-primary">Issue Snapshot</h2>
+					<p className="mt-1 text-sm text-slate-500">Resolution status of all concerns in your projects (30d).</p>
+					<ul className="mt-6 space-y-4">
+						<li className="flex items-center justify-between rounded-2xl border border-rose-100 bg-rose-50/50 px-4 py-3">
+							<span className="font-medium text-rose-900">{tw("concerns.statusOpen")}</span>
+							<span className="text-2xl font-bold tabular-nums text-rose-800">{snapshot.concernStatusCount.open}</span>
+						</li>
+						<li className="flex items-center justify-between rounded-2xl border border-amber-100 bg-amber-50/50 px-4 py-3">
+							<span className="font-medium text-amber-900">{tw("concerns.statusInProgress")}</span>
+							<span className="text-2xl font-bold tabular-nums text-amber-900">{snapshot.concernStatusCount.inProgress}</span>
+						</li>
+						<li className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50/50 px-4 py-3">
+							<span className="font-medium text-emerald-900">{tw("concerns.statusClosed")}</span>
+							<span className="text-2xl font-bold tabular-nums text-emerald-800">{snapshot.concernStatusCount.closed}</span>
+						</li>
+					</ul>
+				</div>
+			</div>
 
 			<div className="grid gap-6 lg:grid-cols-2">
 				<div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
 					<h2 className="font-plus-jakarta text-lg font-bold text-brand-primary">{t("categoryTitle")}</h2>
-					<ul className="mt-4 space-y-3">
-						<li className="flex items-center justify-between gap-4">
-							<span className="text-sm text-slate-600">{t("catConcern")}</span>
-							<span className="font-plus-jakarta text-lg font-bold tabular-nums">
+					<ul className="mt-6 space-y-3">
+						<li className="flex items-center justify-between gap-4 p-3 bg-slate-50/50 border border-slate-100 rounded-2xl">
+							<span className="text-sm font-semibold text-slate-600">{t("catConcern")}</span>
+							<span className="font-plus-jakarta text-xl font-bold tabular-nums text-slate-900">
 								{snapshot.categoryBreakdown30d.concern}
 							</span>
 						</li>
-						<li className="flex items-center justify-between gap-4">
-							<span className="text-sm text-slate-600">{t("catAchievement")}</span>
-							<span className="font-plus-jakarta text-lg font-bold tabular-nums">
+						<li className="flex items-center justify-between gap-4 p-3 bg-slate-50/50 border border-slate-100 rounded-2xl">
+							<span className="text-sm font-semibold text-slate-600">{t("catAchievement")}</span>
+							<span className="font-plus-jakarta text-xl font-bold tabular-nums text-slate-900">
 								{snapshot.categoryBreakdown30d.achievement}
 							</span>
 						</li>
-						<li className="flex items-center justify-between gap-4">
-							<span className="text-sm text-slate-600">{t("catAppreciation")}</span>
-							<span className="font-plus-jakarta text-lg font-bold tabular-nums">
+						<li className="flex items-center justify-between gap-4 p-3 bg-slate-50/50 border border-slate-100 rounded-2xl">
+							<span className="text-sm font-semibold text-slate-600">{t("catAppreciation")}</span>
+							<span className="font-plus-jakarta text-xl font-bold tabular-nums text-slate-900">
 								{snapshot.categoryBreakdown30d.appreciation}
 							</span>
 						</li>
@@ -186,21 +210,21 @@ export async function StaffDashboardView({
 				<div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
 					<h2 className="font-plus-jakarta text-lg font-bold text-brand-primary">{t("sentimentTitle")}</h2>
 					{snapshot.projectSentiments.length === 0 ? (
-						<p className="mt-4 text-sm text-slate-500">{t("sentimentEmpty")}</p>
+						<p className="mt-4 text-sm text-slate-500 italic text-center py-10">{t("sentimentEmpty")}</p>
 					) : (
-						<ul className="mt-4 space-y-4">
+						<ul className="mt-6 space-y-4">
 							{snapshot.projectSentiments.map(p => (
-								<li key={p.projectId} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+								<li key={p.projectId} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between group">
 									<div className="min-w-0">
-										<p className="truncate font-medium text-slate-900">{p.projectName}</p>
-										<p className="text-xs text-slate-500">
+										<p className="truncate font-bold text-slate-900 group-hover:text-brand-primary transition-colors">{p.projectName}</p>
+										<p className="text-xs text-slate-500 font-medium">
 											{t("signalsCount", { count: p.signalCount })}
 										</p>
 									</div>
 									<div className="flex items-center gap-3">
 										<SentimentBar value={p.avgSentiment} />
 										{p.avgSentiment != null ? (
-											<span className="w-10 text-right text-sm font-semibold tabular-nums text-slate-700">
+											<span className="w-10 text-right text-sm font-bold tabular-nums text-slate-700">
 												{p.avgSentiment}
 											</span>
 										) : null}
@@ -215,11 +239,11 @@ export async function StaffDashboardView({
 			<StaffConcernsStrip concerns={concerns} />
 
 			<div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
-				<h2 className="font-plus-jakarta text-lg font-bold text-brand-primary">{t("teamTitle")}</h2>
+				<h2 className="font-plus-jakarta text-lg font-bold text-brand-primary uppercase tracking-tight mb-6">{t("teamTitle")}</h2>
 				{snapshot.teamActivity.length === 0 ? (
-					<p className="mt-4 text-sm text-slate-500">{t("teamEmpty")}</p>
+					<p className="mt-4 text-sm text-slate-500 italic text-center py-10">{t("teamEmpty")}</p>
 				) : (
-					<ul className="mt-4 space-y-4">
+					<ul className="space-y-6">
 						{snapshot.teamActivity.map(item => {
 							const isRedundant =
 								item.preview &&
@@ -229,16 +253,16 @@ export async function StaffDashboardView({
 							return (
 								<li
 									key={item.id}
-									className="flex gap-3 border-b border-slate-100 pb-4 last:border-0 last:pb-0"
+									className="flex gap-4 border-b border-slate-50 pb-6 last:border-0 last:pb-0 group"
 								>
 									<ActivityIcon category={item.category} />
-									<div className="min-w-0 flex-1 space-y-1">
+									<div className="min-w-0 flex-1 space-y-1.5">
 										<p className="font-plus-jakarta text-[11px] font-extrabold uppercase tracking-[0.15em] text-slate-400">
-											{item.authorName} {activityVerb(item.category, t)}
+											<span className="text-slate-600">{item.authorName}</span> {activityVerb(item.category, t)}
 										</p>
 										<FormattedContent
 											content={item.title}
-											className="line-clamp-2 font-plus-jakarta text-base font-bold tracking-tight text-brand-primary"
+											className="line-clamp-2 font-plus-jakarta text-base font-bold tracking-tight text-[#191C1D] group-hover:text-brand-primary transition-colors"
 										/>
 										{item.preview && !isRedundant ? (
 											<FormattedContent
@@ -246,8 +270,8 @@ export async function StaffDashboardView({
 												className="line-clamp-2 font-plus-jakarta text-sm font-medium leading-relaxed text-slate-500"
 											/>
 										) : null}
-										<div className="flex flex-wrap gap-x-3 gap-y-1 font-plus-jakarta text-[11px] font-bold text-slate-400">
-											{item.projectName ? <span>{item.projectName}</span> : null}
+										<div className="flex flex-wrap gap-x-4 gap-y-1 font-plus-jakarta text-[11px] font-bold text-slate-400">
+											{item.projectName ? <span className="flex items-center gap-1"><Activity className="size-3" /> {item.projectName}</span> : null}
 											<span>{formatRelative(item.createdAt)}</span>
 										</div>
 									</div>

@@ -118,10 +118,68 @@ export async function getStaffDashboardSnapshot(): Promise<StaffDashboardSnapsho
 		}));
 	}
 
+	const { data: allProjSignals } = await supabase
+		.from("signals")
+		.select("id, category, sentiment_score, ai_issue_category, concern_status, project_id")
+		.in("project_id", projectIds)
+		.gte("created_at", since);
+
+	const staffSignals = (allProjSignals ?? []) as SignalMetricInput[];
+	
+	const catCounts = new Map<string, number>();
+	const concerns = staffSignals.filter(s => s.category === "concern");
+	for (const s of concerns) {
+		const k = s.ai_issue_category ?? "others";
+		catCounts.set(k, (catCounts.get(k) ?? 0) + 1);
+	}
+	const catTotal = concerns.length;
+
+	const SLICE_COLORS: Record<string, string> = {
+		"Burnout Alert": "#ef4444",
+		"Scope Creep": "#f97316",
+		"Process Bottleneck": "#eab308",
+		"Communication Gap": "#3b82f6",
+		"Technical Debt": "#a855f7",
+		"Micro-management": "#ec4899",
+		"Professional Growth": "#06b6d4",
+		"Office Environment": "#22c55e",
+		others: "#94a3b8",
+	};
+
+	const SLICE_LABELS: Record<string, string> = {
+		"Burnout Alert": "Burnout",
+		"Scope Creep": "Scope",
+		"Process Bottleneck": "Process",
+		"Communication Gap": "Communication",
+		"Technical Debt": "Technical",
+		"Micro-management": "Micro-mgmt",
+		"Professional Growth": "Professional",
+		"Office Environment": "Office",
+		others: "Other",
+	};
+
+	const sentimentSlices = [...catCounts.entries()]
+		.map(([key, count]) => ({
+			key,
+			label: SLICE_LABELS[key] ?? key,
+			count,
+			pct: catTotal > 0 ? Math.round((count / catTotal) * 100) : 0,
+			color: SLICE_COLORS[key] ?? SLICE_COLORS.others,
+		}))
+		.sort((a, b) => b.count - a.count);
+
+	const concernStatusCount = {
+		open: concerns.filter(s => s.concern_status === "open").length,
+		inProgress: concerns.filter(s => s.concern_status === "in_progress").length,
+		closed: concerns.filter(s => s.concern_status === "closed").length,
+	};
+
 	return {
 		concernsCount30d,
 		categoryBreakdown30d,
 		projectSentiments,
 		teamActivity,
+		sentimentSlices,
+		concernStatusCount,
 	};
 }
