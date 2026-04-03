@@ -1,14 +1,10 @@
-import { getConcernFormOptions, getMyConcerns } from "@/app/actions/concerns";
+import { getMyConcerns } from "@/app/actions/concerns";
 import { MyConcernsClient } from "@/components/dashboard/my-concerns-client";
 
 export default async function ConcernsPage() {
-	const [concerns, options] = await Promise.all([getMyConcerns(), getConcernFormOptions()]);
+	const concerns = await getMyConcerns();
 
 	return (
-		<MyConcernsClient
-			initialConcerns={concerns}
-			organizations={options.organizations}
-			employees={options.employees}
-		/>
+		<MyConcernsClient initialConcerns={concerns} />
 	);
 }

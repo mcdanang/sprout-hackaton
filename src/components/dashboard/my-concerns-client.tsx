@@ -1,24 +1,16 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { toast } from "sonner";
-import { ChatLines, Plus, Xmark } from "iconoir-react";
+import { ChatLines } from "iconoir-react";
 import { AlertCircle, ArrowRight, CheckCircle2, Clock, User } from "lucide-react";
 
-import { createConcern } from "@/app/actions/concerns";
-import { initialConcernActionState, type MyConcernItem } from "@/app/actions/concerns.types";
-import { SIGNAL_ISSUE_CATEGORIES } from "@/lib/signal-ai";
+import { type MyConcernItem } from "@/app/actions/concerns.types";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { FormattedContent } from "@/components/shared/formatted-content";
 
 type Props = {
 	initialConcerns: MyConcernItem[];
-	organizations: { id: string; name: string }[];
-	employees: { id: string; full_name: string }[];
 };
 
 function formatDate(iso: string, locale: string) {
@@ -155,261 +147,9 @@ function ConcernCard({ item }: { item: MyConcernItem }) {
 	);
 }
 
-function SubmitConcernModal({
-	open,
-	onClose,
-	organizations,
-	employees,
-}: {
-	open: boolean;
-	onClose: () => void;
-	organizations: { id: string; name: string }[];
-	employees: { id: string; full_name: string }[];
-}) {
+
+export function MyConcernsClient({ initialConcerns }: Props) {
 	const t = useTranslations("Dashboard.concerns");
-	const locale = useLocale();
-	const router = useRouter();
-	const [visibility, setVisibility] = useState<"management" | "division" | "person">("management");
-	const [formKey, setFormKey] = useState(0);
-
-	const [state, formAction, isPending] = useActionState(createConcern, initialConcernActionState);
-	const successHandled = useRef(false);
-
-	useEffect(() => {
-		if (!open) return;
-		const onKey = (e: KeyboardEvent) => {
-			if (e.key === "Escape") onClose();
-		};
-		window.addEventListener("keydown", onKey);
-		return () => window.removeEventListener("keydown", onKey);
-	}, [open, onClose]);
-
-	useEffect(() => {
-		if (state.status === "success" && !successHandled.current) {
-			successHandled.current = true;
-			toast.success(state.message);
-			
-			// Pushing state updates to the next tick to avoid cascading renders warning
-			const timer = setTimeout(() => {
-				setFormKey(k => k + 1);
-				setVisibility("management");
-				onClose();
-			}, 0);
-			
-			router.refresh();
-			return () => clearTimeout(timer);
-		} else if (state.status === "error" && state.message) {
-			toast.error(state.message);
-		}
-		if (state.status === "idle") {
-			successHandled.current = false;
-		}
-	}, [state.status, state.message, onClose, router]);
-
-	if (!open) return null;
-
-	return (
-		<div
-			className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[1px]"
-			role="dialog"
-			aria-modal="true"
-			aria-labelledby="submit-concern-title"
-		>
-			<button
-				type="button"
-				className="absolute inset-0 cursor-default"
-				aria-label={t("closeModal")}
-				onClick={onClose}
-			/>
-			<div
-				className="relative z-10 w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-xl"
-				onClick={e => e.stopPropagation()}
-			>
-				<div className="mb-6 flex items-start justify-between gap-4">
-					<h2 id="submit-concern-title" className="text-xl font-bold tracking-tight text-slate-900">
-						{t("modalTitle")}
-					</h2>
-					<button
-						type="button"
-						onClick={onClose}
-						className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-						aria-label={t("closeModal")}
-					>
-						<Xmark className="size-5" />
-					</button>
-				</div>
-
-				<form key={formKey} action={formAction} className="space-y-5">
-					<input type="hidden" name="locale" value={locale} />
-
-					<div>
-						<label
-							htmlFor="issueCategory"
-							className="mb-1.5 block text-sm font-medium text-slate-800"
-						>
-							{t("categoryLabel")}
-						</label>
-						<select
-							id="issueCategory"
-							name="issueCategory"
-							required
-							className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
-							defaultValue=""
-						>
-							<option value="" disabled>
-								{t("categoryPlaceholder")}
-							</option>
-							{SIGNAL_ISSUE_CATEGORIES.map(c => (
-								<option key={c} value={c}>
-									{c}
-								</option>
-							))}
-						</select>
-					</div>
-
-					<div>
-						<p className="mb-2 text-sm font-medium text-slate-800">{t("visibilityLabel")}</p>
-						<div className="space-y-2">
-							{(
-								[
-									["management", t("visibilityManagement")],
-									["division", t("visibilityDivision")],
-									["person", t("visibilityPerson")],
-								] as const
-							).map(([value, label]) => (
-								<label
-									key={value}
-									className={cn(
-										"flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-colors",
-										visibility === value
-											? "border-slate-900 bg-slate-50"
-											: "border-slate-200 hover:border-slate-300",
-									)}
-								>
-									<input
-										type="radio"
-										name="visibility"
-										value={value}
-										checked={visibility === value}
-										onChange={() => setVisibility(value)}
-										className="size-4 border-slate-300 text-slate-900"
-									/>
-									<span className="font-medium text-slate-900">{label}</span>
-								</label>
-							))}
-						</div>
-					</div>
-
-					{visibility === "division" ? (
-						<div>
-							<label
-								htmlFor="organizationId"
-								className="mb-1.5 block text-sm font-medium text-slate-800"
-							>
-								{t("divisionLabel")}
-							</label>
-							<select
-								id="organizationId"
-								name="organizationId"
-								className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
-								defaultValue=""
-							>
-								<option value="">{t("divisionPlaceholder")}</option>
-								{organizations.map(o => (
-									<option key={o.id} value={o.id}>
-										{o.name}
-									</option>
-								))}
-							</select>
-						</div>
-					) : null}
-
-					{visibility === "person" ? (
-						<div>
-							<label
-								htmlFor="targetEmployeeId"
-								className="mb-1.5 block text-sm font-medium text-slate-800"
-							>
-								{t("personLabel")}
-							</label>
-							<select
-								id="targetEmployeeId"
-								name="targetEmployeeId"
-								className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
-								defaultValue=""
-							>
-								<option value="">{t("personPlaceholder")}</option>
-								{employees.map(e => (
-									<option key={e.id} value={e.id}>
-										{e.full_name}
-									</option>
-								))}
-							</select>
-						</div>
-					) : null}
-
-					{visibility === "management" ? (
-						<input type="hidden" name="organizationId" value="" />
-					) : null}
-					{visibility === "management" ? (
-						<input type="hidden" name="targetEmployeeId" value="" />
-					) : null}
-					{visibility === "division" ? (
-						<input type="hidden" name="targetEmployeeId" value="" />
-					) : null}
-					{visibility === "person" ? <input type="hidden" name="organizationId" value="" /> : null}
-
-					<div>
-						<label htmlFor="details" className="mb-1.5 block text-sm font-medium text-slate-800">
-							{t("descriptionLabel")}
-						</label>
-						<Textarea
-							id="details"
-							name="details"
-							required
-							rows={5}
-							placeholder={t("descriptionPlaceholder")}
-							className="min-h-[120px] resize-y rounded-xl border-slate-200"
-						/>
-					</div>
-
-					<div className="rounded-xl border border-amber-100 bg-amber-50/80 px-4 py-3">
-						<label className="flex cursor-pointer items-start gap-3">
-							<input
-								type="checkbox"
-								name="isAnonymous"
-								className="mt-1 size-4 rounded border-slate-300"
-							/>
-							<span>
-								<span className="block text-sm font-medium text-slate-900">
-									{t("anonymousLabel")}
-								</span>
-								<span className="text-xs text-slate-600">{t("anonymousHint")}</span>
-							</span>
-						</label>
-					</div>
-
-					<div className="flex justify-end gap-3 pt-2">
-						<Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
-							{t("cancel")}
-						</Button>
-						<Button
-							type="submit"
-							disabled={isPending}
-							className="bg-slate-900 text-white hover:bg-slate-900/90"
-						>
-							{isPending ? t("submitting") : t("submit")}
-						</Button>
-					</div>
-				</form>
-			</div>
-		</div>
-	);
-}
-
-export function MyConcernsClient({ initialConcerns, organizations, employees }: Props) {
-	const t = useTranslations("Dashboard.concerns");
-	const [modalOpen, setModalOpen] = useState(false);
 
 	return (
 		<div className="max-w-5xl mx-auto space-y-12 pb-20">
@@ -425,14 +165,6 @@ export function MyConcernsClient({ initialConcerns, organizations, employees }: 
 						{t("subtitle")}
 					</p>
 				</div>
-				<Button
-					type="button"
-					onClick={() => setModalOpen(true)}
-					className="shrink-0 gap-2 bg-brand-primary text-white hover:bg-brand-primary/90 rounded-full px-8 h-12 font-plus-jakarta font-bold shadow-sm transition-all active:scale-95"
-				>
-					<Plus className="size-4" />
-					{t("submitCta")}
-				</Button>
 			</div>
 
 			{initialConcerns.length === 0 ? (
@@ -440,14 +172,6 @@ export function MyConcernsClient({ initialConcerns, organizations, employees }: 
 					<ChatLines className="mb-4 h-12 w-12 text-slate-300" />
 					<h3 className="text-lg font-semibold text-slate-700">{t("emptyTitle")}</h3>
 					<p className="mt-2 max-w-sm text-sm text-slate-500">{t("emptyHint")}</p>
-					<Button
-						type="button"
-						className="mt-6 gap-2 bg-slate-900 text-white hover:bg-slate-900/90"
-						onClick={() => setModalOpen(true)}
-					>
-						<Plus className="size-4" />
-						{t("submitCta")}
-					</Button>
 				</div>
 			) : (
 				<ul className="space-y-4">
@@ -459,12 +183,6 @@ export function MyConcernsClient({ initialConcerns, organizations, employees }: 
 				</ul>
 			)}
 
-			<SubmitConcernModal
-				open={modalOpen}
-				onClose={() => setModalOpen(false)}
-				organizations={organizations}
-				employees={employees}
-			/>
 		</div>
 	);
 }
