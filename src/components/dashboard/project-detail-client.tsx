@@ -56,6 +56,7 @@ export function ProjectDetailClient({ project, activities, isSquadLead }: Props)
 
 	const handleResolve = () => {
 		setConcernsCount(prev => Math.max(0, prev - 1));
+		router.refresh();
 	};
 
 	return (

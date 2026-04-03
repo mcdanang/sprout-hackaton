@@ -8,6 +8,7 @@ import type {
 	ManagementKpiTrend,
 	SentimentSlice,
 } from "@/lib/management-dashboard-types";
+import { computeAverageSentiment, type SignalMetricInput } from "@/lib/utils/signal-metrics";
 
 const RANGE_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -208,26 +209,22 @@ export async function getManagementDashboardSnapshot(): Promise<ManagementDashbo
 	const { data: allProjects } = await supabase.from("projects").select("id");
 	const projectIds = (allProjects ?? []).map(p => p.id);
 
-	let sentimentRows: { project_id: string | null; sentiment_score: number | null }[] = [];
+	let sentimentRows: SignalMetricInput[] = [];
 	if (projectIds.length) {
 		const { data } = await supabase
 			.from("signals")
-			.select("project_id, sentiment_score")
+			.select("project_id, category, sentiment_score, concern_status")
 			.in("project_id", projectIds)
 			.gte("created_at", currentStart);
-		sentimentRows = data ?? [];
+		sentimentRows = (data ?? []) as SignalMetricInput[];
 	}
 
-	const byProject = new Map<string, { sum: number; n: number }>();
-	for (const row of sentimentRows ?? []) {
-		const pid = row.project_id;
-		if (!pid) continue;
-		const s = row.sentiment_score;
-		if (s == null) continue;
-		const cur = byProject.get(pid) ?? { sum: 0, n: 0 };
-		cur.sum += s;
-		cur.n += 1;
-		byProject.set(pid, cur);
+	const signalsByProject = new Map<string, SignalMetricInput[]>();
+	for (const s of sentimentRows) {
+		if (!s.project_id) continue;
+		const list = signalsByProject.get(s.project_id) ?? [];
+		list.push(s);
+		signalsByProject.set(s.project_id, list);
 	}
 
 	let healthy = 0;
@@ -235,8 +232,7 @@ export async function getManagementDashboardSnapshot(): Promise<ManagementDashbo
 	let critical = 0;
 
 	for (const pid of projectIds) {
-		const agg = byProject.get(pid);
-		const avg = agg && agg.n > 0 ? agg.sum / agg.n : null;
+		const avg = computeAverageSentiment(signalsByProject.get(pid) ?? []);
 		if (avg == null) {
 			warning += 1;
 			continue;
