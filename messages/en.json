@@ -203,7 +203,8 @@
 	"Common": {
 		"signIn": "Sign In",
 		"dashboard": "Dashboard",
-		"anonymous": "Anonymous"
+		"anonymous": "Anonymous",
+		"loadingDashboard": "Loading dashboard…"
 	},
 	"Projects": {
 		"label": "Team Projects",

@@ -1,14 +1,41 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useLinkStatus } from "next/link";
 import { Link, usePathname } from "@/i18n/routing";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+import type { LucideIcon } from "lucide-react";
 import { User, ShieldCheck, Briefcase } from "lucide-react";
 
+import { LinkPendingIndicator } from "@/components/navigation/link-pending-indicator";
 import { DashboardMobileSwitcher } from "./dashboard-mobile-switcher";
 
 export type DashboardRole = "individual" | "squad_lead" | "management";
+
+function RoleTabInner({
+	label,
+	Icon,
+	isActive,
+}: {
+	label: string;
+	Icon: LucideIcon;
+	isActive: boolean;
+}) {
+	const { pending } = useLinkStatus();
+	return (
+		<span
+			className={cn(
+				"flex items-center gap-2",
+				pending && "opacity-70",
+			)}
+		>
+			<Icon className={cn("size-4", isActive ? "text-primary" : "text-slate-400")} />
+			{label}
+			<LinkPendingIndicator className="size-4" />
+		</span>
+	);
+}
 
 interface DashboardRoleSwitcherProps {
 	availableRoles: DashboardRole[];
@@ -53,8 +80,7 @@ export function DashboardRoleSwitcher({ availableRoles, currentRole }: Dashboard
 										: "text-slate-500 hover:text-slate-800 hover:bg-white/50"
 								)}
 							>
-								<Icon className={cn("size-4", isActive ? "text-primary" : "text-slate-400")} />
-								{role.label}
+								<RoleTabInner label={role.label} Icon={Icon} isActive={isActive} />
 							</Link>
 						);
 					})}

@@ -203,7 +203,8 @@
 	"Common": {
 		"signIn": "Masuk",
 		"dashboard": "Dashboard",
-		"anonymous": "Anonim"
+		"anonymous": "Anonim",
+		"loadingDashboard": "Memuat dashboard…"
 	},
 	"Projects": {
 		"label": "Proyek Tim",
