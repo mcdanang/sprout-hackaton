@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
@@ -20,23 +20,28 @@ export function AccountSwitchPersona({
 }) {
 	const router = useRouter();
 	const t = useTranslations("AccountSwitch");
-	const [isPending, setIsPending] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
+	const [isRefreshing, startRefreshTransition] = useTransition();
 
 	if (!accountSwitchEnabled) return null;
 
+	const isPending = isSaving || isRefreshing;
+
 	async function onChange(e: React.ChangeEvent<HTMLSelectElement>) {
 		const v = e.target.value;
-		setIsPending(true);
+		setIsSaving(true);
 		try {
 			if (v === "") {
 				await clearAccountPersona();
 			} else if (isAccountPersonaId(v)) {
 				await setAccountPersona(v);
 			}
-			router.refresh();
 		} finally {
-			setIsPending(false);
+			setIsSaving(false);
 		}
+		startRefreshTransition(() => {
+			router.refresh();
+		});
 	}
 
 	return (

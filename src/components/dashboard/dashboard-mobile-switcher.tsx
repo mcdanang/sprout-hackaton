@@ -2,11 +2,59 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { useLinkStatus } from "next/link";
 import { Link, usePathname } from "@/i18n/routing";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+import type { LucideIcon } from "lucide-react";
 import { User, ShieldCheck, Briefcase, Layers, X, Check } from "lucide-react";
+
+import { LinkPendingIndicator } from "@/components/navigation/link-pending-indicator";
 import type { DashboardRole } from "./dashboard-role-switcher";
+
+function MobileRoleRowInner({
+	label,
+	Icon,
+	isActive,
+}: {
+	label: string;
+	Icon: LucideIcon;
+	isActive: boolean;
+}) {
+	const { pending } = useLinkStatus();
+	return (
+		<>
+			<div className="flex items-center gap-4">
+				<div
+					className={cn(
+						"p-2.5 rounded-xl transition-colors",
+						isActive ? "bg-brand-primary text-white" : "bg-white text-slate-500 shadow-sm",
+						pending && "opacity-70",
+					)}
+				>
+					<Icon className="size-5" />
+				</div>
+				<span
+					className={cn(
+						"text-base font-bold",
+						isActive ? "text-brand-primary" : "text-slate-700",
+						pending && "opacity-70",
+					)}
+				>
+					{label}
+				</span>
+			</div>
+			<div className="flex items-center gap-2">
+				<LinkPendingIndicator className="size-5" />
+				{isActive && (
+					<div className="bg-brand-primary rounded-full p-1">
+						<Check className="size-3.5 text-white stroke-[3px]" />
+					</div>
+				)}
+			</div>
+		</>
+	);
+}
 
 interface DashboardMobileSwitcherProps {
 	availableRoles: DashboardRole[];
@@ -90,25 +138,7 @@ export function DashboardMobileSwitcher({ availableRoles, currentRole }: Dashboa
 											: "bg-slate-50 border-transparent hover:bg-white hover:border-slate-200"
 									)}
 								>
-									<div className="flex items-center gap-4">
-										<div className={cn(
-											"p-2.5 rounded-xl transition-colors",
-											isActive ? "bg-brand-primary text-white" : "bg-white text-slate-500 shadow-sm"
-										)}>
-											<Icon className="size-5" />
-										</div>
-										<span className={cn(
-											"text-base font-bold",
-											isActive ? "text-brand-primary" : "text-slate-700"
-										)}>
-											{role.label}
-										</span>
-									</div>
-									{isActive && (
-										<div className="bg-brand-primary rounded-full p-1">
-											<Check className="size-3.5 text-white stroke-[3px]" />
-										</div>
-									)}
+									<MobileRoleRowInner label={role.label} Icon={Icon} isActive={isActive} />
 								</Link>
 							);
 						})}

@@ -1,13 +1,12 @@
 "use client";
 
+import { useLinkStatus } from "next/link";
 import { Link, usePathname } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 import {
 	ViewGrid,
 	Folder,
 	ChatLines,
-	Star,
-	ShieldCheck,
 	Flash,
 	Menu,
 	Xmark,
@@ -21,6 +20,7 @@ import { UserButton } from "@clerk/nextjs";
 import { AccountSwitchPersona } from "@/components/account-switch/account-switch-persona";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import type { AccountPersonaId } from "@/lib/constants/account-switch";
+import { LinkPendingIndicator } from "@/components/navigation/link-pending-indicator";
 
 const navItems = [
 	{ href: "/dashboard", icon: ViewGrid, label: "dashboard" },
@@ -30,6 +30,52 @@ const navItems = [
 	// { href: "/dashboard/feedback", icon: ShieldCheck, label: "privateFeedback" },
 	{ href: "/dashboard/ai-assistant", icon: Flash, label: "aiAssistant" },
 ];
+
+type NavItem = (typeof navItems)[number];
+
+function SidebarNavItemBody({
+	item,
+	isActive,
+	isCollapsed,
+	label,
+}: {
+	item: NavItem;
+	isActive: boolean;
+	isCollapsed: boolean;
+	label: string;
+}) {
+	const { pending } = useLinkStatus();
+	const Icon = item.icon;
+	if (isCollapsed) {
+		return (
+			<span className="flex flex-col items-center gap-1">
+				<Icon
+					className={cn(
+						"h-5 w-5 min-w-[20px]",
+						isActive ? "stroke-[2.5px]" : "stroke-[1.5px]",
+						pending && "opacity-60",
+					)}
+				/>
+				<LinkPendingIndicator className="h-3.5 w-3.5" />
+			</span>
+		);
+	}
+	return (
+		<>
+			<Icon
+				className={cn(
+					"h-5 w-5 min-w-[20px]",
+					isActive ? "stroke-[2.5px]" : "stroke-[1.5px]",
+					pending && "opacity-60",
+				)}
+			/>
+			<span className="flex-1 whitespace-nowrap animate-in fade-in slide-in-from-left-1 duration-300">
+				{label}
+			</span>
+			<LinkPendingIndicator className="h-4 w-4" />
+		</>
+	);
+}
 
 interface DashboardSidebarProps {
 	isCollapsed: boolean;
@@ -83,7 +129,6 @@ export function DashboardSidebar({
 				{navItems.map(item => {
 					const isActive =
 						item.href === "/dashboard" ? pathname === item.href : pathname.startsWith(item.href);
-					const Icon = item.icon;
 
 					return (
 						<Link
@@ -98,17 +143,12 @@ export function DashboardSidebar({
 									: "text-[#64748B] font-semibold hover:bg-slate-50 hover:text-slate-900",
 							)}
 						>
-							<Icon
-								className={cn(
-									"h-5 w-5 min-w-[20px]",
-									isActive ? "stroke-[2.5px]" : "stroke-[1.5px]",
-								)}
+							<SidebarNavItemBody
+								item={item}
+								isActive={isActive}
+								isCollapsed={isCollapsed}
+								label={t(`nav.${item.label}`)}
 							/>
-							{!isCollapsed && (
-								<span className="whitespace-nowrap animate-in fade-in slide-in-from-left-1 duration-300">
-									{t(`nav.${item.label}`)}
-								</span>
-							)}
 						</Link>
 					);
 				})}
@@ -212,7 +252,6 @@ export function DashboardSidebar({
 								item.href === "/dashboard"
 									? pathname === item.href
 									: pathname.startsWith(item.href);
-							const Icon = item.icon;
 
 							return (
 								<Link
@@ -226,8 +265,12 @@ export function DashboardSidebar({
 											: "text-[#64748B] font-semibold hover:bg-slate-50 hover:text-slate-900",
 									)}
 								>
-									<Icon className={cn("h-5 w-5", isActive ? "stroke-[2.5px]" : "stroke-[1.5px]")} />
-									<span>{t(`nav.${item.label}`)}</span>
+									<SidebarNavItemBody
+										item={item}
+										isActive={isActive}
+										isCollapsed={false}
+										label={t(`nav.${item.label}`)}
+									/>
 								</Link>
 							);
 						})}
