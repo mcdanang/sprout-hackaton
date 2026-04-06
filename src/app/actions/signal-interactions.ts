@@ -27,6 +27,34 @@ async function getRoleName(params: {
 	return role?.name ?? null;
 }
 
+/** Squad leads may interact on a project if they lead it or are assigned (e.g. org-wide SPROUT). */
+async function assertSquadLeadProjectAccess(params: {
+	supabase: Awaited<ReturnType<typeof createClient>>;
+	roleName: string;
+	employeeId: string;
+	projectId: string;
+}): Promise<void> {
+	if (params.roleName !== "SQUAD LEAD") return;
+
+	const { data: asLead } = await params.supabase
+		.from("projects")
+		.select("id")
+		.eq("id", params.projectId)
+		.eq("squad_lead_employee_id", params.employeeId)
+		.maybeSingle();
+
+	if (asLead) return;
+
+	const { data: asMember } = await params.supabase
+		.from("employee_projects")
+		.select("project_id")
+		.eq("project_id", params.projectId)
+		.eq("employee_id", params.employeeId)
+		.maybeSingle();
+
+	if (!asMember) throw new Error("Unauthorized");
+}
+
 export async function toggleSignalLike(signalId: string): Promise<{
 	likesCount: number;
 	isLiked: boolean;
@@ -47,16 +75,12 @@ export async function toggleSignalLike(signalId: string): Promise<{
 
 	if (!signalRow) throw new Error("Signal not found");
 
-	if (roleName === "SQUAD LEAD") {
-		const { data: projectRow } = await supabase
-			.from("projects")
-			.select("id")
-			.eq("id", signalRow.project_id)
-			.eq("squad_lead_employee_id", employee.id)
-			.maybeSingle();
-
-		if (!projectRow) throw new Error("Unauthorized");
-	}
+	await assertSquadLeadProjectAccess({
+		supabase,
+		roleName,
+		employeeId: employee.id,
+		projectId: signalRow.project_id,
+	});
 
 	// Check if like exists; if yes, remove; otherwise insert.
 	const { data: existingLike } = await supabase
@@ -129,16 +153,12 @@ export async function createSignalReply(params: { signalId: string; content: str
 
 	if (!signalRow) throw new Error("Signal not found");
 
-	if (roleName === "SQUAD LEAD") {
-		const { data: projectRow } = await supabase
-			.from("projects")
-			.select("id")
-			.eq("id", signalRow.project_id)
-			.eq("squad_lead_employee_id", employee.id)
-			.maybeSingle();
-
-		if (!projectRow) throw new Error("Unauthorized");
-	}
+	await assertSquadLeadProjectAccess({
+		supabase,
+		roleName,
+		employeeId: employee.id,
+		projectId: signalRow.project_id,
+	});
 
 	// Insert reply.
 	const { data: createdReply, error: insertError } = await supabase
@@ -218,7 +238,7 @@ export async function resolveConcern(signalId: string): Promise<{ ok: boolean }>
 
 export async function rateAchievement(
 	signalId: string,
-	points: number
+	points: number,
 ): Promise<{ ok: boolean; achievementPoints: number }> {
 	const supabase = await createClient();
 	const employee = await getCurrentEmployee(supabase);
